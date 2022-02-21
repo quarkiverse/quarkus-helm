@@ -1,0 +1,11 @@
+---
+name: Quarkus - Helm
+description: Quarkus extension for Helm
+metadata:
+  keywords:
+  - helm
+  - kubernetes
+  - openshift
+  categories:
+  - "cloud"
+  status: "preview"

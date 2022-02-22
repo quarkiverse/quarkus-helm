@@ -35,7 +35,7 @@ public class HelmProcessor {
         final DekorateOutputBuildItem dekorateOutput = optDekorateOutput.get();
         final HelmWriterSessionListener helmWriter = new HelmWriterSessionListener();
         helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), (Project) dekorateOutput.getProject(),
-                toDekorateHelmChartConfig(config),
+                toDekorateHelmChartConfig(app, config),
                 outputTarget.getOutputDirectory(),
                 toFiles(dekorateOutput.getGeneratedFiles()));
 
@@ -51,12 +51,13 @@ public class HelmProcessor {
         return generatedFiles.stream().map(File::new).collect(Collectors.toSet());
     }
 
-    private io.dekorate.helm.config.HelmChartConfig toDekorateHelmChartConfig(HelmChartConfig config) {
+    private io.dekorate.helm.config.HelmChartConfig toDekorateHelmChartConfig(ApplicationInfoBuildItem app,
+            HelmChartConfig config) {
         HelmChartConfigBuilder builder = new HelmChartConfigBuilder()
                 .withEnabled(config.enabled)
-                .withName(config.name)
+                .withName(config.name.orElse(app.getName()))
                 .withCreateTarFile(config.createTarFile)
-                .withVersion(config.version)
+                .withVersion(config.version.orElse(app.getVersion()))
                 .withExtension(config.extension);
         config.description.ifPresent(builder::withDescription);
         config.keywords.ifPresent(builder::addAllToKeywords);

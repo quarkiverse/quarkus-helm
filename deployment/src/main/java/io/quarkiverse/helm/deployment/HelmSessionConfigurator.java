@@ -25,8 +25,7 @@ public class HelmSessionConfigurator implements BiConsumer<Object, Object> {
     private void doAccept(Project project, Session session) {
         session.getConfigurationRegistry()
                 .add(new ConfigurationSupplier<>(io.dekorate.helm.config.HelmChartConfig
-                        .newHelmChartConfigBuilderFromDefaults()
-                        .withName(config.name)));
+                        .newHelmChartConfigBuilderFromDefaults()));
 
     }
 }

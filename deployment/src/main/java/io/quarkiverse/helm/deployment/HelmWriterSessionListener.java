@@ -1,19 +1,3 @@
-/**
- * Copyright 2018 The original authors.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- **/
-
 package io.quarkiverse.helm.deployment;
 
 import static io.dekorate.helm.config.HelmBuildConfigGenerator.HELM;
@@ -25,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -67,6 +52,7 @@ public class HelmWriterSessionListener {
     private static final String CHART_API_VERSION = "v1";
     private static final String TEMPLATES = "templates";
     private static final String CHARTS = "charts";
+    private static final String NOTES_TEMPLATE = "/NOTES.template.txt";
     private static final String NOTES = "NOTES.txt";
     private static final String KUBERNETES_CLASSIFIER = "helm";
     private static final String OPENSHIFT_CLASSIFIER = "helmshift";
@@ -122,9 +108,9 @@ public class HelmWriterSessionListener {
     }
 
     private Map<String, String> addNotesIntoTemplatesFolder(HelmChartConfig helmConfig, Path outputDir) throws IOException {
-        InputStream notesInputStream = HelmWriterSessionListener.class.getResourceAsStream("/" + NOTES);
+        InputStream notesInputStream = HelmWriterSessionListener.class.getResourceAsStream(NOTES_TEMPLATE);
         Path chartOutputDir = getChartOutputDir(helmConfig, outputDir).resolve(TEMPLATES).resolve(NOTES);
-        Files.copy(notesInputStream, chartOutputDir);
+        Files.copy(notesInputStream, chartOutputDir, StandardCopyOption.REPLACE_EXISTING);
         return Collections.singletonMap(chartOutputDir.toString(), EMPTY);
     }
 

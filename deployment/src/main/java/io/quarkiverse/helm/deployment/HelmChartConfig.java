@@ -18,16 +18,17 @@ public class HelmChartConfig {
 
     /**
      * Name of the Helm chart.
+     * If not set, it will use the application name.
      */
-    @ConfigItem(defaultValue = "${quarkus.application.name}")
-    String name;
+    @ConfigItem
+    Optional<String> name;
 
     /**
      * Version of the Helm chart.
-     * If not set, it will use the same version as the container image if exists.
+     * If not set, it will use the application version.
      */
-    @ConfigItem(defaultValue = "${quarkus.container-image.tag}")
-    String version;
+    @ConfigItem
+    Optional<String> version;
 
     /**
      * The Helm chart single-sentence description.

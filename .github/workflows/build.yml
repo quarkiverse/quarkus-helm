@@ -1,0 +1,83 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - "main"
+    paths-ignore:
+      - '.gitignore'
+      - 'CODEOWNERS'
+      - 'LICENSE'
+      - '*.md'
+      - '*.adoc'
+      - '*.txt'
+      - '.all-contributorsrc'
+  pull_request:
+    paths-ignore:
+      - '.gitignore'
+      - 'CODEOWNERS'
+      - 'LICENSE'
+      - '*.md'
+      - '*.adoc'
+      - '*.txt'
+      - '.all-contributorsrc'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: 11
+
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "::set-output name=date::$(/bin/date -u "+%Y-%m")"
+        shell: bash
+      - name: Cache Maven Repository
+        id: cache-maven
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          # refresh cache every month to avoid unlimited growth
+          key: maven-repo-${{ runner.os }}-${{ steps.get-date.outputs.date }}
+
+      - name: Build with Maven
+        run: mvn -B formatter:validate install --file pom.xml -Dnative
+
+      - name: Kubernetes KinD Cluster
+        uses: container-tools/kind-action@v1
+        with:
+          version: v0.11.1
+          registry: true
+
+      - name: Install Test using Helm
+        run: |
+          K8S_NAMESPACE=helm
+          KIND_REGISTRY_GROUP=local
+          VERSION=latest
+          kubectl create namespace $K8S_NAMESPACE
+          cd integration-tests/helm-kubernetes
+          mvn clean package -Dquarkus.container-image.build=true \
+            -Dquarkus.container-image.push=true \
+            -Dquarkus.container-image.registry=$KIND_REGISTRY \
+            -Dquarkus.container-image.group=$KIND_REGISTRY_GROUP \
+            -Dquarkus.container-image.tag=$VERSION \
+            -Dquarkus.container-image.insecure=true
+          helm install quarkus-hello-world target/helm/quarkus-helm-integration-tests-kubernetes -n $K8S_NAMESPACE --set quarkusHelmIntegrationTestsKubernetes.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes:$VERSION
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes -n $K8S_NAMESPACE
+          RESPONSE=$(kubectl exec deployment/quarkus-helm-integration-tests-kubernetes -n $K8S_NAMESPACE -- curl -s localhost:8080)
+          if [[ $RESPONSE != *"Hello, World!"* ]] ; then
+            echo "Application didn't return the expected message. Got: $RESPONSE"
+            exit 1
+          fi
+
+      - name: Delete Project using Helm
+        run: kubectl delete namespace helm

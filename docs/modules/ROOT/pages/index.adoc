@@ -14,12 +14,17 @@ Under the hood, the Quarkus Helm extension uses https://dekorate.io/[Dekorate] t
 To complete this guide, you need:
 
 * roughly 10 minutes
-* an IDE
 * JDK 11+ installed with `JAVA_HOME` configured appropriately
 * Apache Maven {maven-version}
 * Docker installed
+* https://helm.sh/docs/intro/install/[Helm command line] installed
+* Have connected/logged to a Kubernetes cluster
 
 == Create a Quarkus application with the Helm extension
+
+The Quarkus Helm extension will generate the Helm Chart of a Quarkus application.
+
+In this example, we'll create a Quarkus application with the Quarkus Helm and the Quarkus Kubernetes extensions by running the following command:
 
 [source,bash,subs=attributes+]
 ----
@@ -39,7 +44,7 @@ If you already have your Quarkus project configured, you can add the `helm` exte
 ./mvnw quarkus:add-extension -Dextensions="helm"
 ----
 
-This will add the following to your `pom.xml`:
+This command will add the following dependency to your `pom.xml` file:
 
 [source,xml,subs=attributes+]
 ----
@@ -50,11 +55,272 @@ This will add the following to your `pom.xml`:
 </dependency>
 ----
 
-Finally, build your application by running the following command:
+Once we add the Quarkus Helm extension to your project, you can now generate the Helm resources by running the following Maven command:
 
 [source,bash]
 ----
-mvn clean package
+./mvnw clean package
+----
+
+Depending on the Quarkus Kubernetes extensions that you are using in your project, the Helm resources will include some resources or others.
+For example, if your project use the Quarkus Kubernetes extension, then the helm resources will include the following templates at `target/helm/<chart name>/`:
+
+* Chart.yaml
+* values.yaml
+* /charts
+* /templates
+* /templates/deployment.yaml
+* /templates/ingress.yaml
+* /templates/service.yaml
+* /templates/NOTES.txt
+
+[TIP]
+====
+The `<chart name>` is set from either the property `quarkus.helm.name` or the `@HelmChart` annotation or the Quarkus application.
+====
+
+== Helm Usage
+
+Let's now see how to use the previously generated Helm resources on a Kubernetes cluster.
+
+First, you need to build the application container image and push it into a container registry. For doing this, Quarkus provides https://quarkus.io/guides/container-image[some container image extensions] to ease up this step. Let's add the Quarkus container image docker extension in this example:
+
+[source,bash]
+----
+./mvnw quarkus:add-extension -Dextensions="container-image-docker"
+----
+
+Now, we can generate the Helm resources and build/push the application container image at once by running the following Maven command:
+
+[source,bash]
+----
+./mvnw clean package -Dquarkus.container-image.build=true -Dquarkus.container-image.push=true -Dquarkus.container-image.registry=<your container registry> -Dquarkus.container-image.group=<your container registry namespace>
+----
+
+[TIP]
+====
+Make sure the application container image is public and available to be used by your Kubernetes cluster.
+====
+
+Finally, let's use Helm to deploy it into the cluster:
+
+[source,bash]
+----
+helm install helm-example ./target/helm/<chart name>
+----
+
+The above command will use the default values, which are located in `./target/helm/<chart name>/values.yaml`.
+To override the default values, pass as parameter you own value file `--values /path/to/another.values.yaml` or set them using `--set key1=val1 --set key2=val2`.
+
+=== How can I update my deployment?
+
+- Either via the `upgrade` option of Helm command line:
+
+After making changes to your project and regenerating the Helm resources and the application container image, then you need to upgrade your deployment:
+
+[source,bash]
+----
+helm upgrade helm-example ./target/helm/<chart name>
+----
+
+- Or via the `set` option of Helm command line:
+
+[source,bash]
+----
+helm upgrade helm-example ./target/helm/<chart name> --set appName.replicas=1
+----
+
+=== How can we delete my deployment?
+
+[source,bash]
+----
+helm uninstall helm-example
+----
+
+== Mapping Values
+
+By default, the Quarkus Helm extension will generate the Helm values file (`values.yaml`) by mapping the following pre-configured properties:
+
+- The Kubernetes/Openshift replicas
+- The Kubernetes/Openshift image
+- The Kubernetes/Openshift Env Var values (only for plain values - secrets or configmaps are not supported yet)
+- The Kubernetes ingress host
+- The Openshift S2i builder image
+
+[TIP]
+====
+If you would like to automatically map any other pre-configured properties, please submit a feature request https://github.com/quarkiverse/quarkus-helm/issues[at this repository], and we'll work on it.
+====
+
+For example, if you set 3 replicas for your deployment:
+
+[source,properties]
+----
+quarkus.helm.name=myChart
+quarkus.helm.description=Description of my Chart
+
+# Set replicas to 3
+quarkus.kubernetes.replicas=3
+----
+
+The extension will generate the next Helm values file at `target/helm/<chart name>/values.yaml`:
+
+[source,yaml]
+----
+appName:
+  replicas: 3
+----
+
+And the Deployment file at `target/helm/<chart name>/templates/deployment.yaml` will have a reference to this value:
+
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helm-on-kubernetes-example
+spec:
+  replicas: {{ .Values.appName.replicas }}
+----
+
+This is done transparently to users.
+
+=== Mapping user properties using JSONPath expressions
+
+As we have introduced in the previous section, the Quarkus Helm extension will automatically map some properties like the `replicas` or the `images` to the Values helm file. Still, some users might need to map more properties. For example, let's see the following YAML resource:
+
+[source,yaml]
+----
+apiVersion: v1
+kind: Service
+metadata:
+  name: helm-on-kubernetes-example
+----
+
+The property at `metadata.name`, with value `helm-on-kubernetes-example`, will not be replaced with `{{ .Values.appName.name }}` in the Helm templates.
+However, the extension allows users to define https://tools.ietf.org/id/draft-goessner-dispatch-jsonpath-00.html[JSONPath] expressions to map these properties into the Helm values file. Let's see how to do it using the above example to map the property `metadata.name` with `{{ .Values.appName.name }}`.
+
+[TIP]
+====
+JSONPath works with JSON, not YAML files. So, for testing your expressions, you first need to convert YAML files to JSON files, for example, using https://jsonformatter.org/yaml-to-json[this online tool] and then use some JSONPath online evaluator like https://jsonpath.com/[https://jsonpath.com/]. Moreover, make sure you also wrap the JSON objects into lists.
+====
+
+After getting familiar with JSONPath, the expression to map the metadata name field is `$..metadata.name`, so you need to add the following properties to your configuration:
+
+[source,properties]
+----
+quarkus.helm.name=myChart
+quarkus.helm.description=Description of my Chart
+
+# Map all the metadata name resources
+quarkus.helm.values[0].property=appName.name
+quarkus.helm.values[0].jsonPaths=$..metadata.name
+----
+
+The resulting `values.yaml` file will look like as:
+
+[source,yaml]
+----
+appName:
+  name: helm-on-kubernetes-example
+----
+
+The `appName.name` value is set automatically by the Quarkus Helm extension. However, users can provide other values using the `value` property:
+
+[source,properties]
+----
+quarkus.helm.name=myChart
+quarkus.helm.description=Description of my Chart
+
+# Map all the metadata name resources
+quarkus.helm.values[0].property=appName.name
+quarkus.helm.values[0].jsonPaths=$..metadata.name
+## Overwrite value:
+quarkus.helm.values[0].value=this-is-another-name
+----
+
+And the `values.yaml` file will now contain:
+
+[source,yaml]
+----
+appName:
+  name: this-is-another-name
+----
+
+=== Mapping multiple properties at once
+
+What about if the properties are located in different places, for example:
+
+[source,yaml]
+----
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: helm-on-kubernetes-example ## (1)
+spec:
+  rules:
+    - host: my-host
+      http:
+        paths:
+          - backend:
+              service:
+                name: helm-on-kubernetes-example ## (2)
+                port:
+                  name: http
+            path: /
+            pathType: Prefix
+----
+
+From this example, we need to map the value `helm-on-kubernetes-example` which is used in two places: (1) `metadata.name` and (2) `spec.rules..http.paths..backend.service.name` to the same property `appName.name`. For doing this, we need to provide a comma-separated list of JSONPath expressions to be mapped to `appName.name`:
+
+[source,properties]
+----
+quarkus.helm.name=myChart
+quarkus.helm.description=Description of my Chart
+
+# Map all the metadata name resources
+quarkus.helm.values[0].property=appName.name
+## Comma separated list of JSONPath expressions:
+quarkus.helm.values[0].jsonPaths=$..metadata.name,$.[?(@.kind == 'Ingress')].spec.rules..http.paths..backend.service.name
+----
+
+Now, the extension will first map the expression `$..metadata.name` and then the expression `$.[?(@.kind == 'Ingress')].spec.rules..http.paths..backend.service.name` (this expression only applies to `Ingress` resources - see more about filtering in JSONPath).
+
+== Helm Profiles
+
+By default, all the properties are mapped to the same Helm values file `values.yaml`. However, the Quarkus Helm extension also supports the generation of Helm values by profiles.
+For example, let's say we have two environments: one for testing and another one for production; each environment has a different ingress host where your Kubernetes applications will be exposed.
+We can configure our application as:
+
+[source,properties]
+----
+quarkus.kubernetes.ingress.expose=true
+# Mapped to `values.yaml` by the preconfigured Ingress decorator
+quarkus.kubernetes.ingress.host=my-host
+
+# Helm Chart
+quarkus.helm.name=myChart
+## Overwrite the value of `dekorate.kubernetes.host` to `values-<profile-name>.yaml`:
+quarkus.helm.values[0].property=appName.host
+quarkus.helm.values[0].jsonPaths=$.[?(@.kind == 'Ingress')].spec.rules..host
+quarkus.helm.values[0].value=my-test-host
+quarkus.helm.values[0].profile=test
+----
+
+This configuration will generate the `values.yaml` using the value set at the property `quarkus.kubernetes.ingress.host`:
+
+[source,yaml]
+----
+appName:
+  host: my-host
+----
+
+But as you are now using a profile named `test` (see `quarkus.helm.values[0].profile`) in one of your mapped properties, it will also generate a `values-test.yaml` file with the content:
+
+[source,yaml]
+----
+appName:
+  host: my-test-host
 ----
 
 [[configuration-reference]]

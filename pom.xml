@@ -26,6 +26,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.version>999-SNAPSHOT</quarkus.version>
+    <!-- Workaround for https://github.com/quarkusio/quarkus/pull/23868 -->
+    <dekorate.version>2.9.0</dekorate.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -35,6 +37,12 @@
         <version>${quarkus.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.dekorate</groupId>
+        <artifactId>helm-annotations</artifactId>
+        <version>${dekorate.version}</version>
+        <classifier>noapt</classifier>
       </dependency>
     </dependencies>
   </dependencyManagement>

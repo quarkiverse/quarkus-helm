@@ -85,9 +85,10 @@ public class HelmWriterSessionListener {
                         valuesByProfile));
                 artifacts.putAll(createChartYaml(helmConfig, project, outputDir));
                 artifacts.putAll(createValuesYaml(helmConfig, outputDir, prodValues, valuesByProfile));
-                if (helmConfig.isCreateTarFile()) {
-                    artifacts.putAll(createTarball(helmConfig, project, outputDir, artifacts, valuesByProfile.keySet()));
-                }
+                // Available in Dekorate 2.10.0
+                // if (helmConfig.isCreateTarFile()) {
+                artifacts.putAll(createTarball(helmConfig, project, outputDir, artifacts, valuesByProfile.keySet()));
+                // }
 
                 // To follow Helm file structure standards:
                 artifacts.putAll(createEmptyChartFolder(helmConfig, outputDir));
@@ -315,7 +316,8 @@ public class HelmWriterSessionListener {
         chart.setKeywords(Arrays.asList(helmConfig.getKeywords()));
         chart.setDependencies(Arrays.stream(helmConfig.getDependencies())
                 .map(d -> new HelmDependency(d.getName(),
-                        Strings.defaultIfEmpty(d.getAlias(), d.getName()),
+                        // Available in Dekorate 2.10.0
+                        // Strings.defaultIfEmpty(d.getAlias(), d.getName()),
                         d.getVersion(),
                         d.getRepository()))
                 .collect(Collectors.toList()));

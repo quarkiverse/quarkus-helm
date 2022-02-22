@@ -56,7 +56,8 @@ public class HelmProcessor {
         HelmChartConfigBuilder builder = new HelmChartConfigBuilder()
                 .withEnabled(config.enabled)
                 .withName(config.name.orElse(app.getName()))
-                .withCreateTarFile(config.createTarFile)
+                // Available in Dekorate 2.10.0
+                // .withCreateTarFile(config.createTarFile)
                 .withVersion(config.version.orElse(app.getVersion()))
                 .withExtension(config.extension);
         config.description.ifPresent(builder::withDescription);
@@ -67,7 +68,11 @@ public class HelmProcessor {
         config.maintainers.values().forEach(
                 m -> builder.addNewMaintainer(m.name, defaultString(m.email), defaultString(m.url)));
         config.dependencies.values()
-                .forEach(d -> builder.addNewDependency(d.name, defaultString(d.alias, d.name), d.version, d.repository));
+                .forEach(d -> builder.addNewDependency(d.name,
+                        // Available in Dekorate 2.10.0
+                        // defaultString(d.alias, d.name),
+                        d.version,
+                        d.repository));
         config.values.values().forEach(v -> builder.addNewValue(v.property, v.jsonPaths.toArray(new String[v.jsonPaths.size()]),
                 defaultString(v.profile), defaultString(v.value)));
 

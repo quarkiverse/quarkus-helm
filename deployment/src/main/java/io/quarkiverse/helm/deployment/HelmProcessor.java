@@ -1,6 +1,8 @@
 package io.quarkiverse.helm.deployment;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -48,7 +50,7 @@ public class HelmProcessor {
     }
 
     private Collection<File> toFiles(List<String> generatedFiles) {
-        return generatedFiles.stream().map(File::new).collect(Collectors.toSet());
+        return generatedFiles.stream().map(File::new).filter(File::exists).collect(Collectors.toSet());
     }
 
     private io.dekorate.helm.config.HelmChartConfig toDekorateHelmChartConfig(ApplicationInfoBuildItem app,

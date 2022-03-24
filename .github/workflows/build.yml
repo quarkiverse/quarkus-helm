@@ -51,7 +51,7 @@ jobs:
           key: maven-repo-${{ runner.os }}-${{ steps.get-date.outputs.date }}
 
       - name: Build with Maven
-        run: mvn -B formatter:validate install --file pom.xml -Dnative
+        run: mvn -B formatter:validate install --file pom.xml
 
       - name: Kubernetes KinD Cluster
         uses: container-tools/kind-action@v1
@@ -74,11 +74,6 @@ jobs:
             -Dquarkus.container-image.insecure=true
           helm install quarkus-hello-world target/helm/quarkus-helm-integration-tests-kubernetes -n $K8S_NAMESPACE --set quarkusHelmIntegrationTestsKubernetes.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes:$VERSION
           kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes -n $K8S_NAMESPACE
-          RESPONSE=$(kubectl exec deployment/quarkus-helm-integration-tests-kubernetes -n $K8S_NAMESPACE -- curl -s localhost:8080)
-          if [[ $RESPONSE != *"Hello, World!"* ]] ; then
-            echo "Application didn't return the expected message. Got: $RESPONSE"
-            exit 1
-          fi
 
       - name: Delete Project using Helm
         run: kubectl delete namespace helm

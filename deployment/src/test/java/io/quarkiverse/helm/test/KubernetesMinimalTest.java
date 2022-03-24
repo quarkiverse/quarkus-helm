@@ -18,6 +18,7 @@ import io.dekorate.helm.model.Chart;
 import io.dekorate.utils.Serialization;
 import io.quarkiverse.helm.test.assets.Endpoint;
 import io.quarkus.bootstrap.model.AppArtifact;
+import io.quarkus.builder.Version;
 import io.quarkus.test.ProdBuildResults;
 import io.quarkus.test.ProdModeTestResults;
 import io.quarkus.test.QuarkusProdModeTest;
@@ -31,8 +32,7 @@ public class KubernetesMinimalTest {
     static final QuarkusProdModeTest config = new QuarkusProdModeTest()
             .setForcedDependencies(
                     Collections.singletonList(
-                            new AppArtifact("io.quarkus", "quarkus-kubernetes",
-                                    System.getProperty("quarkus.version", "999-SNAPSHOT"))))
+                            new AppArtifact("io.quarkus", "quarkus-kubernetes", Version.getVersion())))
             .withApplicationRoot((jar) -> jar.addClasses(Endpoint.class))
             .withConfigurationResource("application-k8s-minimal.properties");
 

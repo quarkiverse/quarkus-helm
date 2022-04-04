@@ -57,16 +57,6 @@ jobs:
           git rebase release
           mvn -B release:perform -Darguments=-DperformRelease -DperformRelease -Prelease -s /tmp/maven-settings.xml
 
-      - name: Adjust tag for documentation changes
-        run: |
-          git checkout ${{steps.metadata.outputs.current-version}}
-          mvn -B clean install -DskipTests -DskipITs
-          git commit -am "Update stable version for documentation"
-          # Move the tag after inclusion of documentation adjustments
-          git tag -f ${{steps.metadata.outputs.current-version}}
-          # Go back to main
-          git checkout main
-
       - name: Push changes to ${{github.base_ref}}
         uses: ad-m/github-push-action@v0.6.0
         with:

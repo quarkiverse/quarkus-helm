@@ -33,7 +33,7 @@ mvn io.quarkus.platform:quarkus-maven-plugin:{quarkus-version}:create \
     -DprojectArtifactId=helm-quickstart \
     -DclassName="org.acme.quickstart.GreetingResource" \
     -Dpath="/hello" \
-    -Dextensions="resteasy,kubernetes,helm"
+    -Dextensions="resteasy-reactive,kubernetes,helm"
 cd helm-quickstart
 ----
 

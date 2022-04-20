@@ -73,8 +73,6 @@ public class KubernetesFullTest {
         assertEquals(3, helmExampleValues.get("replicas"));
         // Should NOT contain not-found: as this property is ignored
         assertNull(helmExampleValues.get("not-found"));
-        // Should contain commit-id
-        assertNotNull(helmExampleValues.get("commitId"));
     }
 
     @Test
@@ -94,8 +92,6 @@ public class KubernetesFullTest {
         assertEquals(3, helmExampleValues.get("replicas"));
         // Should NOT contain not-found: as this property is ignored
         assertNull(helmExampleValues.get("not-found"));
-        // Should contain commit-id
-        assertNotNull(helmExampleValues.get("commitId"));
         // Should contain vcs-url with the value from properties
         assertEquals("Only for DEV!", helmExampleValues.get("commitId"));
     }

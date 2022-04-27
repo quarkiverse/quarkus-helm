@@ -29,7 +29,7 @@ import io.quarkus.test.QuarkusProdModeTest;
 public class KubernetesFullTest {
 
     private static final String CHART_NAME = "myChart";
-    private static final String ROOT_CONFIG_NAME = "unset";
+    private static final String ROOT_CONFIG_NAME = "quarkusHelmDeployment";
 
     @RegisterExtension
     static final QuarkusProdModeTest config = new QuarkusProdModeTest()

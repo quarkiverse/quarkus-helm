@@ -24,6 +24,18 @@ public class HelmChartConfig {
     Optional<String> name;
 
     /**
+     * Alias of the root element in the generated values file.
+     */
+    @ConfigItem(defaultValue = "app")
+    String valuesRootAlias;
+
+    /**
+     * Notes template to be generated.
+     */
+    @ConfigItem(defaultValue = "/NOTES.template.txt")
+    String notes;
+
+    /**
      * Version of the Helm chart.
      * If not set, it will use the application version.
      */

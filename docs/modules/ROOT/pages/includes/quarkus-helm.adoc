@@ -1,3 +1,5 @@
+
+:summaryTableId: quarkus-helm
 [.configuration-legend]
 icon:lock[title=Fixed at build time] Configuration property fixed at build time - All other configuration properties are overridable at runtime
 [.configuration-reference.searchable, cols="80,.^10,.^10"]
@@ -13,6 +15,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.enabled]]`lin
 [.description]
 --
 Enabled the generation of Helm files.
+
+Environment variable: `+++QUARKUS_HELM_ENABLED+++`
 --|boolean 
 |`true`
 
@@ -22,8 +26,32 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.name]]`link:#
 [.description]
 --
 Name of the Helm chart. If not set, it will use the application name.
+
+Environment variable: `+++QUARKUS_HELM_NAME+++`
 --|string 
 |
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-root-alias]]`link:#quarkus-helm_quarkus.helm.values-root-alias[quarkus.helm.values-root-alias]`
+
+[.description]
+--
+Alias of the root element in the generated values file.
+
+Environment variable: `+++QUARKUS_HELM_VALUES_ROOT_ALIAS+++`
+--|string 
+|`app`
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.notes]]`link:#quarkus-helm_quarkus.helm.notes[quarkus.helm.notes]`
+
+[.description]
+--
+Notes template to be generated.
+
+Environment variable: `+++QUARKUS_HELM_NOTES+++`
+--|string 
+|`/NOTES.template.txt`
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.version]]`link:#quarkus-helm_quarkus.helm.version[quarkus.helm.version]`
@@ -31,6 +59,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.version]]`lin
 [.description]
 --
 Version of the Helm chart. If not set, it will use the application version.
+
+Environment variable: `+++QUARKUS_HELM_VERSION+++`
 --|string 
 |
 
@@ -40,6 +70,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.description]]
 [.description]
 --
 The Helm chart single-sentence description.
+
+Environment variable: `+++QUARKUS_HELM_DESCRIPTION+++`
 --|string 
 |
 
@@ -49,6 +81,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.icon]]`link:#
 [.description]
 --
 Icon of the Helm chart. It must be a URL to an SVG or PNG image.
+
+Environment variable: `+++QUARKUS_HELM_ICON+++`
 --|string 
 |
 
@@ -58,6 +92,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.home]]`link:#
 [.description]
 --
 Project's home page of the Helm chart. It must be a URL.
+
+Environment variable: `+++QUARKUS_HELM_HOME+++`
 --|string 
 |
 
@@ -67,6 +103,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.keywords]]`li
 [.description]
 --
 List of keywords to add to the chart.
+
+Environment variable: `+++QUARKUS_HELM_KEYWORDS+++`
 --|list of string 
 |
 
@@ -76,6 +114,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.sources]]`lin
 [.description]
 --
 The Helm chart list of URLs to source code for this project.
+
+Environment variable: `+++QUARKUS_HELM_SOURCES+++`
 --|list of string 
 |
 
@@ -85,6 +125,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.extension]]`l
 [.description]
 --
 Extension of the Helm tarball file. Default is `tar.gz`.
+
+Environment variable: `+++QUARKUS_HELM_EXTENSION+++`
 --|string 
 |`tar.gz`
 
@@ -94,6 +136,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.create-tar-fi
 [.description]
 --
 If Helm tar file is generated.
+
+Environment variable: `+++QUARKUS_HELM_CREATE_TAR_FILE+++`
 --|boolean 
 |`false`
 
@@ -103,6 +147,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.maintainers.-
 [.description]
 --
 Name of the maintainer.
+
+Environment variable: `+++QUARKUS_HELM_MAINTAINERS__MAINTAINERS__NAME+++`
 --|string 
 |required icon:exclamation-circle[title=Configuration property is required]
 
@@ -112,6 +158,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.maintainers.-
 [.description]
 --
 Email of the maintainer.
+
+Environment variable: `+++QUARKUS_HELM_MAINTAINERS__MAINTAINERS__EMAIL+++`
 --|string 
 |
 
@@ -121,6 +169,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.maintainers.-
 [.description]
 --
 URL profile of the maintainer.
+
+Environment variable: `+++QUARKUS_HELM_MAINTAINERS__MAINTAINERS__URL+++`
 --|string 
 |
 
@@ -130,6 +180,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.
 [.description]
 --
 Name of the dependency.
+
+Environment variable: `+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__NAME+++`
 --|string 
 |required icon:exclamation-circle[title=Configuration property is required]
 
@@ -139,6 +191,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.
 [.description]
 --
 Version of the dependency.
+
+Environment variable: `+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__VERSION+++`
 --|string 
 |required icon:exclamation-circle[title=Configuration property is required]
 
@@ -148,6 +202,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.
 [.description]
 --
 Repository of the dependency.
+
+Environment variable: `+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__REPOSITORY+++`
 --|string 
 |required icon:exclamation-circle[title=Configuration property is required]
 
@@ -157,6 +213,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.
 [.description]
 --
 Alias of the dependency.
+
+Environment variable: `+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__ALIAS+++`
 --|string 
 |
 
@@ -166,6 +224,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-value
 [.description]
 --
 The name of the property that will be present in the Helm values file.
+
+Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__PROPERTY+++`
 --|string 
 |required icon:exclamation-circle[title=Configuration property is required]
 
@@ -175,6 +235,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-value
 [.description]
 --
 A comma-separated list of ++[++JSONPath++]++(https://tools.ietf.org/id/draft-goessner-dispatch-jsonpath-00.html) expressions to map the Dekorate auto-generated properties to the final Helm values file.
+
+Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__JSON_PATHS+++`
 --|list of string 
 |required icon:exclamation-circle[title=Configuration property is required]
 
@@ -184,6 +246,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-value
 [.description]
 --
 The profile where this value reference will be mapped to. For example, if the profile is `dev`, then a `values-dev.yml` file will be created with the value.
+
+Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__PROFILE+++`
 --|string 
 |
 
@@ -193,6 +257,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-value
 [.description]
 --
 The value that the property will have in the Helm values file. If not set, the extension will resolve it from the generated artifacts.
+
+Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__VALUE+++`
 --|string 
 |
 

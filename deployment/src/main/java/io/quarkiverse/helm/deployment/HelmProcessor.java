@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import io.dekorate.Session;
 import io.dekorate.helm.config.HelmChartConfigBuilder;
+import io.dekorate.helm.listener.HelmWriterSessionListener;
 import io.dekorate.project.Project;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -85,7 +86,9 @@ public class HelmProcessor {
                 .withName(config.name.orElse(app.getName()))
                 .withCreateTarFile(config.createTarFile)
                 .withVersion(config.version.orElse(app.getVersion()))
-                .withExtension(config.extension);
+                .withExtension(config.extension)
+                .withValuesRootAlias(config.valuesRootAlias)
+                .withNotes(config.notes);
         config.description.ifPresent(builder::withDescription);
         config.keywords.ifPresent(builder::addAllToKeywords);
         config.icon.ifPresent(builder::withIcon);

@@ -1,6 +1,5 @@
-package io.quarkiverse.helm.test;
+package io.quarkiverse.helm.tests.kubernetes;
 
-import static io.dekorate.helm.config.HelmBuildConfigGenerator.HELM;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -8,43 +7,24 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
+import java.nio.file.Paths;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
-import io.dekorate.helm.model.Chart;
 import io.dekorate.utils.Serialization;
-import io.quarkiverse.helm.test.assets.Endpoint;
-import io.quarkus.bootstrap.model.AppArtifact;
-import io.quarkus.builder.Version;
-import io.quarkus.test.ProdBuildResults;
-import io.quarkus.test.ProdModeTestResults;
-import io.quarkus.test.QuarkusProdModeTest;
 
-public class KubernetesMinimalTest {
+public class KubernetesIT {
 
-    private static final String CHART_NAME = "myChart";
-    private static final String ROOT_CONFIG_NAME = "quarkusHelmDeployment";
-
-    @RegisterExtension
-    static final QuarkusProdModeTest config = new QuarkusProdModeTest()
-            .setForcedDependencies(
-                    Collections.singletonList(
-                            new AppArtifact("io.quarkus", "quarkus-kubernetes", Version.getVersion())))
-            .withApplicationRoot((jar) -> jar.addClasses(Endpoint.class))
-            .withConfigurationResource("application-k8s-minimal.properties");
-
-    @ProdBuildResults
-    private ProdModeTestResults prodModeTestResults;
+    private static final String CHART_NAME = "quarkus-helm-integration-tests-kubernetes-minimal";
+    private static final String ROOT_CONFIG_NAME = "app";
 
     @Test
     public void shouldHelmManifestsBeGenerated() throws IOException {
-        Chart chart = Serialization.yamlMapper()
-                .readValue(getResourceAsStream("Chart.yaml"), Chart.class);
+        Map chart = Serialization.yamlMapper()
+                .readValue(getResourceAsStream("Chart.yaml"), Map.class);
         assertNotNull(chart, "Chart is null!");
-        assertEquals(CHART_NAME, chart.getName());
+        assertEquals(CHART_NAME, chart.get("name"));
         // Values.yaml manifest
         assertNotNull(getResourceAsStream("values.yaml"));
         // templates
@@ -68,6 +48,6 @@ public class KubernetesMinimalTest {
     }
 
     private final InputStream getResourceAsStream(String file) throws FileNotFoundException {
-        return new FileInputStream(prodModeTestResults.getBuildDir().resolve(HELM).resolve(CHART_NAME).resolve(file).toFile());
+        return new FileInputStream(Paths.get("target", "helm").resolve(CHART_NAME).resolve(file).toFile());
     }
 }

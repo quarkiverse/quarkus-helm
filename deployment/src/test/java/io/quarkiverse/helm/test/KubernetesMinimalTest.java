@@ -8,7 +8,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -30,8 +30,11 @@ public class KubernetesMinimalTest {
 
     @RegisterExtension
     static final QuarkusProdModeTest config = new QuarkusProdModeTest()
+            .setApplicationName("application-k8s-minimal")
+            .setApplicationVersion("0.1-SNAPSHOT")
             .setForcedDependencies(
-                    Collections.singletonList(
+                    Arrays.asList(
+                            new AppArtifact("io.quarkus", "quarkus-resteasy-reactive", Version.getVersion()),
                             new AppArtifact("io.quarkus", "quarkus-kubernetes", Version.getVersion())))
             .withApplicationRoot((jar) -> jar.addClasses(Endpoint.class))
             .withConfigurationResource("application-k8s-minimal.properties");

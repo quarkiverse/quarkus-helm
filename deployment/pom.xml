@@ -29,17 +29,7 @@
     <dependency>
       <groupId>io.dekorate</groupId>
       <artifactId>helm-annotations</artifactId>
-      <version>2.9.2</version>
-      <exclusions>
-        <exclusion>
-          <groupId>io.sundr</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.sun</groupId>
-          <artifactId>tools</artifactId>
-        </exclusion>
-      </exclusions>
+      <classifier>noapt</classifier>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>

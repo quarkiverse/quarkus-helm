@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import io.dekorate.Session;
 import io.dekorate.helm.config.HelmChartConfigBuilder;
+import io.dekorate.helm.listener.HelmWriterSessionListener;
 import io.dekorate.project.Project;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;

@@ -65,15 +65,15 @@ jobs:
           KIND_REGISTRY_GROUP=local
           VERSION=latest
           kubectl create namespace $K8S_NAMESPACE
-          cd integration-tests/helm-kubernetes
+          cd integration-tests/helm-kubernetes-minimal
           mvn clean package -Dquarkus.container-image.build=true \
             -Dquarkus.container-image.push=true \
             -Dquarkus.container-image.registry=$KIND_REGISTRY \
             -Dquarkus.container-image.group=$KIND_REGISTRY_GROUP \
             -Dquarkus.container-image.tag=$VERSION \
             -Dquarkus.container-image.insecure=true
-          helm install quarkus-hello-world target/helm/quarkus-helm-integration-tests-kubernetes -n $K8S_NAMESPACE --set quarkusHelmIntegrationTestsKubernetes.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes:$VERSION
-          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes -n $K8S_NAMESPACE
+          helm install quarkus-hello-world target/helm/quarkus-helm-integration-tests-kubernetes-minimal -n $K8S_NAMESPACE --set app.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-minimal:$VERSION
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-minimal -n $K8S_NAMESPACE
 
       - name: Delete Project using Helm
         run: kubectl delete namespace helm

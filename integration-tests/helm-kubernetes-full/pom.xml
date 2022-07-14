@@ -7,8 +7,8 @@
     <version>0.0.3-SNAPSHOT</version>
   </parent>
 
-  <artifactId>quarkus-helm-integration-tests-kubernetes</artifactId>
-  <name>Quarkus - Helm - Integration Tests - Kubernetes</name>
+  <artifactId>quarkus-helm-integration-tests-kubernetes-full</artifactId>
+  <name>Quarkus - Helm - Integration Tests - Kubernetes - Full</name>
 
   <dependencies>
     <dependency>
@@ -40,6 +40,11 @@
     <dependency>
       <groupId>io.rest-assured</groupId>
       <artifactId>rest-assured</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.dekorate</groupId>
+      <artifactId>dekorate-core</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

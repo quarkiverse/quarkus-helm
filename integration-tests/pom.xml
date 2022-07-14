@@ -12,6 +12,7 @@
   <name>Quarkus - Helm - Integration Tests</name>
 
   <modules>
-    <module>helm-kubernetes</module>
+    <module>helm-kubernetes-minimal</module>
+    <module>helm-kubernetes-full</module>
   </modules>
 </project>

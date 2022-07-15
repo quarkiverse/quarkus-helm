@@ -101,4 +101,12 @@ public class HelmChartConfig {
      */
     @ConfigItem
     Map<String, ValueReferenceConfig> values;
+
+    /**
+     * The output folder in which to place the Helm generated folder. The extension will always create a folder within this
+     * location named "helm". By default, if not set, it will use the default value for the property
+     * "quarkus.package.output-directory".
+     */
+    @ConfigItem
+    public Optional<String> outputDirectory;
 }

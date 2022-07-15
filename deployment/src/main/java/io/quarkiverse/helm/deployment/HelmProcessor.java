@@ -35,12 +35,15 @@ public class HelmProcessor {
             DekorateOutputBuildItem dekorateOutput,
             List<GeneratedKubernetesResourceBuildItem> generatedResources,
             HelmChartConfig config) {
+        // Deduct output folder
+        Path outputFolder = getOutputDirectory(config, outputTarget);
+        deleteOutputHelmFolderIfExists(outputFolder);
+
         // Dekorate session writer
         final HelmWriterSessionListener helmWriter = new HelmWriterSessionListener();
-        deleteOutputHelmFolderIfExists(outputTarget);
         helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), (Project) dekorateOutput.getProject(),
                 toDekorateHelmChartConfig(app, config),
-                outputTarget.getOutputDirectory(),
+                outputFolder,
                 toFiles(dekorateOutput.getGeneratedFiles(), generatedResources));
 
         return new FeatureBuildItem(FEATURE);
@@ -51,13 +54,16 @@ public class HelmProcessor {
         helmConfiguration.produce(new ConfiguratorBuildItem(new DisableDefaultHelmListener()));
     }
 
-    private void deleteOutputHelmFolderIfExists(OutputTargetBuildItem outputTarget) {
+    private void deleteOutputHelmFolderIfExists(Path outputFolder) {
         try {
-            Path outputDirectory = outputTarget.getOutputDirectory().resolve(FEATURE);
-            FileUtil.deleteIfExists(outputDirectory);
+            FileUtil.deleteIfExists(outputFolder.resolve(FEATURE));
         } catch (IOException ignored) {
 
         }
+    }
+
+    private Path getOutputDirectory(HelmChartConfig config, OutputTargetBuildItem outputTarget) {
+        return config.outputDirectory.map(Path::of).orElse(outputTarget.getOutputDirectory());
     }
 
     private Collection<File> toFiles(List<String> generatedFiles,

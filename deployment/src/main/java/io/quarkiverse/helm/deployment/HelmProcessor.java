@@ -3,6 +3,7 @@ package io.quarkiverse.helm.deployment;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -20,6 +21,7 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
+import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.kubernetes.spi.ConfiguratorBuildItem;
 import io.quarkus.kubernetes.spi.DekorateOutputBuildItem;
 import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
@@ -35,6 +37,7 @@ public class HelmProcessor {
             HelmChartConfig config) {
         // Dekorate session writer
         final HelmWriterSessionListener helmWriter = new HelmWriterSessionListener();
+        deleteOutputHelmFolderIfExists(outputTarget);
         helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), (Project) dekorateOutput.getProject(),
                 toDekorateHelmChartConfig(app, config),
                 outputTarget.getOutputDirectory(),
@@ -46,6 +49,15 @@ public class HelmProcessor {
     @BuildStep(onlyIf = HelmEnabled.class)
     void disableDefaultHelmListener(BuildProducer<ConfiguratorBuildItem> helmConfiguration) {
         helmConfiguration.produce(new ConfiguratorBuildItem(new DisableDefaultHelmListener()));
+    }
+
+    private void deleteOutputHelmFolderIfExists(OutputTargetBuildItem outputTarget) {
+        try {
+            Path outputDirectory = outputTarget.getOutputDirectory().resolve(FEATURE);
+            FileUtil.deleteIfExists(outputDirectory);
+        } catch (IOException ignored) {
+
+        }
     }
 
     private Collection<File> toFiles(List<String> generatedFiles,

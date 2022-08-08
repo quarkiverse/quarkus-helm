@@ -241,13 +241,13 @@ Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__PROPERTY+++`
 |required icon:exclamation-circle[title=Configuration property is required]
 
 
-a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.json-paths]]`link:#quarkus-helm_quarkus.helm.values.-values-.json-paths[quarkus.helm.values."values".json-paths]`
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.paths]]`link:#quarkus-helm_quarkus.helm.values.-values-.paths[quarkus.helm.values."values".paths]`
 
 [.description]
 --
-A comma-separated list of ++[++JSONPath++]++(https://tools.ietf.org/id/draft-goessner-dispatch-jsonpath-00.html) expressions to map the Dekorate auto-generated properties to the final Helm values file.
+A comma-separated list of YAMLPath expressions to map the Dekorate auto-generated properties to the final Helm values file.
 
-Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__JSON_PATHS+++`
+Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__PATHS+++`
 --|list of string 
 |required icon:exclamation-circle[title=Configuration property is required]
 

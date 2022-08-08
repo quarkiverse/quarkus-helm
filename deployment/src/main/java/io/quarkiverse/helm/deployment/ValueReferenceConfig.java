@@ -15,11 +15,11 @@ public class ValueReferenceConfig {
     String property;
 
     /**
-     * A comma-separated list of [JSONPath](https://tools.ietf.org/id/draft-goessner-dispatch-jsonpath-00.html) expressions
-     * to map the Dekorate auto-generated properties to the final Helm values file.
+     * A comma-separated list of YAMLPath expressions to map the Dekorate auto-generated properties to the final
+     * Helm values file.
      */
     @ConfigItem
-    List<String> jsonPaths;
+    List<String> paths;
 
     /**
      * The profile where this value reference will be mapped to.

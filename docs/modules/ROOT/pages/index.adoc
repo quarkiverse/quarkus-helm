@@ -127,7 +127,7 @@ helm upgrade helm-example ./target/helm/<chart name>
 
 [source,bash]
 ----
-helm upgrade helm-example ./target/helm/<chart name> --set appName.replicas=1
+helm upgrade helm-example ./target/helm/<chart name> --set app.replicas=1
 ----
 
 === How can we delete my deployment?
@@ -135,6 +135,24 @@ helm upgrade helm-example ./target/helm/<chart name> --set appName.replicas=1
 [source,bash]
 ----
 helm uninstall helm-example
+----
+
+== Alias name
+
+The alias name is the name used to keep all the properties linked as:
+
+[source,yaml]
+----
+app:
+  replicas: 3
+----
+
+The alias name in the above example is "app" which is the default value. You can modify it using the property "quarkus.helm.values-root-alias=myAppName" and then the generated Helm resources will look like:
+
+[source,yaml]
+----
+myAppName:
+  replicas: 3
 ----
 
 == Mapping Values
@@ -167,7 +185,7 @@ The extension will generate the next Helm values file at `target/helm/<chart nam
 
 [source,yaml]
 ----
-appName:
+app:
   replicas: 3
 ----
 
@@ -180,12 +198,12 @@ kind: Deployment
 metadata:
   name: helm-on-kubernetes-example
 spec:
-  replicas: {{ .Values.appName.replicas }}
+  replicas: {{ .Values.app.replicas }}
 ----
 
 This is done transparently to users.
 
-=== Mapping user properties using JSONPath expressions
+=== Mapping user properties using YAMLPath expressions
 
 As we have introduced in the previous section, the Quarkus Helm extension will automatically map some properties like the `replicas` or the `images` to the Values helm file. Still, some users might need to map more properties. For example, let's see the following YAML resource:
 
@@ -197,15 +215,8 @@ metadata:
   name: helm-on-kubernetes-example
 ----
 
-The property at `metadata.name`, with value `helm-on-kubernetes-example`, will not be replaced with `{{ .Values.appName.name }}` in the Helm templates.
-However, the extension allows users to define https://tools.ietf.org/id/draft-goessner-dispatch-jsonpath-00.html[JSONPath] expressions to map these properties into the Helm values file. Let's see how to do it using the above example to map the property `metadata.name` with `{{ .Values.appName.name }}`.
-
-[TIP]
-====
-JSONPath works with JSON, not YAML files. So, for testing your expressions, you first need to convert YAML files to JSON files, for example, using https://jsonformatter.org/yaml-to-json[this online tool] and then use some JSONPath online evaluator like https://jsonpath.com/[https://jsonpath.com/]. Moreover, make sure you also wrap the JSON objects into lists.
-====
-
-After getting familiar with JSONPath, the expression to map the metadata name field is `$..metadata.name`, so you need to add the following properties to your configuration:
+The property at `metadata.name`, with value `helm-on-kubernetes-example`, will not be replaced with `{{ .Values.app.name }}` in the Helm templates.
+However, the extension allows users to define https://github.com/yaml-path/YamlPath[YAMLPath] expressions to map these properties into the Helm values file. Let's see how to do it using the above example to map the property `metadata.name` with `{{ .Values.app.name }}`. You only need to add the following properties to your configuration:
 
 [source,properties]
 ----
@@ -213,19 +224,19 @@ quarkus.helm.name=myChart
 quarkus.helm.description=Description of my Chart
 
 # Map all the metadata name resources
-quarkus.helm.values[0].property=appName.name
-quarkus.helm.values[0].jsonPaths=$..metadata.name
+quarkus.helm.values[0].property=name
+quarkus.helm.values[0].paths=metadata.name
 ----
 
 The resulting `values.yaml` file will look like as:
 
 [source,yaml]
 ----
-appName:
+app:
   name: helm-on-kubernetes-example
 ----
 
-The `appName.name` value is set automatically by the Quarkus Helm extension. However, users can provide other values using the `value` property:
+The `app.name` value is set automatically by the Quarkus Helm extension. However, users can provide other values using the `value` property:
 
 [source,properties]
 ----
@@ -233,8 +244,8 @@ quarkus.helm.name=myChart
 quarkus.helm.description=Description of my Chart
 
 # Map all the metadata name resources
-quarkus.helm.values[0].property=appName.name
-quarkus.helm.values[0].jsonPaths=$..metadata.name
+quarkus.helm.values[0].property=name
+quarkus.helm.values[0].paths=metadata.name
 ## Overwrite value:
 quarkus.helm.values[0].value=this-is-another-name
 ----
@@ -243,7 +254,7 @@ And the `values.yaml` file will now contain:
 
 [source,yaml]
 ----
-appName:
+app:
   name: this-is-another-name
 ----
 
@@ -271,7 +282,7 @@ spec:
             pathType: Prefix
 ----
 
-From this example, we need to map the value `helm-on-kubernetes-example` which is used in two places: (1) `metadata.name` and (2) `spec.rules..http.paths..backend.service.name` to the same property `appName.name`. For doing this, we need to provide a comma-separated list of JSONPath expressions to be mapped to `appName.name`:
+From this example, we need to map the value `helm-on-kubernetes-example` which is used in two places: (1) `metadata.name` and (2) `spec.rules..http.paths..backend.service.name` to the same property `name`. For doing this, we need to provide a comma-separated list of YAMLPath expressions to be mapped to `app.name`:
 
 [source,properties]
 ----
@@ -279,12 +290,12 @@ quarkus.helm.name=myChart
 quarkus.helm.description=Description of my Chart
 
 # Map all the metadata name resources
-quarkus.helm.values[0].property=appName.name
-## Comma separated list of JSONPath expressions:
-quarkus.helm.values[0].jsonPaths=$..metadata.name,$.[?(@.kind == 'Ingress')].spec.rules..http.paths..backend.service.name
+quarkus.helm.values[0].property=name
+## Comma separated list of YAMLPath expressions:
+quarkus.helm.values[0].paths=metadata.name,(kind == Ingress).spec.rules.http.paths.backend.service.name
 ----
 
-Now, the extension will first map the expression `$..metadata.name` and then the expression `$.[?(@.kind == 'Ingress')].spec.rules..http.paths..backend.service.name` (this expression only applies to `Ingress` resources - see more about filtering in JSONPath).
+Now, the extension will first map the expression `metadata.name` and then the expression `(kind == Ingress).spec.rules.http.paths.backend.service.name` (this expression only applies to `Ingress` resources).
 
 == Helm Profiles
 
@@ -301,8 +312,8 @@ quarkus.kubernetes.ingress.host=my-host
 # Helm Chart
 quarkus.helm.name=myChart
 ## Overwrite the value of `dekorate.kubernetes.host` to `values-<profile-name>.yaml`:
-quarkus.helm.values[0].property=appName.host
-quarkus.helm.values[0].jsonPaths=$.[?(@.kind == 'Ingress')].spec.rules..host
+quarkus.helm.values[0].property=host
+quarkus.helm.values[0].paths=(kind == Ingress).spec.rules.host
 quarkus.helm.values[0].value=my-test-host
 quarkus.helm.values[0].profile=test
 ----
@@ -311,7 +322,7 @@ This configuration will generate the `values.yaml` using the value set at the pr
 
 [source,yaml]
 ----
-appName:
+app:
   host: my-host
 ----
 
@@ -319,7 +330,7 @@ But as you are now using a profile named `test` (see `quarkus.helm.values[0].pro
 
 [source,yaml]
 ----
-appName:
+app:
   host: my-test-host
 ----
 

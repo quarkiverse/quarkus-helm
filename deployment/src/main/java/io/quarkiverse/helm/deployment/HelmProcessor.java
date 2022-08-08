@@ -119,7 +119,7 @@ public class HelmProcessor {
                         defaultString(d.alias, d.name),
                         d.version,
                         d.repository));
-        config.values.values().forEach(v -> builder.addNewValue(v.property, v.jsonPaths.toArray(new String[v.jsonPaths.size()]),
+        config.values.values().forEach(v -> builder.addNewValue(v.property, v.paths.toArray(new String[v.paths.size()]),
                 defaultString(v.profile), defaultString(v.value)));
 
         return builder.build();

@@ -16,6 +16,7 @@ import io.dekorate.Session;
 import io.dekorate.helm.config.HelmChartConfigBuilder;
 import io.dekorate.helm.listener.HelmWriterSessionListener;
 import io.dekorate.project.Project;
+import io.quarkus.deployment.IsNormal;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
@@ -30,7 +31,7 @@ public class HelmProcessor {
 
     private static final String FEATURE = "helm";
 
-    @BuildStep(onlyIf = HelmEnabled.class)
+    @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     FeatureBuildItem feature(ApplicationInfoBuildItem app, OutputTargetBuildItem outputTarget,
             DekorateOutputBuildItem dekorateOutput,
             List<GeneratedKubernetesResourceBuildItem> generatedResources,
@@ -49,7 +50,7 @@ public class HelmProcessor {
         return new FeatureBuildItem(FEATURE);
     }
 
-    @BuildStep(onlyIf = HelmEnabled.class)
+    @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void disableDefaultHelmListener(BuildProducer<ConfiguratorBuildItem> helmConfiguration) {
         helmConfiguration.produce(new ConfiguratorBuildItem(new DisableDefaultHelmListener()));
     }

@@ -63,7 +63,7 @@ Once we add the Quarkus Helm extension to your project, you can now generate the
 ----
 
 Depending on the Quarkus Kubernetes extensions that you are using in your project, the Helm resources will include some resources or others.
-For example, if your project use the Quarkus Kubernetes extension, then the helm resources will include the following templates at `target/helm/<chart name>/`:
+For example, if your project use the Quarkus Kubernetes extension, then the helm resources will include the following templates at `target/helm/kubernetes/<chart name>/`:
 
 * Chart.yaml
 * values.yaml
@@ -106,10 +106,10 @@ Finally, let's use Helm to deploy it into the cluster:
 
 [source,bash]
 ----
-helm install helm-example ./target/helm/<chart name>
+helm install helm-example ./target/helm/kubernetes/<chart name>
 ----
 
-The above command will use the default values, which are located in `./target/helm/<chart name>/values.yaml`.
+The above command will use the default values, which are located in `./target/helm/kubernetes/<chart name>/values.yaml`.
 To override the default values, pass as parameter you own value file `--values /path/to/another.values.yaml` or set them using `--set key1=val1 --set key2=val2`.
 
 === How can I update my deployment?
@@ -120,14 +120,14 @@ After making changes to your project and regenerating the Helm resources and the
 
 [source,bash]
 ----
-helm upgrade helm-example ./target/helm/<chart name>
+helm upgrade helm-example ./target/helm/kubernetes/<chart name>
 ----
 
 - Or via the `set` option of Helm command line:
 
 [source,bash]
 ----
-helm upgrade helm-example ./target/helm/<chart name> --set app.replicas=1
+helm upgrade helm-example ./target/helm/kubernetes/<chart name> --set app.replicas=1
 ----
 
 === How can we delete my deployment?
@@ -181,7 +181,7 @@ quarkus.helm.description=Description of my Chart
 quarkus.kubernetes.replicas=3
 ----
 
-The extension will generate the next Helm values file at `target/helm/<chart name>/values.yaml`:
+The extension will generate the next Helm values file at `target/helm/kubernetes/<chart name>/values.yaml`:
 
 [source,yaml]
 ----
@@ -189,7 +189,7 @@ app:
   replicas: 3
 ----
 
-And the Deployment file at `target/helm/<chart name>/templates/deployment.yaml` will have a reference to this value:
+And the Deployment file at `target/helm/kubernetes/<chart name>/templates/deployment.yaml` will have a reference to this value:
 
 [source,yaml]
 ----

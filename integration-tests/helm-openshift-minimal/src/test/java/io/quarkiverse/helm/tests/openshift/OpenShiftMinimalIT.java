@@ -1,4 +1,4 @@
-package io.quarkiverse.helm.tests.kubernetes;
+package io.quarkiverse.helm.tests.openshift;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -14,9 +14,9 @@ import org.junit.jupiter.api.Test;
 
 import io.dekorate.utils.Serialization;
 
-public class KubernetesIT {
+public class OpenShiftMinimalIT {
 
-    private static final String CHART_NAME = "quarkus-helm-integration-tests-kubernetes-minimal";
+    private static final String CHART_NAME = "quarkus-helm-integration-tests-openshift-minimal";
     private static final String ROOT_CONFIG_NAME = "app";
 
     @Test
@@ -28,7 +28,8 @@ public class KubernetesIT {
         // Values.yaml manifest
         assertNotNull(getResourceAsStream("values.yaml"));
         // templates
-        assertNotNull(getResourceAsStream("templates/deployment.yaml"));
+        assertNotNull(getResourceAsStream("templates/deploymentconfig.yaml"));
+        assertNotNull(getResourceAsStream("templates/imagestream.yaml"));
         // notes
         assertNotNull(getResourceAsStream("templates/NOTES.txt"));
     }
@@ -48,6 +49,6 @@ public class KubernetesIT {
     }
 
     private final InputStream getResourceAsStream(String file) throws FileNotFoundException {
-        return new FileInputStream(Paths.get("target", "helm", "kubernetes").resolve(CHART_NAME).resolve(file).toFile());
+        return new FileInputStream(Paths.get("target", "helm", "openshift").resolve(CHART_NAME).resolve(file).toFile());
     }
 }

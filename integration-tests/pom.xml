@@ -14,5 +14,6 @@
   <modules>
     <module>helm-kubernetes-minimal</module>
     <module>helm-kubernetes-full</module>
+    <module>helm-openshift-minimal</module>
   </modules>
 </project>

@@ -4,9 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -14,13 +16,12 @@ import org.apache.commons.lang3.StringUtils;
 
 import io.dekorate.Session;
 import io.dekorate.helm.config.HelmChartConfigBuilder;
-import io.dekorate.helm.listener.HelmWriterSessionListener;
 import io.dekorate.project.Project;
 import io.quarkus.deployment.IsNormal;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
-import io.quarkus.deployment.builditem.FeatureBuildItem;
+import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.kubernetes.spi.ConfiguratorBuildItem;
@@ -32,22 +33,29 @@ public class HelmProcessor {
     private static final String FEATURE = "helm";
 
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
-    FeatureBuildItem feature(ApplicationInfoBuildItem app, OutputTargetBuildItem outputTarget,
+    void generateResources(ApplicationInfoBuildItem app, OutputTargetBuildItem outputTarget,
             DekorateOutputBuildItem dekorateOutput,
             List<GeneratedKubernetesResourceBuildItem> generatedResources,
+            // this is added to ensure that the build step will be run
+            BuildProducer<ArtifactResultBuildItem> dummy,
             HelmChartConfig config) {
+
         // Deduct output folder
         Path outputFolder = getOutputDirectory(config, outputTarget);
         deleteOutputHelmFolderIfExists(outputFolder);
 
         // Dekorate session writer
-        final HelmWriterSessionListener helmWriter = new HelmWriterSessionListener();
-        helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), (Project) dekorateOutput.getProject(),
-                toDekorateHelmChartConfig(app, config),
-                outputFolder,
-                toFiles(dekorateOutput.getGeneratedFiles(), generatedResources));
-
-        return new FeatureBuildItem(FEATURE);
+        final QuarkusHelmWriterSessionListener helmWriter = new QuarkusHelmWriterSessionListener();
+        final Map<String, Set<File>> deploymentTargets = toDeploymentTargets(dekorateOutput.getGeneratedFiles(),
+                generatedResources);
+        // separate generated helm charts into the deployment targets
+        for (Map.Entry<String, Set<File>> filesInDeploymentTarget : deploymentTargets.entrySet()) {
+            Path chartOutputFolder = outputFolder.resolve(filesInDeploymentTarget.getKey());
+            helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), (Project) dekorateOutput.getProject(),
+                    toDekorateHelmChartConfig(app, config),
+                    chartOutputFolder,
+                    filesInDeploymentTarget.getValue());
+        }
     }
 
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
@@ -64,14 +72,26 @@ public class HelmProcessor {
     }
 
     private Path getOutputDirectory(HelmChartConfig config, OutputTargetBuildItem outputTarget) {
-        return config.outputDirectory.map(Path::of).orElse(outputTarget.getOutputDirectory());
+        return outputTarget.getOutputDirectory().resolve(config.outputDirectory);
     }
 
-    private Collection<File> toFiles(List<String> generatedFiles,
+    private Map<String, Set<File>> toDeploymentTargets(List<String> generatedFiles,
             List<GeneratedKubernetesResourceBuildItem> generatedResources) {
-        Set<File> files = new HashSet<>();
+        Map<String, Set<File>> filesByDeploymentTarget = new HashMap<>();
         for (String generatedFile : generatedFiles) {
+            if (generatedFile.toLowerCase(Locale.ROOT).endsWith(".json")) {
+                // skip json files
+                continue;
+            }
+
             File file = new File(generatedFile);
+            String deploymentTarget = file.getName().substring(0, file.getName().indexOf("."));
+            if (filesByDeploymentTarget.containsKey(deploymentTarget)) {
+                // It's already included.
+                continue;
+            }
+
+            Set<File> files = new HashSet<>();
             if (!file.exists()) {
                 Optional<byte[]> content = generatedResources.stream()
                         .filter(resource -> file.getName().equals(resource.getName()))
@@ -93,9 +113,11 @@ public class HelmProcessor {
             } else {
                 files.add(file);
             }
+
+            filesByDeploymentTarget.put(deploymentTarget, files);
         }
 
-        return files;
+        return filesByDeploymentTarget;
     }
 
     private io.dekorate.helm.config.HelmChartConfig toDekorateHelmChartConfig(ApplicationInfoBuildItem app,

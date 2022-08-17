@@ -69,6 +69,6 @@ public class KubernetesFullIT {
     }
 
     private final InputStream getResourceAsStream(String file) throws FileNotFoundException {
-        return new FileInputStream(Paths.get("target", "helm").resolve(CHART_NAME).resolve(file).toFile());
+        return new FileInputStream(Paths.get("target", "helm", "kubernetes").resolve(CHART_NAME).resolve(file).toFile());
     }
 }

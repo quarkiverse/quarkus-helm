@@ -198,7 +198,7 @@ kind: Deployment
 metadata:
   name: helm-on-kubernetes-example
 spec:
-  replicas: {{ .Values.app.replicas }}
+  replicas: '{{ .Values.app.replicas }}'
 ----
 
 This is done transparently to users.

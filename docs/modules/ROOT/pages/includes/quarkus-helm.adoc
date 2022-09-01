@@ -153,6 +153,17 @@ Environment variable: `+++QUARKUS_HELM_OUTPUT_DIRECTORY+++`
 |`helm`
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.clear-directory]]`link:#quarkus-helm_quarkus.helm.clear-directory[quarkus.helm.clear-directory]`
+
+[.description]
+--
+If the output folder can be cleared/deleted before writing the output files. If this is true (default), any files you may have on the output directory will be deleted. If this is false then the helm generated files are overwritten but any other file remains in the directory.
+
+Environment variable: `+++QUARKUS_HELM_CLEAR_DIRECTORY+++`
+--|boolean 
+|`true`
+
+
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.maintainers.-maintainers-.name]]`link:#quarkus-helm_quarkus.helm.maintainers.-maintainers-.name[quarkus.helm.maintainers."maintainers".name]`
 
 [.description]

@@ -108,4 +108,12 @@ public class HelmChartConfig {
      */
     @ConfigItem(defaultValue = "helm")
     public String outputDirectory;
+
+    /**
+     * If the output folder can be cleared/deleted before writing the output files. If this is true (default), any files
+     * you may have on the output directory will be deleted. If this is false then the helm generated files are overwritten
+     * but any other file remains in the directory.
+     */
+    @ConfigItem(defaultValue = "true")
+    boolean clearDirectory;
 }

@@ -42,7 +42,9 @@ public class HelmProcessor {
 
         // Deduct output folder
         Path outputFolder = getOutputDirectory(config, outputTarget);
-        deleteOutputHelmFolderIfExists(outputFolder);
+        if (config.clearDirectory) {
+            deleteOutputHelmFolderIfExists(outputFolder);
+        }
 
         // Dekorate session writer
         final QuarkusHelmWriterSessionListener helmWriter = new QuarkusHelmWriterSessionListener();

@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -99,7 +100,7 @@ public class QuarkusHelmWriterSessionListener {
                 }
 
                 // To follow Helm file structure standards:
-                artifacts.putAll(createEmptyChartFolder(helmConfig, outputDir));
+                artifacts.putAll(createChartFolder(helmConfig, outputDir));
                 artifacts.putAll(addNotesIntoTemplatesFolder(helmConfig, outputDir));
 
             } catch (IOException e) {
@@ -126,7 +127,7 @@ public class QuarkusHelmWriterSessionListener {
             throw new RuntimeException("Could not find the notes template file in the classpath at " + helmConfig.getNotes());
         }
         Path chartOutputDir = getChartOutputDir(helmConfig, outputDir).resolve(TEMPLATES).resolve(NOTES);
-        Files.copy(notesInputStream, chartOutputDir);
+        Files.copy(notesInputStream, chartOutputDir, StandardCopyOption.REPLACE_EXISTING);
         return Collections.singletonMap(chartOutputDir.toString(), EMPTY);
     }
 
@@ -141,10 +142,10 @@ public class QuarkusHelmWriterSessionListener {
         return is;
     }
 
-    private Map<String, String> createEmptyChartFolder(HelmChartConfig helmConfig, Path outputDir) throws IOException {
-        Path emptyChartsDir = getChartOutputDir(helmConfig, outputDir).resolve(CHARTS);
-        Files.createDirectories(emptyChartsDir);
-        return Collections.singletonMap(emptyChartsDir.toString(), EMPTY);
+    private Map<String, String> createChartFolder(HelmChartConfig helmConfig, Path outputDir) throws IOException {
+        Path chartsDir = getChartOutputDir(helmConfig, outputDir).resolve(CHARTS);
+        Files.createDirectories(chartsDir);
+        return Collections.singletonMap(chartsDir.toString(), EMPTY);
     }
 
     private List<ConfigReference> getValuesReferences(HelmChartConfig helmBuildConfig, Session session) {
@@ -248,7 +249,7 @@ public class QuarkusHelmWriterSessionListener {
                     // replace randomly escape characters that is entered by Jackson readTree method:
                     .replaceAll("\\\\\\n(\\s)*\\\\(\\s)*}}", " }}");
 
-            writeFile(adaptedString, targetFile);
+            writeFile(adaptedString, targetFile, false);
         }
 
         return Collections.emptyMap();
@@ -330,11 +331,11 @@ public class QuarkusHelmWriterSessionListener {
 
     private Map<String, String> writeFileAsYaml(Object data, Path file) throws IOException {
         String value = Serialization.asYaml(data);
-        return writeFile(value, file);
+        return writeFile(value, file, false);
     }
 
-    private Map<String, String> writeFile(String value, Path file) throws IOException {
-        try (FileWriter writer = new FileWriter(file.toFile(), APPEND)) {
+    private Map<String, String> writeFile(String value, Path file, boolean append) throws IOException {
+        try (FileWriter writer = new FileWriter(file.toFile(), append)) {
             writer.write(value);
             return Collections.singletonMap(file.toString(), value);
         }

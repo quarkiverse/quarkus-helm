@@ -72,7 +72,10 @@ public class HelmProcessor {
     }
 
     private Path getOutputDirectory(HelmChartConfig config, OutputTargetBuildItem outputTarget) {
-        return outputTarget.getOutputDirectory().resolve(config.outputDirectory);
+        if (config.placeInTarget) {
+            return outputTarget.getOutputDirectory().resolve(config.outputDirectory);
+        }
+        return Path.of(config.outputDirectory);
     }
 
     private Map<String, Set<File>> toDeploymentTargets(List<String> generatedFiles,

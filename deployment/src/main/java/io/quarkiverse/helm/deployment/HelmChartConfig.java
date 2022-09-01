@@ -108,4 +108,11 @@ public class HelmChartConfig {
      */
     @ConfigItem(defaultValue = "helm")
     public String outputDirectory;
+
+    /**
+     * If the {@link #outputDirectory} is in reference to the target or not. If not, the value provided in
+     * {@link #outputDirectory} should be an absolute path.
+     */
+    @ConfigItem(defaultValue = "true")
+    boolean placeInTarget;
 }

@@ -72,6 +72,7 @@ jobs:
             -Dquarkus.container-image.group=$KIND_REGISTRY_GROUP \
             -Dquarkus.container-image.tag=$VERSION \
             -Dquarkus.container-image.insecure=true
+          helm lint target/helm/kubernetes/quarkus-helm-integration-tests-kubernetes-minimal
           helm install quarkus-hello-world target/helm/kubernetes/quarkus-helm-integration-tests-kubernetes-minimal -n $K8S_NAMESPACE --set app.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-minimal:$VERSION
           kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-minimal -n $K8S_NAMESPACE
 

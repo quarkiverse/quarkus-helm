@@ -54,7 +54,8 @@ public class HelmProcessor {
             helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), (Project) dekorateOutput.getProject(),
                     toDekorateHelmChartConfig(app, config),
                     chartOutputFolder,
-                    filesInDeploymentTarget.getValue());
+                    filesInDeploymentTarget.getValue(),
+                    config.apiVersion);
         }
     }
 

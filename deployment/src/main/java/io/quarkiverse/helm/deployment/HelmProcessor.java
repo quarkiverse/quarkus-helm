@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -72,7 +73,12 @@ public class HelmProcessor {
     }
 
     private Path getOutputDirectory(HelmChartConfig config, OutputTargetBuildItem outputTarget) {
-        return outputTarget.getOutputDirectory().resolve(config.outputDirectory);
+        Path path = Paths.get(config.outputDirectory);
+        if (!path.isAbsolute()) {
+            return outputTarget.getOutputDirectory().resolve(path);
+        }
+
+        return path;
     }
 
     private Map<String, Set<File>> toDeploymentTargets(List<String> generatedFiles,

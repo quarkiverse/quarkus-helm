@@ -103,8 +103,12 @@ public class HelmChartConfig {
     Map<String, ValueReferenceConfig> values;
 
     /**
-     * The output folder in which to place the Helm generated folder. By default, it will be generated in the folder named
-     * "helm".
+     * The output folder in which to place the Helm generated folder. The folder is relative to the target output directory
+     * in Quarkus that is also configurable using the property `quarkus.package.output-directory`.
+     *
+     * It also supports absolute paths.
+     *
+     * By default, it will be generated in the folder named "helm".
      */
     @ConfigItem(defaultValue = "helm")
     public String outputDirectory;

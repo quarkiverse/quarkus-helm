@@ -146,7 +146,7 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.output-direct
 
 [.description]
 --
-The output folder in which to place the Helm generated folder. By default, it will be generated in the folder named "helm".
+The output folder in which to place the Helm generated folder. The folder is relative to the target output directory in Quarkus that is also configurable using the property `quarkus.package.output-directory`. It also supports absolute paths. By default, it will be generated in the folder named "helm".
 
 Environment variable: `+++QUARKUS_HELM_OUTPUT_DIRECTORY+++`
 --|string 

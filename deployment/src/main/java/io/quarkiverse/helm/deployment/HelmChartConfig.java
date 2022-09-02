@@ -17,6 +17,12 @@ public class HelmChartConfig {
     boolean enabled;
 
     /**
+     * The Chart API version. The default value is `v2`.
+     */
+    @ConfigItem(defaultValue = "v2")
+    String apiVersion;
+
+    /**
      * Name of the Helm chart.
      * If not set, it will use the application name.
      */

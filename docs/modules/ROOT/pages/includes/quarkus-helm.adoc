@@ -21,6 +21,17 @@ Environment variable: `+++QUARKUS_HELM_ENABLED+++`
 |`true`
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.api-version]]`link:#quarkus-helm_quarkus.helm.api-version[quarkus.helm.api-version]`
+
+[.description]
+--
+The Chart API version. The default value is `v2`.
+
+Environment variable: `+++QUARKUS_HELM_API_VERSION+++`
+--|string 
+|`v2`
+
+
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.name]]`link:#quarkus-helm_quarkus.helm.name[quarkus.helm.name]`
 
 [.description]

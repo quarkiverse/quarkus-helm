@@ -60,7 +60,6 @@ public class QuarkusHelmWriterSessionListener {
     private static final String YAML_REG_EXP = ".*?\\.ya?ml$";
     private static final String CHART_FILENAME = "Chart" + YAML;
     private static final String VALUES = "values";
-    private static final String CHART_API_VERSION = "v1";
     private static final String TEMPLATES = "templates";
     private static final String CHARTS = "charts";
     private static final String NOTES = "NOTES.txt";
@@ -80,7 +79,9 @@ public class QuarkusHelmWriterSessionListener {
      * @return the list of the Helm generated files.
      */
     public Map<String, String> writeHelmFiles(Session session, Project project, HelmChartConfig helmConfig, Path outputDir,
-            Collection<File> generatedFiles) {
+            Collection<File> generatedFiles,
+            // TODO: The chart api version should be in HelmChartConfig (coming in the next release of Dekorate)
+            String chartApiVersion) {
         Map<String, String> artifacts = new HashMap<>();
         if (helmConfig.isEnabled()) {
             validateHelmConfig(helmConfig);
@@ -92,7 +93,7 @@ public class QuarkusHelmWriterSessionListener {
                 Map<String, Map<String, Object>> valuesByProfile = new HashMap<>();
                 artifacts.putAll(processSourceFiles(helmConfig, outputDir, generatedFiles, valuesReferences, prodValues,
                         valuesByProfile));
-                artifacts.putAll(createChartYaml(helmConfig, project, outputDir));
+                artifacts.putAll(createChartYaml(helmConfig, project, outputDir, chartApiVersion));
                 artifacts.putAll(createValuesYaml(helmConfig, outputDir, prodValues, valuesByProfile));
                 if (helmConfig.isCreateTarFile()) {
                     artifacts.putAll(createTarball(helmConfig, project, outputDir, artifacts, valuesByProfile.keySet()));
@@ -303,10 +304,11 @@ public class QuarkusHelmWriterSessionListener {
         return allResources;
     }
 
-    private Map<String, String> createChartYaml(HelmChartConfig helmConfig, Project project, Path outputDir)
+    private Map<String, String> createChartYaml(HelmChartConfig helmConfig, Project project, Path outputDir,
+            String chartApiVersion)
             throws IOException {
         final Chart chart = new Chart();
-        chart.setApiVersion(CHART_API_VERSION);
+        chart.setApiVersion(chartApiVersion);
         chart.setName(helmConfig.getName());
         chart.setVersion(getVersion(helmConfig, project));
         chart.setDescription(helmConfig.getDescription());

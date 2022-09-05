@@ -153,6 +153,17 @@ Environment variable: `+++QUARKUS_HELM_CREATE_TAR_FILE+++`
 |`false`
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.input-directory]]`link:#quarkus-helm_quarkus.helm.input-directory[quarkus.helm.input-directory]`
+
+[.description]
+--
+The input folder in which to place the user-defined Helm files. These files will be used as inputs to populate the generated Helm files. At the moment, the only supported Helm file is the `values.yaml` file. It also supports absolute paths. By default, it will use the folder "src/main/helm".
+
+Environment variable: `+++QUARKUS_HELM_INPUT_DIRECTORY+++`
+--|string 
+|`src/main/helm`
+
+
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.output-directory]]`link:#quarkus-helm_quarkus.helm.output-directory[quarkus.helm.output-directory]`
 
 [.description]
@@ -260,7 +271,7 @@ A comma-separated list of YAMLPath expressions to map the Dekorate auto-generate
 
 Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__PATHS+++`
 --|list of string 
-|required icon:exclamation-circle[title=Configuration property is required]
+|
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.profile]]`link:#quarkus-helm_quarkus.helm.values.-values-.profile[quarkus.helm.values."values".profile]`

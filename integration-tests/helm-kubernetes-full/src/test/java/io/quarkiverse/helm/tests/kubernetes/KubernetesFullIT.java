@@ -24,6 +24,8 @@ public class KubernetesFullIT {
     public void shouldHelmManifestsBeGenerated() throws IOException {
         assertNotNull(getResourceAsStream("Chart.yaml"));
         assertNotNull(getResourceAsStream("values.yaml"));
+        assertNotNull(getResourceAsStream("LICENSE"));
+        assertNotNull(getResourceAsStream("README.md"));
         assertNotNull(getResourceAsStream("values.dev.yaml"));
         assertNotNull(getResourceAsStream("templates/deployment.yaml"));
         assertNotNull(getResourceAsStream("templates/NOTES.txt"));

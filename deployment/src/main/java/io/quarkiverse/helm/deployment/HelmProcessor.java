@@ -41,7 +41,10 @@ public class HelmProcessor {
             BuildProducer<ArtifactResultBuildItem> dummy,
             HelmChartConfig config) {
 
-        // Deduct output folder
+        Project project = (Project) dekorateOutput.getProject();
+
+        // Deduct folders
+        Path inputFolder = getInputDirectory(config, project);
         Path outputFolder = getOutputDirectory(config, outputTarget);
         deleteOutputHelmFolderIfExists(outputFolder);
 
@@ -52,8 +55,9 @@ public class HelmProcessor {
         // separate generated helm charts into the deployment targets
         for (Map.Entry<String, Set<File>> filesInDeploymentTarget : deploymentTargets.entrySet()) {
             Path chartOutputFolder = outputFolder.resolve(filesInDeploymentTarget.getKey());
-            helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), (Project) dekorateOutput.getProject(),
+            helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), project,
                     toDekorateHelmChartConfig(app, config),
+                    inputFolder,
                     chartOutputFolder,
                     filesInDeploymentTarget.getValue(),
                     config.apiVersion);
@@ -71,6 +75,15 @@ public class HelmProcessor {
         } catch (IOException ignored) {
 
         }
+    }
+
+    private Path getInputDirectory(HelmChartConfig config, Project project) {
+        Path path = Paths.get(config.inputDirectory);
+        if (!path.isAbsolute()) {
+            return project.getRoot().resolve(path);
+        }
+
+        return path;
     }
 
     private Path getOutputDirectory(HelmChartConfig config, OutputTargetBuildItem outputTarget) {
@@ -149,8 +162,10 @@ public class HelmProcessor {
                         defaultString(d.alias, d.name),
                         d.version,
                         d.repository));
-        config.values.values().forEach(v -> builder.addNewValue(v.property, v.paths.toArray(new String[v.paths.size()]),
-                defaultString(v.profile), defaultString(v.value)));
+        config.values.values().forEach(v -> builder.addNewValue(v.property,
+                v.paths.map(l -> l.toArray(new String[0])).orElse(new String[0]),
+                defaultString(v.profile),
+                defaultString(v.value)));
 
         return builder.build();
     }

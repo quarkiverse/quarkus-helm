@@ -19,7 +19,7 @@ public class ValueReferenceConfig {
      * Helm values file.
      */
     @ConfigItem
-    List<String> paths;
+    Optional<List<String>> paths;
 
     /**
      * The profile where this value reference will be mapped to.

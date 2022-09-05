@@ -109,6 +109,18 @@ public class HelmChartConfig {
     Map<String, ValueReferenceConfig> values;
 
     /**
+     * The input folder in which to place the user-defined Helm files. These files will be used as inputs to populate the
+     * generated Helm files.
+     * At the moment, the only supported Helm file is the `values.yaml` file.
+     *
+     * It also supports absolute paths.
+     *
+     * By default, it will use the folder "src/main/helm".
+     */
+    @ConfigItem(defaultValue = "src/main/helm")
+    public String inputDirectory;
+
+    /**
      * The output folder in which to place the Helm generated folder. The folder is relative to the target output directory
      * in Quarkus that is also configurable using the property `quarkus.package.output-directory`.
      *

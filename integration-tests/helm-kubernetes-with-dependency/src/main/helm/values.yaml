@@ -1,0 +1,5 @@
+postgresql:
+  global:
+    postgresql:
+      auth:
+        key: value

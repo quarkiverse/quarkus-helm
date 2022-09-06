@@ -1,5 +1,7 @@
 package io.quarkiverse.helm.deployment;
 
+import static io.quarkiverse.helm.deployment.HelmChartUploader.pushToHelmRepository;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -55,12 +57,22 @@ public class HelmProcessor {
         // separate generated helm charts into the deployment targets
         for (Map.Entry<String, Set<File>> filesInDeploymentTarget : deploymentTargets.entrySet()) {
             Path chartOutputFolder = outputFolder.resolve(filesInDeploymentTarget.getKey());
-            helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), project,
+            Map<String, String> generated = helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), project,
                     toDekorateHelmChartConfig(app, config),
                     inputFolder,
                     chartOutputFolder,
                     filesInDeploymentTarget.getValue(),
                     config.apiVersion);
+
+            // Push to Helm repository if enabled
+            if (config.repository.push) {
+                String tarball = generated.keySet().stream()
+                        .filter(file -> file.endsWith(config.extension))
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("Couldn't find the tarball file. There should have "
+                                + "been generated when pushing to a Helm repository is enabled."));
+                pushToHelmRepository(new File(tarball), config.repository);
+            }
         }
     }
 
@@ -145,7 +157,7 @@ public class HelmProcessor {
         HelmChartConfigBuilder builder = new HelmChartConfigBuilder()
                 .withEnabled(config.enabled)
                 .withName(config.name.orElse(app.getName()))
-                .withCreateTarFile(config.createTarFile)
+                .withCreateTarFile(config.createTarFile || config.repository.push)
                 .withVersion(config.version.orElse(app.getVersion()))
                 .withExtension(config.extension)
                 .withValuesRootAlias(config.valuesRootAlias)

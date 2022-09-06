@@ -130,4 +130,10 @@ public class HelmChartConfig {
      */
     @ConfigItem(defaultValue = "helm")
     public String outputDirectory;
+
+    /**
+     * The configuration to perform Helm charts uploads to Helm repositories..
+     */
+    @ConfigItem
+    public HelmRepository repository;
 }

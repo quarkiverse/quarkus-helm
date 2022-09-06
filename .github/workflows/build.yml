@@ -78,3 +78,35 @@ jobs:
 
       - name: Delete Project using Helm
         run: kubectl delete namespace helm
+
+      - name: Install Test using Helm Repository
+        run: |
+          K8S_NAMESPACE=helmrepo
+          KIND_REGISTRY_GROUP=local
+          VERSION=latest
+          kubectl create namespace $K8S_NAMESPACE
+
+          # run chartmuseum
+          docker run --rm -u 0 -it -d -p 8080:8080 -e DEBUG=1 -e STORAGE=local -e STORAGE_LOCAL_ROOTDIR=/charts -v $(pwd)/charts:/charts chartmuseum/chartmuseum:latest
+
+          # create image plus push to a Helm repository
+          cd integration-tests/helm-kubernetes-minimal
+          mvn clean package -Dquarkus.container-image.build=true \
+          -Dquarkus.container-image.push=true \
+          -Dquarkus.container-image.registry=$KIND_REGISTRY \
+          -Dquarkus.container-image.group=$KIND_REGISTRY_GROUP \
+          -Dquarkus.container-image.tag=$VERSION \
+          -Dquarkus.container-image.insecure=true \
+          -Dquarkus.helm.repository.push=true \
+          -Dquarkus.helm.repository.url=http://localhost:8080/api/charts \
+          -Dquarkus.helm.repository.type=CHARTMUSEUM
+
+          # Install Helm repository
+          helm repo add local http://localhost:8080
+
+          # And install application from the Helm repository
+          helm install --devel quarkus-hello-world local/quarkus-helm-integration-tests-kubernetes-minimal -n $K8S_NAMESPACE --set app.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-minimal:$VERSION
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-minimal -n $K8S_NAMESPACE
+
+      - name: Delete Project using Helm Repository
+        run: kubectl delete namespace helmrepo

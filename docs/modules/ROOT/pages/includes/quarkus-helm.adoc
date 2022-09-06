@@ -175,6 +175,62 @@ Environment variable: `+++QUARKUS_HELM_OUTPUT_DIRECTORY+++`
 |`helm`
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.push]]`link:#quarkus-helm_quarkus.helm.repository.push[quarkus.helm.repository.push]`
+
+[.description]
+--
+If true, it will perform the upload to a Helm repository.
+
+Environment variable: `+++QUARKUS_HELM_REPOSITORY_PUSH+++`
+--|boolean 
+|`false`
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.type]]`link:#quarkus-helm_quarkus.helm.repository.type[quarkus.helm.repository.type]`
+
+[.description]
+--
+The Helm repository type. Options are: `CHARTMUSEUM`, `ARTIFACTORY`, and `NEXUS`.
+
+Environment variable: `+++QUARKUS_HELM_REPOSITORY_TYPE+++`
+-- a|
+`chartmuseum`, `artifactory`, `nexus` 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.url]]`link:#quarkus-helm_quarkus.helm.repository.url[quarkus.helm.repository.url]`
+
+[.description]
+--
+The Helm repository URL.
+
+Environment variable: `+++QUARKUS_HELM_REPOSITORY_URL+++`
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.username]]`link:#quarkus-helm_quarkus.helm.repository.username[quarkus.helm.repository.username]`
+
+[.description]
+--
+The Helm repository username.
+
+Environment variable: `+++QUARKUS_HELM_REPOSITORY_USERNAME+++`
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.password]]`link:#quarkus-helm_quarkus.helm.repository.password[quarkus.helm.repository.password]`
+
+[.description]
+--
+The Helm repository password.
+
+Environment variable: `+++QUARKUS_HELM_REPOSITORY_PASSWORD+++`
+--|string 
+|
+
+
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.maintainers.-maintainers-.name]]`link:#quarkus-helm_quarkus.helm.maintainers.-maintainers-.name[quarkus.helm.maintainers."maintainers".name]`
 
 [.description]

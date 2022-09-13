@@ -48,7 +48,6 @@ public class HelmProcessor {
         // Deduct folders
         Path inputFolder = getInputDirectory(config, project);
         Path outputFolder = getOutputDirectory(config, outputTarget);
-        deleteOutputHelmFolderIfExists(outputFolder);
 
         // Dekorate session writer
         final QuarkusHelmWriterSessionListener helmWriter = new QuarkusHelmWriterSessionListener();
@@ -57,6 +56,7 @@ public class HelmProcessor {
         // separate generated helm charts into the deployment targets
         for (Map.Entry<String, Set<File>> filesInDeploymentTarget : deploymentTargets.entrySet()) {
             Path chartOutputFolder = outputFolder.resolve(filesInDeploymentTarget.getKey());
+            deleteOutputHelmFolderIfExists(chartOutputFolder);
             Map<String, String> generated = helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), project,
                     toDekorateHelmChartConfig(app, config),
                     inputFolder,
@@ -83,7 +83,7 @@ public class HelmProcessor {
 
     private void deleteOutputHelmFolderIfExists(Path outputFolder) {
         try {
-            FileUtil.deleteIfExists(outputFolder.resolve(FEATURE));
+            FileUtil.deleteIfExists(outputFolder);
         } catch (IOException ignored) {
 
         }

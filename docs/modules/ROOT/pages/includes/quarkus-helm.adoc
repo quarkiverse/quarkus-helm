@@ -16,7 +16,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.enabled]]`lin
 --
 Enabled the generation of Helm files.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_ENABLED+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_ENABLED+++`
+endif::add-copy-button-to-env-var[]
 --|boolean 
 |`true`
 
@@ -27,7 +32,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.api-version]]
 --
 The Chart API version. The default value is `v2`.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_API_VERSION+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_API_VERSION+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |`v2`
 
@@ -38,7 +48,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.name]]`link:#
 --
 Name of the Helm chart. If not set, it will use the application name.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_NAME+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_NAME+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |
 
@@ -49,7 +64,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-root-a
 --
 Alias of the root element in the generated values file.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES_ROOT_ALIAS+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_VALUES_ROOT_ALIAS+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |`app`
 
@@ -60,7 +80,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.notes]]`link:
 --
 Notes template to be generated.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_NOTES+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_NOTES+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |`/NOTES.template.txt`
 
@@ -71,7 +96,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.version]]`lin
 --
 Version of the Helm chart. If not set, it will use the application version.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VERSION+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_VERSION+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |
 
@@ -82,7 +112,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.description]]
 --
 The Helm chart single-sentence description.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_DESCRIPTION+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_DESCRIPTION+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |
 
@@ -93,7 +128,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.icon]]`link:#
 --
 Icon of the Helm chart. It must be a URL to an SVG or PNG image.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_ICON+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_ICON+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |
 
@@ -104,7 +144,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.home]]`link:#
 --
 Project's home page of the Helm chart. It must be a URL.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_HOME+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_HOME+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |
 
@@ -115,7 +160,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.keywords]]`li
 --
 List of keywords to add to the chart.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_KEYWORDS+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_KEYWORDS+++`
+endif::add-copy-button-to-env-var[]
 --|list of string 
 |
 
@@ -126,7 +176,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.sources]]`lin
 --
 The Helm chart list of URLs to source code for this project.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_SOURCES+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_SOURCES+++`
+endif::add-copy-button-to-env-var[]
 --|list of string 
 |
 
@@ -137,7 +192,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.extension]]`l
 --
 Extension of the Helm tarball file. Default is `tar.gz`.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_EXTENSION+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_EXTENSION+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |`tar.gz`
 
@@ -148,7 +208,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.create-tar-fi
 --
 If Helm tar file is generated.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_CREATE_TAR_FILE+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_CREATE_TAR_FILE+++`
+endif::add-copy-button-to-env-var[]
 --|boolean 
 |`false`
 
@@ -159,7 +224,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.input-directo
 --
 The input folder in which to place the user-defined Helm files. These files will be used as inputs to populate the generated Helm files. At the moment, the only supported Helm file is the `values.yaml` file. It also supports absolute paths. By default, it will use the folder "src/main/helm".
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_INPUT_DIRECTORY+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_INPUT_DIRECTORY+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |`src/main/helm`
 
@@ -170,7 +240,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.output-direct
 --
 The output folder in which to place the Helm generated folder. The folder is relative to the target output directory in Quarkus that is also configurable using the property `quarkus.package.output-directory`. It also supports absolute paths. By default, it will be generated in the folder named "helm".
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_OUTPUT_DIRECTORY+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_OUTPUT_DIRECTORY+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |`helm`
 
@@ -181,7 +256,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.pu
 --
 If true, it will perform the upload to a Helm repository.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_REPOSITORY_PUSH+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_REPOSITORY_PUSH+++`
+endif::add-copy-button-to-env-var[]
 --|boolean 
 |`false`
 
@@ -192,7 +272,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.ty
 --
 The Helm repository type. Options are: `CHARTMUSEUM`, `ARTIFACTORY`, and `NEXUS`.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_REPOSITORY_TYPE+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_REPOSITORY_TYPE+++`
+endif::add-copy-button-to-env-var[]
 -- a|
 `chartmuseum`, `artifactory`, `nexus` 
 |
@@ -204,7 +289,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.ur
 --
 The Helm repository URL.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_REPOSITORY_URL+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_REPOSITORY_URL+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |
 
@@ -215,7 +305,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.us
 --
 The Helm repository username.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_REPOSITORY_USERNAME+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_REPOSITORY_USERNAME+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |
 
@@ -226,7 +321,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.pa
 --
 The Helm repository password.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_REPOSITORY_PASSWORD+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_REPOSITORY_PASSWORD+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |
 
@@ -237,7 +337,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.maintainers.-
 --
 Name of the maintainer.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_MAINTAINERS__MAINTAINERS__NAME+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_MAINTAINERS__MAINTAINERS__NAME+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |required icon:exclamation-circle[title=Configuration property is required]
 
@@ -248,7 +353,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.maintainers.-
 --
 Email of the maintainer.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_MAINTAINERS__MAINTAINERS__EMAIL+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_MAINTAINERS__MAINTAINERS__EMAIL+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |
 
@@ -259,7 +369,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.maintainers.-
 --
 URL profile of the maintainer.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_MAINTAINERS__MAINTAINERS__URL+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_MAINTAINERS__MAINTAINERS__URL+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |
 
@@ -270,7 +385,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.
 --
 Name of the dependency.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__NAME+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__NAME+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |required icon:exclamation-circle[title=Configuration property is required]
 
@@ -281,7 +401,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.
 --
 Version of the dependency.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__VERSION+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__VERSION+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |required icon:exclamation-circle[title=Configuration property is required]
 
@@ -292,7 +417,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.
 --
 Repository of the dependency.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__REPOSITORY+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__REPOSITORY+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |required icon:exclamation-circle[title=Configuration property is required]
 
@@ -303,7 +433,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.
 --
 Alias of the dependency.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__ALIAS+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__ALIAS+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |
 
@@ -314,7 +449,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-value
 --
 The name of the property that will be present in the Helm values file.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES__VALUES__PROPERTY+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__PROPERTY+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |required icon:exclamation-circle[title=Configuration property is required]
 
@@ -325,7 +465,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-value
 --
 A comma-separated list of YAMLPath expressions to map the Dekorate auto-generated properties to the final Helm values file.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES__VALUES__PATHS+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__PATHS+++`
+endif::add-copy-button-to-env-var[]
 --|list of string 
 |
 
@@ -336,7 +481,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-value
 --
 The profile where this value reference will be mapped to. For example, if the profile is `dev`, then a `values-dev.yml` file will be created with the value.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES__VALUES__PROFILE+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__PROFILE+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |
 
@@ -347,7 +497,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-value
 --
 The value that the property will have in the Helm values file. If not set, the extension will resolve it from the generated artifacts.
 
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES__VALUES__VALUE+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__VALUE+++`
+endif::add-copy-button-to-env-var[]
 --|string 
 |
 

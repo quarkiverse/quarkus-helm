@@ -32,8 +32,7 @@ import io.quarkus.kubernetes.spi.DekorateOutputBuildItem;
 import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
 public class HelmProcessor {
-
-    private static final String FEATURE = "helm";
+    private static final String NAME_FORMAT_REG_EXP = "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
 
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void generateResources(ApplicationInfoBuildItem app, OutputTargetBuildItem outputTarget,
@@ -42,7 +41,7 @@ public class HelmProcessor {
             // this is added to ensure that the build step will be run
             BuildProducer<ArtifactResultBuildItem> dummy,
             HelmChartConfig config) {
-
+        validate(config);
         Project project = (Project) dekorateOutput.getProject();
 
         // Deduct folders
@@ -79,6 +78,15 @@ public class HelmProcessor {
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void disableDefaultHelmListener(BuildProducer<ConfiguratorBuildItem> helmConfiguration) {
         helmConfiguration.produce(new ConfiguratorBuildItem(new DisableDefaultHelmListener()));
+    }
+
+    private void validate(HelmChartConfig config) {
+        if (config.name.isPresent()) {
+            if (!config.name.get().matches(NAME_FORMAT_REG_EXP)) {
+                throw new IllegalStateException(String.format("Wrong name '%s'. Regular expression used for validation "
+                        + "is '%s'", config.name.get(), NAME_FORMAT_REG_EXP));
+            }
+        }
     }
 
     private void deleteOutputHelmFolderIfExists(Path outputFolder) {

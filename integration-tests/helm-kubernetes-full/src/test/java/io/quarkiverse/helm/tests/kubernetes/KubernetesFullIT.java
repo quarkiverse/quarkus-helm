@@ -17,7 +17,7 @@ import io.dekorate.utils.Serialization;
 
 public class KubernetesFullIT {
 
-    private static final String CHART_NAME = "myChart";
+    private static final String CHART_NAME = "my-chart";
     private static final String ROOT_CONFIG_NAME = "app";
 
     @Test

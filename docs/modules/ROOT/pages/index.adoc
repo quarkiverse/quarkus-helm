@@ -174,7 +174,7 @@ For example, if you set 3 replicas for your deployment:
 
 [source,properties]
 ----
-quarkus.helm.name=myChart
+quarkus.helm.name=my-chart
 quarkus.helm.description=Description of my Chart
 
 # Set replicas to 3
@@ -220,7 +220,7 @@ However, the extension allows users to define https://github.com/yaml-path/YamlP
 
 [source,properties]
 ----
-quarkus.helm.name=myChart
+quarkus.helm.name=my-chart
 quarkus.helm.description=Description of my Chart
 
 # Map all the metadata name resources
@@ -240,7 +240,7 @@ The `app.name` value is set automatically by the Quarkus Helm extension. However
 
 [source,properties]
 ----
-quarkus.helm.name=myChart
+quarkus.helm.name=my-chart
 quarkus.helm.description=Description of my Chart
 
 # Map all the metadata name resources
@@ -286,7 +286,7 @@ From this example, we need to map the value `helm-on-kubernetes-example` which i
 
 [source,properties]
 ----
-quarkus.helm.name=myChart
+quarkus.helm.name=my-chart
 quarkus.helm.description=Description of my Chart
 
 # Map all the metadata name resources
@@ -425,7 +425,7 @@ quarkus.kubernetes.ingress.expose=true
 quarkus.kubernetes.ingress.host=my-host
 
 # Helm Chart
-quarkus.helm.name=myChart
+quarkus.helm.name=my-chart
 ## Overwrite the value of `dekorate.kubernetes.host` to `values-<profile-name>.yaml`:
 quarkus.helm.values[0].property=host
 quarkus.helm.values[0].paths=(kind == Ingress).spec.rules.host

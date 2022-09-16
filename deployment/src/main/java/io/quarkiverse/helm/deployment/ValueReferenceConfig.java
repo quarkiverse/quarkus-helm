@@ -34,4 +34,18 @@ public class ValueReferenceConfig {
      */
     @ConfigItem
     Optional<String> value;
+
+    /**
+     * The integer value that the property will have in the Helm values file.
+     * If not set, the extension will resolve it from the generated artifacts.
+     */
+    @ConfigItem
+    Optional<Integer> valueAsInt;
+
+    /**
+     * The boolean value that the property will have in the Helm values file.
+     * If not set, the extension will resolve it from the generated artifacts.
+     */
+    @ConfigItem
+    Optional<Boolean> valueAsBool;
 }

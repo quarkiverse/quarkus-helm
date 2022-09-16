@@ -14,9 +14,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
+import io.dekorate.ConfigReference;
 import io.dekorate.Session;
 import io.dekorate.helm.config.HelmChartConfigBuilder;
 import io.dekorate.project.Project;
@@ -52,12 +54,18 @@ public class HelmProcessor {
         final QuarkusHelmWriterSessionListener helmWriter = new QuarkusHelmWriterSessionListener();
         final Map<String, Set<File>> deploymentTargets = toDeploymentTargets(dekorateOutput.getGeneratedFiles(),
                 generatedResources);
+
+        // Config
+        io.dekorate.helm.config.HelmChartConfig dekorateHelmChartConfig = toDekorateHelmChartConfig(app, config);
+        List<ConfigReference> valueReferencesFromConfig = toValueReferences(config);
+
         // separate generated helm charts into the deployment targets
         for (Map.Entry<String, Set<File>> filesInDeploymentTarget : deploymentTargets.entrySet()) {
             Path chartOutputFolder = outputFolder.resolve(filesInDeploymentTarget.getKey());
             deleteOutputHelmFolderIfExists(chartOutputFolder);
             Map<String, String> generated = helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), project,
-                    toDekorateHelmChartConfig(app, config),
+                    dekorateHelmChartConfig,
+                    valueReferencesFromConfig,
                     inputFolder,
                     chartOutputFolder,
                     filesInDeploymentTarget.getValue(),
@@ -182,12 +190,27 @@ public class HelmProcessor {
                         defaultString(d.alias, d.name),
                         d.version,
                         d.repository));
-        config.values.values().forEach(v -> builder.addNewValue(v.property,
-                v.paths.map(l -> l.toArray(new String[0])).orElse(new String[0]),
-                defaultString(v.profile),
-                defaultString(v.value)));
 
         return builder.build();
+    }
+
+    private List<ConfigReference> toValueReferences(HelmChartConfig config) {
+        return config.values.values().stream()
+                .map(v -> new ConfigReference(v.property,
+                        v.paths.map(l -> l.toArray(new String[0])).orElse(new String[0]),
+                        toValue(v),
+                        defaultString(v.profile)))
+                .collect(Collectors.toList());
+    }
+
+    private Object toValue(ValueReferenceConfig v) {
+        if (v.valueAsInt.isPresent()) {
+            return v.valueAsInt.get();
+        } else if (v.valueAsBool.isPresent()) {
+            return v.valueAsBool.get();
+        }
+
+        return v.value.orElse(null);
     }
 
     private String defaultString(Optional<String> value) {

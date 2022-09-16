@@ -47,6 +47,10 @@ public class KubernetesFullIT {
         assertEquals(3, helmExampleValues.get("replicas"));
         // Should NOT contain not-found: as this property is ignored
         assertNull(helmExampleValues.get("not-found"));
+        // Should contain number
+        assertEquals(12, helmExampleValues.get("typesNumber"));
+        // Should contain boolean
+        assertEquals(true, helmExampleValues.get("typesBool"));
     }
 
     @Test

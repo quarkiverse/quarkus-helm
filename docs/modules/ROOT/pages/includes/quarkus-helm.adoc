@@ -506,4 +506,36 @@ endif::add-copy-button-to-env-var[]
 --|string 
 |
 
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.value-as-int]]`link:#quarkus-helm_quarkus.helm.values.-values-.value-as-int[quarkus.helm.values."values".value-as-int]`
+
+[.description]
+--
+The integer value that the property will have in the Helm values file. If not set, the extension will resolve it from the generated artifacts.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES__VALUES__VALUE_AS_INT+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__VALUE_AS_INT+++`
+endif::add-copy-button-to-env-var[]
+--|int 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.value-as-bool]]`link:#quarkus-helm_quarkus.helm.values.-values-.value-as-bool[quarkus.helm.values."values".value-as-bool]`
+
+[.description]
+--
+The boolean value that the property will have in the Helm values file. If not set, the extension will resolve it from the generated artifacts.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES__VALUES__VALUE_AS_BOOL+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__VALUE_AS_BOOL+++`
+endif::add-copy-button-to-env-var[]
+--|boolean 
+|
+
 |===

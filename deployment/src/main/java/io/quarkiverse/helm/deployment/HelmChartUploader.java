@@ -1,17 +1,20 @@
 package io.quarkiverse.helm.deployment;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.Reader;
 import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.nio.charset.Charset;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpHeaders;
 import org.jboss.logging.Logger;
 
 import io.dekorate.utils.Strings;
@@ -21,6 +24,7 @@ public final class HelmChartUploader {
     private static Logger LOGGER = Logger.getLogger(HelmProcessor.class);
 
     private static String APPLICATION_GZIP = "application/gzip";
+    private static final String CONTENT_TYPE = "Content-Type";
     private static String POST = "POST";
     private static String PUT = "PUT";
 
@@ -39,9 +43,9 @@ public final class HelmChartUploader {
             if (connection.getResponseCode() >= HttpURLConnection.HTTP_MULT_CHOICE) {
                 String response;
                 if (connection.getErrorStream() != null) {
-                    response = IOUtils.toString(connection.getErrorStream(), Charset.defaultCharset());
+                    response = inputStreamToString(connection.getErrorStream(), Charset.defaultCharset());
                 } else if (connection.getInputStream() != null) {
-                    response = IOUtils.toString(connection.getInputStream(), Charset.defaultCharset());
+                    response = inputStreamToString(connection.getInputStream(), Charset.defaultCharset());
                 } else {
                     response = "No details provided";
                 }
@@ -76,7 +80,7 @@ public final class HelmChartUploader {
 
     private static void writeFileOnConnection(File file, HttpURLConnection connection) throws IOException {
         try (FileInputStream fileInputStream = new FileInputStream(file)) {
-            IOUtils.copy(fileInputStream, connection.getOutputStream());
+            copyToOutputStream(fileInputStream, connection.getOutputStream());
         }
     }
 
@@ -108,7 +112,7 @@ public final class HelmChartUploader {
         final HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setDoOutput(true);
         connection.setRequestMethod(POST);
-        connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, APPLICATION_GZIP);
+        connection.setRequestProperty(CONTENT_TYPE, APPLICATION_GZIP);
         verifyAndSetAuthentication(repository);
         return connection;
     }
@@ -126,4 +130,25 @@ public final class HelmChartUploader {
             });
         }
     }
+
+    private static String inputStreamToString(InputStream input, Charset charset) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        try (Reader reader = new BufferedReader(new InputStreamReader(input, charset))) {
+            int c = 0;
+            while ((c = reader.read()) != -1) {
+                sb.append((char) c);
+            }
+        }
+
+        return sb.toString();
+    }
+
+    private static void copyToOutputStream(InputStream source, OutputStream target) throws IOException {
+        byte[] buf = new byte[8192];
+        int length;
+        while ((length = source.read(buf)) != -1) {
+            target.write(buf, 0, length);
+        }
+    }
+
 }

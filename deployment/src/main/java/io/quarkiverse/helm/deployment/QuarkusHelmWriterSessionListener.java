@@ -48,7 +48,6 @@ import io.dekorate.LoggerFactory;
 import io.dekorate.Session;
 import io.dekorate.WithConfigReferences;
 import io.dekorate.helm.config.HelmChartConfig;
-import io.dekorate.helm.config.ValueReference;
 import io.dekorate.helm.listener.HelmWriterSessionListener;
 import io.dekorate.helm.model.Chart;
 import io.dekorate.helm.model.HelmDependency;
@@ -88,9 +87,7 @@ public class QuarkusHelmWriterSessionListener {
     public Map<String, String> writeHelmFiles(Session session, Project project,
             HelmChartConfig helmConfig, List<ConfigReference> valuesReferencesFromConfig,
             Path inputDir,
-            Path outputDir, Collection<File> generatedFiles,
-            // TODO: The chart api version should be in HelmChartConfig (coming in the next release of Dekorate)
-            String chartApiVersion) {
+            Path outputDir, Collection<File> generatedFiles) {
         Map<String, String> artifacts = new HashMap<>();
         if (helmConfig.isEnabled()) {
             validateHelmConfig(helmConfig);
@@ -102,7 +99,7 @@ public class QuarkusHelmWriterSessionListener {
                 Map<String, Map<String, Object>> valuesByProfile = new HashMap<>();
                 artifacts.putAll(processSourceFiles(helmConfig, outputDir, generatedFiles, valuesReferences, prodValues,
                         valuesByProfile));
-                artifacts.putAll(createChartYaml(helmConfig, project, outputDir, chartApiVersion));
+                artifacts.putAll(createChartYaml(helmConfig, project, outputDir));
                 artifacts.putAll(
                         createValuesYaml(helmConfig, valuesReferences, inputDir, outputDir, prodValues, valuesByProfile));
                 if (helmConfig.isCreateTarFile()) {
@@ -199,13 +196,6 @@ public class QuarkusHelmWriterSessionListener {
         return valueReference.getPaths() != null && valueReference.getPaths().length > 0;
     }
 
-    private ConfigReference toConfigReference(ValueReference valueReference) {
-        return new ConfigReference(valueReference.getProperty(),
-                valueReference.getPaths(),
-                Strings.isNullOrEmpty(valueReference.getValue()) ? null : valueReference.getValue(),
-                valueReference.getProfile());
-    }
-
     private Map<String, String> createValuesYaml(HelmChartConfig helmConfig, List<ConfigReference> valuesReferences,
             Path inputDir, Path outputDir, Map<String, Object> prodValues, Map<String, Map<String, Object>> valuesByProfile)
             throws IOException {
@@ -281,6 +271,7 @@ public class QuarkusHelmWriterSessionListener {
         String name = parts[0];
         return Stream.of(dependencies)
                 .map(d -> Strings.defaultIfEmpty(d.getAlias(), d.getName()))
+                .peek(System.out::println)
                 .anyMatch(d -> Strings.equals(d, name));
     }
 
@@ -368,7 +359,11 @@ public class QuarkusHelmWriterSessionListener {
 
                 // Check whether path exists
                 for (String path : valueReference.getPaths()) {
-                    Object found = parser.readAndSet(path, VALUES_START_TAG + valueReferenceProperty + VALUES_END_TAG);
+                    String expression = Optional.ofNullable(valueReference.getExpression())
+                            .filter(Strings::isNotNullOrEmpty)
+                            .orElse(VALUES_START_TAG + valueReferenceProperty + VALUES_END_TAG);
+
+                    Object found = parser.readAndSet(path, expression);
 
                     Object value = Optional.ofNullable(valueReference.getValue()).orElse(found);
                     if (value != null) {
@@ -393,11 +388,10 @@ public class QuarkusHelmWriterSessionListener {
         return allResources;
     }
 
-    private Map<String, String> createChartYaml(HelmChartConfig helmConfig, Project project, Path outputDir,
-            String chartApiVersion)
+    private Map<String, String> createChartYaml(HelmChartConfig helmConfig, Project project, Path outputDir)
             throws IOException {
         final Chart chart = new Chart();
-        chart.setApiVersion(chartApiVersion);
+        chart.setApiVersion(helmConfig.getApiVersion());
         chart.setName(helmConfig.getName());
         chart.setVersion(getVersion(helmConfig, project));
         chart.setDescription(helmConfig.getDescription());
@@ -412,7 +406,9 @@ public class QuarkusHelmWriterSessionListener {
                 .map(d -> new HelmDependency(d.getName(),
                         Strings.defaultIfEmpty(d.getAlias(), d.getName()),
                         d.getVersion(),
-                        d.getRepository()))
+                        d.getRepository(),
+                        d.getCondition(),
+                        d.getTags()))
                 .collect(Collectors.toList()));
 
         Path yml = getChartOutputDir(helmConfig, outputDir).resolve(CHART_FILENAME).normalize();

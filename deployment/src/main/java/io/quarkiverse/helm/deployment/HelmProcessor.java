@@ -68,8 +68,7 @@ public class HelmProcessor {
                     valueReferencesFromConfig,
                     inputFolder,
                     chartOutputFolder,
-                    filesInDeploymentTarget.getValue(),
-                    config.apiVersion);
+                    filesInDeploymentTarget.getValue());
 
             // Push to Helm repository if enabled
             if (config.repository.push) {
@@ -172,6 +171,7 @@ public class HelmProcessor {
             HelmChartConfig config) {
         HelmChartConfigBuilder builder = new HelmChartConfigBuilder()
                 .withEnabled(config.enabled)
+                .withApiVersion(config.apiVersion)
                 .withName(config.name.orElse(app.getName()))
                 .withCreateTarFile(config.createTarFile || config.repository.push)
                 .withVersion(config.version.orElse(app.getVersion()))
@@ -186,10 +186,14 @@ public class HelmProcessor {
         config.maintainers.values().forEach(
                 m -> builder.addNewMaintainer(m.name, defaultString(m.email), defaultString(m.url)));
         config.dependencies.values()
-                .forEach(d -> builder.addNewDependency(d.name,
-                        defaultString(d.alias, d.name),
-                        d.version,
-                        d.repository));
+                .forEach(d -> builder.addNewDependency()
+                        .withName(d.name)
+                        .withAlias(defaultString(d.alias, d.name))
+                        .withVersion(d.version)
+                        .withRepository(d.repository)
+                        .withCondition(defaultString(d.condition))
+                        .withTags(defaultArray(d.tags))
+                        .endDependency());
 
         return builder.build();
     }
@@ -197,8 +201,9 @@ public class HelmProcessor {
     private List<ConfigReference> toValueReferences(HelmChartConfig config) {
         return config.values.values().stream()
                 .map(v -> new ConfigReference(v.property,
-                        v.paths.map(l -> l.toArray(new String[0])).orElse(new String[0]),
+                        defaultArray(v.paths),
                         toValue(v),
+                        defaultString(v.expression),
                         defaultString(v.profile)))
                 .collect(Collectors.toList());
     }
@@ -223,5 +228,9 @@ public class HelmProcessor {
         }
 
         return value.get();
+    }
+
+    private static String[] defaultArray(Optional<List<String>> optional) {
+        return optional.map(l -> l.toArray(new String[0])).orElse(new String[0]);
     }
 }

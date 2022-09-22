@@ -48,4 +48,12 @@ public class ValueReferenceConfig {
      */
     @ConfigItem
     Optional<Boolean> valueAsBool;
+
+    /**
+     * If not provided, it will use `{{ .Values.<root alias>.<property> }}`.
+     *
+     * @return The complete Helm expression to be replaced with.
+     */
+    @ConfigItem
+    Optional<String> expression;
 }

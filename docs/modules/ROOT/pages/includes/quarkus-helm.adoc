@@ -266,6 +266,22 @@ endif::add-copy-button-to-env-var[]
 |`false`
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.deployment-target]]`link:#quarkus-helm_quarkus.helm.repository.deployment-target[quarkus.helm.repository.deployment-target]`
+
+[.description]
+--
+The deployment target to push. Options are: `kubernetes`, `openshift`, `knative`...
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_REPOSITORY_DEPLOYMENT_TARGET+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_REPOSITORY_DEPLOYMENT_TARGET+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|`${quarkus.kubernetes.deployment-target}`
+
+
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.type]]`link:#quarkus-helm_quarkus.helm.repository.type[quarkus.helm.repository.type]`
 
 [.description]

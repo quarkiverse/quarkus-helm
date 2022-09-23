@@ -14,6 +14,11 @@ public class HelmRepository {
     @ConfigItem(defaultValue = "false")
     public boolean push;
     /**
+     * The deployment target to push. Options are: `kubernetes`, `openshift`, `knative`...
+     */
+    @ConfigItem(defaultValue = "${quarkus.kubernetes.deployment-target}")
+    public Optional<String> deploymentTarget;
+    /**
      * The Helm repository type. Options are: `CHARTMUSEUM`, `ARTIFACTORY`, and `NEXUS`.
      */
     @ConfigItem

@@ -18,6 +18,7 @@ package io.quarkiverse.helm.deployment;
 
 import static io.dekorate.helm.util.HelmTarArchiver.createTarBall;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -35,7 +36,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -54,6 +54,7 @@ import io.dekorate.helm.model.HelmDependency;
 import io.dekorate.helm.model.Maintainer;
 import io.dekorate.helm.util.HelmExpressionParser;
 import io.dekorate.project.Project;
+import io.dekorate.utils.Exec;
 import io.dekorate.utils.Maps;
 import io.dekorate.utils.Serialization;
 import io.dekorate.utils.Strings;
@@ -102,9 +103,6 @@ public class QuarkusHelmWriterSessionListener {
                 artifacts.putAll(createChartYaml(helmConfig, project, outputDir));
                 artifacts.putAll(
                         createValuesYaml(helmConfig, valuesReferences, inputDir, outputDir, prodValues, valuesByProfile));
-                if (helmConfig.isCreateTarFile()) {
-                    artifacts.putAll(createTarball(helmConfig, project, outputDir, artifacts, valuesByProfile.keySet()));
-                }
 
                 // To follow Helm file structure standards:
                 artifacts.putAll(createEmptyChartFolder(helmConfig, outputDir));
@@ -112,12 +110,34 @@ public class QuarkusHelmWriterSessionListener {
                 artifacts.putAll(addResourceIfExists(helmConfig, LICENSE, inputDir, outputDir));
                 artifacts.putAll(addResourceIfExists(helmConfig, README, inputDir, outputDir));
 
+                // Final step: packaging
+                if (helmConfig.isCreateTarFile()) {
+                    fetchDependencies(helmConfig, outputDir);
+                    artifacts.putAll(createTarball(helmConfig, project, outputDir, artifacts));
+                }
+
             } catch (IOException e) {
                 throw new RuntimeException("Error writing resources", e);
             }
         }
 
         return artifacts;
+    }
+
+    private void fetchDependencies(HelmChartConfig helmConfig, Path outputDir) {
+        if (helmConfig.getDependencies() != null && helmConfig.getDependencies().length > 0) {
+            Path chartFolder = getChartOutputDir(helmConfig, outputDir);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            boolean success = Exec.inPath(chartFolder)
+                    .redirectingOutput(out)
+                    .commands("helm", "dependency", "build");
+
+            if (success) {
+                LOGGER.info("Dependencies successfully fetched");
+            } else {
+                throw new RuntimeException("Error fetching Helm dependencies. Cause: " + new String(out.toByteArray()));
+            }
+        }
     }
 
     private void validateHelmConfig(HelmChartConfig helmConfig) {
@@ -271,12 +291,11 @@ public class QuarkusHelmWriterSessionListener {
         String name = parts[0];
         return Stream.of(dependencies)
                 .map(d -> Strings.defaultIfEmpty(d.getAlias(), d.getName()))
-                .peek(System.out::println)
                 .anyMatch(d -> Strings.equals(d, name));
     }
 
-    private Map<String, String> createTarball(HelmChartConfig helmConfig, Project project, Path outputDir,
-            Map<String, String> artifacts, Set<String> profiles) throws IOException {
+    public Map<String, String> createTarball(HelmChartConfig helmConfig, Project project, Path outputDir,
+            Map<String, String> artifacts) throws IOException {
 
         File tarballFile = outputDir.resolve(String.format("%s-%s-%s.%s",
                 helmConfig.getName(), getVersion(helmConfig, project), getHelmClassifier(artifacts), helmConfig.getExtension()))
@@ -286,16 +305,17 @@ public class QuarkusHelmWriterSessionListener {
 
         Path helmSources = getChartOutputDir(helmConfig, outputDir);
 
-        List<File> yamls = new ArrayList<>();
-        yamls.add(helmSources.resolve(CHART_FILENAME).toFile());
-        yamls.add(helmSources.resolve(VALUES + YAML).toFile());
-        for (String profile : profiles) {
-            yamls.add(helmSources.resolve(VALUES + "." + profile + YAML).toFile());
+        List<File> files = new ArrayList<>();
+        for (String filePath : artifacts.keySet()) {
+            File file = new File(filePath);
+            if (file.isDirectory()) {
+                files.addAll(Arrays.asList(file.listFiles()));
+            } else {
+                files.add(file);
+            }
         }
 
-        yamls.addAll(listYamls(helmSources.resolve(TEMPLATES)));
-
-        createTarBall(tarballFile, helmSources.toFile(), yamls, helmConfig.getExtension(),
+        createTarBall(tarballFile, helmSources.toFile(), files, helmConfig.getExtension(),
                 tae -> tae.setName(String.format("%s/%s", helmConfig.getName(), tae.getName())));
 
         return Collections.singletonMap(tarballFile.toString(), null);
@@ -313,6 +333,7 @@ public class QuarkusHelmWriterSessionListener {
             List<ConfigReference> valuesReferences, Map<String, Object> prodValues,
             Map<String, Map<String, Object>> valuesByProfile) throws IOException {
 
+        Map<String, String> templates = new HashMap<>();
         Path templatesDir = getChartOutputDir(helmConfig, outputDir).resolve(TEMPLATES);
         Files.createDirectories(templatesDir);
         List<Map<Object, Object>> resources = replaceValuesInYamls(helmConfig, generatedFiles, valuesReferences, prodValues,
@@ -330,9 +351,10 @@ public class QuarkusHelmWriterSessionListener {
                     .replaceAll("\\\\\\n(\\s)*\\\\(\\s)*}}", " }}");
 
             writeFile(adaptedString, targetFile);
+            templates.put(targetFile.toString(), adaptedString);
         }
 
-        return Collections.emptyMap();
+        return templates;
     }
 
     private List<Map<Object, Object>> replaceValuesInYamls(HelmChartConfig helmConfig,

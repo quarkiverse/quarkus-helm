@@ -2,6 +2,7 @@ package io.quarkiverse.helm.tests.kubernetes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +20,14 @@ public class KubernetesWithDependencyIT {
 
     private static final String CHART_NAME = "quarkus-helm-integration-tests-kubernetes-with-dependency";
     private static final String ROOT_CONFIG_NAME = "app";
+
+    @Test
+    public void shouldHelmManifestsBeGenerated() throws IOException {
+        assertTrue(Stream.of(Paths.get("target", "helm", "kubernetes").toFile().listFiles())
+                .anyMatch(f -> f.getName().startsWith(CHART_NAME) && f.getName().endsWith(".tar.gz")));
+
+        assertNotNull(getResourceAsStream("charts/postgresql-11.6.22.tgz"));
+    }
 
     @Test
     public void valuesFileShouldContainDependencyValues() throws IOException {

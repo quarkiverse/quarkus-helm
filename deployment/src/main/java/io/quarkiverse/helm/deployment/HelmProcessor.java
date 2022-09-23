@@ -59,9 +59,13 @@ public class HelmProcessor {
         io.dekorate.helm.config.HelmChartConfig dekorateHelmChartConfig = toDekorateHelmChartConfig(app, config);
         List<ConfigReference> valueReferencesFromConfig = toValueReferences(config);
 
+        // Deduct deployment target to push
+        String deploymentTargetToPush = deductDeploymentTarget(config, deploymentTargets);
+
         // separate generated helm charts into the deployment targets
         for (Map.Entry<String, Set<File>> filesInDeploymentTarget : deploymentTargets.entrySet()) {
-            Path chartOutputFolder = outputFolder.resolve(filesInDeploymentTarget.getKey());
+            String deploymentTarget = filesInDeploymentTarget.getKey();
+            Path chartOutputFolder = outputFolder.resolve(deploymentTarget);
             deleteOutputHelmFolderIfExists(chartOutputFolder);
             Map<String, String> generated = helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), project,
                     dekorateHelmChartConfig,
@@ -71,7 +75,7 @@ public class HelmProcessor {
                     filesInDeploymentTarget.getValue());
 
             // Push to Helm repository if enabled
-            if (config.repository.push) {
+            if (config.repository.push && deploymentTargetToPush.equals(deploymentTarget)) {
                 String tarball = generated.keySet().stream()
                         .filter(file -> file.endsWith(config.extension))
                         .findFirst()
@@ -94,6 +98,28 @@ public class HelmProcessor {
                         + "is '%s'", config.name.get(), NAME_FORMAT_REG_EXP));
             }
         }
+    }
+
+    private String deductDeploymentTarget(HelmChartConfig config, Map<String, Set<File>> deploymentTargets) {
+        if (config.repository.push) {
+            // if enabled, use the deployment target from the user if set
+            if (config.repository.deploymentTarget.isPresent()) {
+                return config.repository.deploymentTarget.get();
+            } else {
+                List<String> deploymentTargetNames = deploymentTargets.keySet().stream().collect(Collectors.toList());
+                if (deploymentTargetNames.size() == 1) {
+                    return deploymentTargetNames.get(0);
+                } else {
+                    throw new IllegalStateException("Multiple deployment target found: '"
+                            + deploymentTargetNames.stream().collect(
+                                    Collectors.joining(", "))
+                            + "'. To push the Helm Chart to the repository, "
+                            + "you need to select only one using the property `quarkus.helm.repository.deployment-target`");
+                }
+            }
+        }
+
+        return null;
     }
 
     private void deleteOutputHelmFolderIfExists(Path outputFolder) {

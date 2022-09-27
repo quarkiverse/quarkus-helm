@@ -1,6 +1,7 @@
 package io.quarkiverse.helm.deployment;
 
 import static io.quarkiverse.helm.deployment.HelmChartUploader.pushToHelmRepository;
+import static io.quarkus.deployment.Capability.OPENSHIFT;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,11 +18,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 import io.dekorate.ConfigReference;
 import io.dekorate.Session;
 import io.dekorate.helm.config.HelmChartConfigBuilder;
+import io.dekorate.kubernetes.config.ContainerBuilder;
+import io.dekorate.kubernetes.decorator.AddInitContainerDecorator;
 import io.dekorate.project.Project;
+import io.quarkus.deployment.Capabilities;
 import io.quarkus.deployment.IsNormal;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -30,11 +36,38 @@ import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.kubernetes.spi.ConfiguratorBuildItem;
+import io.quarkus.kubernetes.spi.DecoratorBuildItem;
 import io.quarkus.kubernetes.spi.DekorateOutputBuildItem;
 import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
 public class HelmProcessor {
     private static final String NAME_FORMAT_REG_EXP = "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
+
+    private static final String QUARKUS_KUBERNETES_NAME = "quarkus.kubernetes.name";
+    private static final String QUARKUS_KNATIVE_NAME = "quarkus.knative.name";
+    private static final String QUARKUS_OPENSHIFT_NAME = "quarkus.openshift.name";
+    private static final String QUARKUS_CONTAINER_IMAGE_NAME = "quarkus.container-image.name";
+    private static final String SERVICE_NAME_PLACEHOLDER = "::service-name";
+
+    @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
+    void configureHelmDependencyOrder(Capabilities capabilities, ApplicationInfoBuildItem info, HelmChartConfig config,
+            BuildProducer<DecoratorBuildItem> decorators) {
+        if (config.dependencies == null || config.dependencies.isEmpty()) {
+            return;
+        }
+
+        for (HelmDependencyConfig dependency : config.dependencies.values()) {
+            if (dependency.waitForService.isPresent()) {
+                String serviceName = dependency.waitForService.get();
+                decorators.produce(new DecoratorBuildItem(new AddInitContainerDecorator(getDeploymentName(capabilities, info),
+                        new ContainerBuilder()
+                                .withImage(dependency.waitForServiceImage)
+                                .withCommand("-c", dependency.waitForServiceCommandTemplate
+                                        .replaceAll(SERVICE_NAME_PLACEHOLDER, serviceName))
+                                .build())));
+            }
+        }
+    }
 
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void generateResources(ApplicationInfoBuildItem app, OutputTargetBuildItem outputTarget,
@@ -258,5 +291,20 @@ public class HelmProcessor {
 
     private static String[] defaultArray(Optional<List<String>> optional) {
         return optional.map(l -> l.toArray(new String[0])).orElse(new String[0]);
+    }
+
+    public static String getDeploymentName(Capabilities capabilities, ApplicationInfoBuildItem info) {
+        Config config = ConfigProvider.getConfig();
+        Optional<String> resourceName;
+        if (capabilities.isPresent(OPENSHIFT)) {
+            resourceName = config.getOptionalValue(QUARKUS_OPENSHIFT_NAME, String.class);
+        } else {
+            resourceName = config.getOptionalValue(QUARKUS_KNATIVE_NAME, String.class)
+                    .or(() -> config.getOptionalValue(QUARKUS_KUBERNETES_NAME, String.class));
+        }
+
+        return resourceName
+                .or(() -> config.getOptionalValue(QUARKUS_CONTAINER_IMAGE_NAME, String.class))
+                .orElse(info.getName());
     }
 }

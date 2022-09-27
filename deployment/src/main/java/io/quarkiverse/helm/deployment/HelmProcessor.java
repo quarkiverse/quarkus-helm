@@ -61,6 +61,7 @@ public class HelmProcessor {
                 String serviceName = dependency.waitForService.get();
                 decorators.produce(new DecoratorBuildItem(new AddInitContainerDecorator(getDeploymentName(capabilities, info),
                         new ContainerBuilder()
+                                .withName("wait-for-" + dependency.name)
                                 .withImage(dependency.waitForServiceImage)
                                 .withCommand("-c", dependency.waitForServiceCommandTemplate
                                         .replaceAll(SERVICE_NAME_PLACEHOLDER, serviceName))

@@ -491,6 +491,54 @@ endif::add-copy-button-to-env-var[]
 |
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.wait-for-service]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.wait-for-service[quarkus.helm.dependencies."dependencies".wait-for-service]`
+
+[.description]
+--
+Instruct the application to wait for the service with this name that should be installed as part of this Helm dependency.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__WAIT_FOR_SERVICE+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__WAIT_FOR_SERVICE+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.wait-for-service-image]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.wait-for-service-image[quarkus.helm.dependencies."dependencies".wait-for-service-image]`
+
+[.description]
+--
+If wait for service is set, it will use this image to configure the init-containers within the deployment resource.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__WAIT_FOR_SERVICE_IMAGE+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__WAIT_FOR_SERVICE_IMAGE+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|`alpine:3.16.2`
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.wait-for-service-command-template]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.wait-for-service-command-template[quarkus.helm.dependencies."dependencies".wait-for-service-command-template]`
+
+[.description]
+--
+If wait for service is set, it will use this command to run the init-containers within the deployment resource.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__WAIT_FOR_SERVICE_COMMAND_TEMPLATE+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__WAIT_FOR_SERVICE_COMMAND_TEMPLATE+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|`for i in $(seq 1 200); do nc -z -w3 ::service-name && exit 0 \|\| sleep 3; done; exit 1`
+
+
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.property]]`link:#quarkus-helm_quarkus.helm.values.-values-.property[quarkus.helm.values."values".property]`
 
 [.description]

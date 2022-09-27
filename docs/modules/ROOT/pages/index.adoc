@@ -9,6 +9,15 @@ https://helm.sh/[Helm] is the package manager for Kubernetes that help to find, 
 
 Under the hood, the Quarkus Helm extension uses https://dekorate.io/[Dekorate] to generate the Helm chart manifests at build time.
 
+Before getting started, make sure you're using the right Quarkus Helm version that is compatible with the Quarkus version you're using in your project. See the following table to see the compatibility among versions:
+
+[%header,format=csv]
+|===
+Quarkus Helm Version,Quarkus Version
+0.0.7,Quarkus 2.13+
+0.0.6,Quarkus 2.12
+|===
+
 == Prerequisites
 
 To complete this guide, you need:

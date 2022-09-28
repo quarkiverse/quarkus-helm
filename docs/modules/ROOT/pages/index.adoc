@@ -383,7 +383,7 @@ quarkus.helm.dependencies.0.alias=database
 quarkus.helm.dependencies.0.name=postgresql
 quarkus.helm.dependencies.0.version=11.6.22
 quarkus.helm.dependencies.0.repository=https://charts.bitnami.com/bitnami
-quarkus.helm.dependencies.0.wait-for-service=chart-database
+quarkus.helm.dependencies.0.wait-for-service=chart-database:5432
 ----
 
 [IMPORTANT]
@@ -405,7 +405,7 @@ initContainers:
   - sh
 ----
 
-You can configure the image and the argument template to use with the properties `quarkus.helm.dependencies.XX.wait-for-service-image` and `quarkus.helm.dependencies.0.wait-for-service-command-template`.
+You can configure the image and the argument template to use with the properties `quarkus.helm.dependencies.XX.wait-for-service-image`, `quarkus.helm.dependencies.0.wait-for-service-port-command-template` and `quarkus.helm.dependencies.0.wait-for-service-only-command-template`.
 
 == Push to Helm Repositories
 

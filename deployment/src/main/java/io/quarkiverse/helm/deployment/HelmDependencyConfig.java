@@ -45,7 +45,8 @@ public class HelmDependencyConfig {
     Optional<List<String>> tags;
 
     /**
-     * Instruct the application to wait for the service with this name that should be installed as part of this Helm dependency.
+     * Instruct the application to wait for the service that should be installed as part of this Helm dependency.
+     * You can set only a service name or a combination of a service name plus the service port (service:port).
      */
     @ConfigItem
     Optional<String> waitForService;
@@ -53,12 +54,18 @@ public class HelmDependencyConfig {
     /**
      * If wait for service is set, it will use this image to configure the init-containers within the deployment resource.
      */
-    @ConfigItem(defaultValue = "alpine:3.16.2")
+    @ConfigItem(defaultValue = "busybox:1.34.1")
     String waitForServiceImage;
 
     /**
      * If wait for service is set, it will use this command to run the init-containers within the deployment resource.
      */
-    @ConfigItem(defaultValue = "for i in $(seq 1 200); do nc -z -w3 ::service-name && exit 0 || sleep 3; done; exit 1")
-    String waitForServiceCommandTemplate;
+    @ConfigItem(defaultValue = "for i in $(seq 1 200); do nc -z -w3 ::service-name ::service-port && exit 0; done; exit 1")
+    String waitForServicePortCommandTemplate;
+
+    /**
+     * If wait for service is set, it will use this command to run the init-containers within the deployment resource.
+     */
+    @ConfigItem(defaultValue = "until nslookup ::service-name; do echo waiting for service; sleep 2; done")
+    String waitForServiceOnlyCommandTemplate;
 }

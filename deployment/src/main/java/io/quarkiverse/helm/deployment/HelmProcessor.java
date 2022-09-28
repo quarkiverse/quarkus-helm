@@ -48,6 +48,8 @@ public class HelmProcessor {
     private static final String QUARKUS_OPENSHIFT_NAME = "quarkus.openshift.name";
     private static final String QUARKUS_CONTAINER_IMAGE_NAME = "quarkus.container-image.name";
     private static final String SERVICE_NAME_PLACEHOLDER = "::service-name";
+    private static final String SERVICE_PORT_PLACEHOLDER = "::service-port";
+    private static final String SERVICE_SPLIT = ":";
 
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void configureHelmDependencyOrder(Capabilities capabilities, ApplicationInfoBuildItem info, HelmChartConfig config,
@@ -58,14 +60,28 @@ public class HelmProcessor {
 
         for (HelmDependencyConfig dependency : config.dependencies.values()) {
             if (dependency.waitForService.isPresent()) {
-                String serviceName = dependency.waitForService.get();
-                decorators.produce(new DecoratorBuildItem(new AddInitContainerDecorator(getDeploymentName(capabilities, info),
-                        new ContainerBuilder()
-                                .withName("wait-for-" + dependency.name)
-                                .withImage(dependency.waitForServiceImage)
-                                .withCommand("-c", dependency.waitForServiceCommandTemplate
-                                        .replaceAll(SERVICE_NAME_PLACEHOLDER, serviceName))
-                                .build())));
+                ContainerBuilder container = new ContainerBuilder()
+                        .withName("wait-for-" + dependency.name)
+                        .withImage(dependency.waitForServiceImage)
+                        .withCommand("sh");
+
+                String service = dependency.waitForService.get();
+                if (service.contains(SERVICE_SPLIT)) {
+                    // it's service name and service port
+                    String[] parts = service.split(SERVICE_SPLIT);
+                    String serviceName = parts[0];
+                    String servicePort = parts[1];
+                    container.withArguments("-c", dependency.waitForServicePortCommandTemplate
+                            .replaceAll(SERVICE_NAME_PLACEHOLDER, serviceName)
+                            .replaceAll(SERVICE_PORT_PLACEHOLDER, servicePort));
+
+                } else {
+                    container.withArguments("-c", dependency.waitForServiceOnlyCommandTemplate
+                            .replaceAll(SERVICE_NAME_PLACEHOLDER, service));
+                }
+
+                decorators.produce(new DecoratorBuildItem(
+                        new AddInitContainerDecorator(getDeploymentName(capabilities, info), container.build())));
             }
         }
     }

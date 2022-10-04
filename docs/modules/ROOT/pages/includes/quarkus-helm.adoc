@@ -666,4 +666,36 @@ endif::add-copy-button-to-env-var[]
 --|string 
 |
 
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.expressions.-expressions-.path]]`link:#quarkus-helm_quarkus.helm.expressions.-expressions-.path[quarkus.helm.expressions."expressions".path]`
+
+[.description]
+--
+The YAMLPath path where to include the template within the resource.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_EXPRESSIONS__EXPRESSIONS__PATH+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_EXPRESSIONS__EXPRESSIONS__PATH+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|required icon:exclamation-circle[title=Configuration property is required]
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.expressions.-expressions-.expression]]`link:#quarkus-helm_quarkus.helm.expressions.-expressions-.expression[quarkus.helm.expressions."expressions".expression]`
+
+[.description]
+--
+The expression template to include.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_EXPRESSIONS__EXPRESSIONS__EXPRESSION+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_EXPRESSIONS__EXPRESSIONS__EXPRESSION+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|required icon:exclamation-circle[title=Configuration property is required]
+
 |===

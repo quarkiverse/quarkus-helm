@@ -15,6 +15,7 @@
     <module>helm-kubernetes-minimal</module>
     <module>helm-kubernetes-with-dependency</module>
     <module>helm-kubernetes-config</module>
+    <module>helm-kubernetes-with-templates</module>
     <module>helm-kubernetes-full</module>
     <module>helm-openshift-minimal</module>
   </modules>

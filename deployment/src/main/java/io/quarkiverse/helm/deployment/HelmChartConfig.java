@@ -109,6 +109,12 @@ public class HelmChartConfig {
     Map<String, ValueReferenceConfig> values;
 
     /**
+     * Helm expressions to be replaced into the generated resources.
+     */
+    @ConfigItem
+    Map<String, ExpressionConfig> expressions;
+
+    /**
      * The input folder in which to place the user-defined Helm files. These files will be used as inputs to populate the
      * generated Helm files.
      * At the moment, the only supported Helm file is the `values.yaml` file.

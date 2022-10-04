@@ -407,6 +407,66 @@ initContainers:
 
 You can configure the image and the argument template to use with the properties `quarkus.helm.dependencies.XX.wait-for-service-image`, `quarkus.helm.dependencies.0.wait-for-service-port-command-template` and `quarkus.helm.dependencies.0.wait-for-service-only-command-template`.
 
+== Helm Expressions Support
+
+The Quarkus Helm extension partially supports Helm extensions via https://helm.sh/docs/chart_template_guide/named_templates/[Helm templates] and https://helm.sh/docs/chart_template_guide/functions_and_pipelines/[functions]. You can make use of the templates and more complex functions using Helm expressions:
+
+[source,properties]
+----
+# Example of expressions
+quarkus.helm.expressions.0.path=(kind == Service).metadata.annotations.'app.quarkus.io/commit-id'
+quarkus.helm.expressions.0.expression={{ .Values.favorite.drink | default "tea" | quote }}
+
+# Example of multiline expression
+quarkus.helm.expressions.1.path=(kind == ConfigMap && metadata.name == my-configmap).data
+quarkus.helm.expressions.1.expression={{- range $key, $val := .Values.favorite }}\n\
+{{ indent 2 $key }}: {{ $val | quote }}\n\
+{{- end }}
+----
+
+The Quarkus Helm extension will replace the specified path with the provided expression.
+
+To provide your custom templates, you can add them into the folder `src/main/helm/templates/_helpers.tpl`, for example:
+
+[source]
+----
+{{/*
+Expand the name of the chart.
+*/}}
+{{- define "foo.name" -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 5 }}
+{{- end }}
+----
+
+And next, you can use this function using the Helm include primitive:
+
+[source,properties]
+----
+quarkus.helm.expressions.0.path=(kind == Service).metadata.annotations.'app.quarkus.io/build-timestamp'
+quarkus.helm.expressions.0.expression={{ include "foo.name" . }}
+----
+
+Moreover, you can specify your Helm templates to only a concrete kind resource, for example, only for Service resources. To do this, you need to add the resource `src/main/helm/templates/<kind>.yaml` (following the example `src/main/helm/templates/service.yaml`). For example, the following resource will add two template functions called "mychart.labels" and "mychart.not-used":
+
+[source]
+----
+{{- define "mychart.labels" }}
+    generator: helm
+{{- end }}
+{{- define "mychart.not-used" }}
+not:
+  used: !
+{{- end }}
+----
+
+And let's use the template "mychart.labels":
+
+[source,properties]
+----
+quarkus.helm.expressions.0.path=(kind == Service && metadata.name == quarkus-helm-integration-tests-kubernetes-with-templates).metadata.labels
+quarkus.helm.expressions.0.expression={{- template "mychart.labels" }}
+----
+
 == Push to Helm Repositories
 
 A https://helm.sh/docs/topics/chart_repository/[Helm chart repository] is a location where packaged charts can be used and shared across the community.

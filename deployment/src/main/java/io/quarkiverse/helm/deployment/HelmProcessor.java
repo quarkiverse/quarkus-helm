@@ -120,6 +120,7 @@ public class HelmProcessor {
             Map<String, String> generated = helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), project,
                     dekorateHelmChartConfig,
                     valueReferencesFromConfig,
+                    config.expressions.values(),
                     inputFolder,
                     chartOutputFolder,
                     filesInDeploymentTarget.getValue());

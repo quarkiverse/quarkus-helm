@@ -113,6 +113,56 @@ jobs:
       - name: Delete namespace "helmrepo" using Helm
         run: kubectl delete namespace helmrepo
 
+      - name: Verify Integration Test With Templates using Helm Repository
+        run: |
+          K8S_NAMESPACE=helmtemplates
+          KIND_REGISTRY_GROUP=local
+          VERSION=latest
+          kubectl create namespace $K8S_NAMESPACE
+
+          # create image plus push to a Helm repository
+          cd integration-tests/helm-kubernetes-with-templates
+          mvn clean package -Dquarkus.container-image.build=true \
+          -Dquarkus.container-image.push=true \
+          -Dquarkus.container-image.registry=$KIND_REGISTRY \
+          -Dquarkus.container-image.group=$KIND_REGISTRY_GROUP \
+          -Dquarkus.container-image.tag=$VERSION \
+          -Dquarkus.container-image.insecure=true \
+          -Dquarkus.helm.repository.push=true \
+          -Dquarkus.helm.repository.url=http://localhost:8080/api/charts \
+          -Dquarkus.helm.repository.type=CHARTMUSEUM
+
+          # Update Helm repository
+          helm repo update local
+
+          # And install application from the Helm repository
+          helm install --devel quarkus-with-templates local/my-chart-with-templates -n $K8S_NAMESPACE --set app.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-with-templates:$VERSION --set favorite.drink=coca
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-with-templates -n $K8S_NAMESPACE
+
+          if [ $(kubectl get configmap/my-configmap -n $K8S_NAMESPACE -o yaml | grep "drink: coca" | wc -l) -ne 1 ]
+          then
+            echo ConfigMap with wrong content
+            kubectl get configmap/my-configmap -n $K8S_NAMESPACE -o yaml
+            exit 1
+          fi
+
+          if [ $(kubectl get services/quarkus-helm-integration-tests-kubernetes-with-templates -n $K8S_NAMESPACE -o jsonpath='{.metadata.labels}' | grep \"generator\":\"helm\" | wc -l) -ne 1 ]
+          then
+            echo Service with wrong content
+            kubectl get services/quarkus-helm-integration-tests-kubernetes-with-templates -n $K8S_NAMESPACE -o yaml
+            exit 1
+          fi
+
+          if [ $(kubectl get services/quarkus-helm-integration-tests-kubernetes-with-templates -n $K8S_NAMESPACE -o jsonpath='{.metadata.annotations}' | grep \"app.quarkus.io/build-timestamp\":\"my-ch\" | wc -l) -ne 1 ]
+          then
+            echo Service with wrong content
+            kubectl get services/quarkus-helm-integration-tests-kubernetes-with-templates -n $K8S_NAMESPACE -o yaml
+            exit 1
+          fi
+
+      - name: Delete namespace "helmtemplates" using Helm
+        run: kubectl delete namespace helmtemplates
+
       - name: Verify Super Hero microservice from Super Hero workshop using Helm Repository
         run: |
           K8S_NAMESPACE=super-heroes
@@ -177,8 +227,8 @@ jobs:
             -Dquarkus.helm.repository.url=http://localhost:8080/api/charts \
             -Dquarkus.helm.repository.type=CHARTMUSEUM
 
-          # Install Helm repository
-          helm repo add local http://localhost:8080
+          # Update Helm repository
+          helm repo update local
 
           # And install application from the Helm repository
           helm install quarkus-rest-heroes local/rest-heroes -n $K8S_NAMESPACE --set app.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/rest-heroes:$VERSION

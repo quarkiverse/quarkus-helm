@@ -26,6 +26,7 @@ public class KubernetesFullIT {
         assertNotNull(getResourceAsStream("values.yaml"));
         assertNotNull(getResourceAsStream("LICENSE"));
         assertNotNull(getResourceAsStream("README.md"));
+        assertNotNull(getResourceAsStream("values.schema.json"));
         assertNotNull(getResourceAsStream("values.dev.yaml"));
         assertNotNull(getResourceAsStream("templates/deployment.yaml"));
         assertNotNull(getResourceAsStream("templates/NOTES.txt"));

@@ -85,8 +85,9 @@ public class QuarkusHelmWriterSessionListener {
     private static final String HELM_HELPER_PREFIX = "_";
     private static final boolean APPEND = true;
     private static final String SEPARATOR_TOKEN = ":LINE_SEPARATOR:";
-    private static final String START_EXPRESSION_TOKEN = "\":START:";
-    private static final String END_EXPRESSION_TOKEN = ":END:\"";
+    private static final String SEPARATOR_QUOTES = ":DOUBLE_QUOTES";
+    private static final String START_EXPRESSION_TOKEN = ":START:";
+    private static final String END_EXPRESSION_TOKEN = ":END:";
     private static final Logger LOGGER = LoggerFactory.getLogger();
 
     /**
@@ -374,10 +375,10 @@ public class QuarkusHelmWriterSessionListener {
             adaptedString = adaptedString
                     .replaceAll(Pattern.quote("\"" + START_TAG), START_TAG)
                     .replaceAll(Pattern.quote(END_TAG + "\""), END_TAG)
-                    .replaceAll(Pattern.quote("\\\""), "\"")
+                    .replaceAll("\"" + START_EXPRESSION_TOKEN, EMPTY)
+                    .replaceAll(END_EXPRESSION_TOKEN + "\"", EMPTY)
+                    .replaceAll(SEPARATOR_QUOTES, "\"")
                     .replaceAll(SEPARATOR_TOKEN, System.lineSeparator())
-                    .replaceAll(Pattern.quote("\"" + START_EXPRESSION_TOKEN), EMPTY)
-                    .replaceAll(Pattern.quote(END_EXPRESSION_TOKEN + "\""), EMPTY)
                     // replace randomly escape characters that is entered by Jackson readTree method:
                     .replaceAll("\\\\\\n(\\s)*\\\\", EMPTY);
 
@@ -528,8 +529,9 @@ public class QuarkusHelmWriterSessionListener {
 
     private Object readAndSet(HelmExpressionParser parser, String path, String expression) {
         return parser.readAndSet(path, START_EXPRESSION_TOKEN +
-                expression.replaceAll(Pattern.quote(System.lineSeparator()), SEPARATOR_TOKEN) +
-                END_EXPRESSION_TOKEN);
+                expression.replaceAll(Pattern.quote(System.lineSeparator()), SEPARATOR_TOKEN)
+                        .replaceAll(Pattern.quote("\""), SEPARATOR_QUOTES)
+                + END_EXPRESSION_TOKEN);
     }
 
     private static Map<String, Object> toMultiValueMap(Map<String, Object> map) {

@@ -202,6 +202,20 @@ endif::add-copy-button-to-env-var[]
 |`tar.gz`
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.tar-file-classifier]]`link:#quarkus-helm_quarkus.helm.tar-file-classifier[quarkus.helm.tar-file-classifier]`
+
+[.description]
+--
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_TAR_FILE_CLASSIFIER+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_TAR_FILE_CLASSIFIER+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.create-tar-file]]`link:#quarkus-helm_quarkus.helm.create-tar-file[quarkus.helm.create-tar-file]`
 
 [.description]

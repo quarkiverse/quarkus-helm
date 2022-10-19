@@ -24,7 +24,7 @@ public class KubernetesWithDependencyIT {
     @Test
     public void shouldHelmManifestsBeGenerated() throws IOException {
         assertTrue(Stream.of(Paths.get("target", "helm", "kubernetes").toFile().listFiles())
-                .anyMatch(f -> f.getName().startsWith(CHART_NAME) && f.getName().endsWith(".tar.gz")));
+                .anyMatch(f -> f.getName().startsWith(CHART_NAME) && f.getName().endsWith("-helm.tar.gz")));
 
         assertNotNull(getResourceAsStream("charts/postgresql-11.6.22.tgz"));
     }

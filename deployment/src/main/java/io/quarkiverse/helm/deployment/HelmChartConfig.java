@@ -85,6 +85,11 @@ public class HelmChartConfig {
     String extension;
 
     /**
+     * Classifier to be appended into the generated Helm tarball file.
+     */
+    Optional<String> tarFileClassifier;
+
+    /**
      * If Helm tar file is generated.
      */
     @ConfigItem(defaultValue = "false")

@@ -121,6 +121,7 @@ public class HelmProcessor {
                     dekorateHelmChartConfig,
                     valueReferencesFromConfig,
                     config.expressions.values(),
+                    config.tarFileClassifier,
                     inputFolder,
                     chartOutputFolder,
                     filesInDeploymentTarget.getValue());

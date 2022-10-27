@@ -1,0 +1,35 @@
+annotations:
+  artifacthub.io/links: |
+    - name: Chart Source
+      url: https://github.com/prometheus-community/helm-charts
+    - name: Upstream Project
+      url: https://github.com/prometheus-operator/kube-prometheus
+  artifacthub.io/operator: "true"
+  catalog.cattle.io/auto-install: monitoring-crd=match
+name: it's replaced!
+apiVersion: v2
+appVersion: 0.50.0
+dependencies:
+  - condition: grafana.enabled
+    name: grafana
+    repository: file://./charts/grafana
+  - condition: hardenedKubelet.enabled
+    name: hardenedKubelet
+    repository: file://./charts/hardenedKubelet
+description: Chart Description
+home: https://github.com/prometheus-operator/kube-prometheus
+icon: https://raw.githubusercontent.com/prometheus/prometheus.github.io/master/assets/prometheus_logo-cb55bb5c346.png
+keywords:
+  - operator
+  - prometheus
+  - kube-prometheus
+  - monitoring
+kubeVersion: '>=1.16.0-0'
+maintainers:
+  - name: Sgitario
+    email: josecarvajalhilario@gmail.com
+sources:
+  - https://github.com/prometheus-community/helm-charts
+  - https://github.com/prometheus-operator/kube-prometheus
+type: application
+version: 101.0.0+up19.0.3

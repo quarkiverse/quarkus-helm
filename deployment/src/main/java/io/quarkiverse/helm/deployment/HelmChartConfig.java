@@ -125,6 +125,9 @@ public class HelmChartConfig {
      * At the moment, the supported Helm files are: README.md, LICENSE, values.schema.json, app-readme.md or app-README.md,
      * questions.yml or questions.yaml, and requirements.yml or requirements.yaml.
      *
+     * Moreover, you can provide a custom `values.yaml` or `Chart.yaml` and the content will be merged with the auto-generated
+     * configuration.
+     *
      * It also supports absolute paths.
      *
      * By default, it will use the folder "src/main/helm".

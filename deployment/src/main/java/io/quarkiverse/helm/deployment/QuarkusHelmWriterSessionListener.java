@@ -68,9 +68,8 @@ public class QuarkusHelmWriterSessionListener {
     private static final String TEMPLATES = "templates";
     private static final String CHARTS = "charts";
     private static final String NOTES = "NOTES.txt";
-    private static final String README = "README.md";
-    private static final String LICENSE = "LICENSE";
-    private static final String VALUES_SCHEMA_JSON = "values.schema.json";
+    private static final List<String> ADDITIONAL_CHART_FILES = List.of("README.md", "LICENSE", "values.schema.json",
+            "app-readme.md", "questions.yml", "questions.yaml", "requirements.yml", "requirements.yaml");
     private static final String KIND = "kind";
     private static final String START_TAG = "{{";
     private static final String END_TAG = "}}";
@@ -117,9 +116,7 @@ public class QuarkusHelmWriterSessionListener {
                 // To follow Helm file structure standards:
                 artifacts.putAll(createEmptyChartFolder(helmConfig, outputDir));
                 artifacts.putAll(addNotesIntoTemplatesFolder(helmConfig, inputDir, outputDir));
-                artifacts.putAll(addResourceIfExists(helmConfig, LICENSE, inputDir, outputDir));
-                artifacts.putAll(addResourceIfExists(helmConfig, README, inputDir, outputDir));
-                artifacts.putAll(addResourceIfExists(helmConfig, VALUES_SCHEMA_JSON, inputDir, outputDir));
+                artifacts.putAll(addAdditionalResources(helmConfig, inputDir, outputDir));
 
                 // Final step: packaging
                 if (helmConfig.isCreateTarFile()) {
@@ -129,6 +126,24 @@ public class QuarkusHelmWriterSessionListener {
 
             } catch (IOException e) {
                 throw new RuntimeException("Error writing resources", e);
+            }
+        }
+
+        return artifacts;
+    }
+
+    private Map<String, String> addAdditionalResources(HelmChartConfig helmConfig, Path inputDir, Path outputDir)
+            throws IOException {
+        if (inputDir == null || !inputDir.toFile().exists()) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, String> artifacts = new HashMap<>();
+        for (File resource : inputDir.toFile().listFiles()) {
+            if (ADDITIONAL_CHART_FILES.stream().anyMatch(resource.getName()::equalsIgnoreCase)) {
+                Path chartOutputDir = getChartOutputDir(helmConfig, outputDir).resolve(resource.getName());
+                Files.copy(new FileInputStream(resource), chartOutputDir);
+                artifacts.put(chartOutputDir.toString(), EMPTY);
             }
         }
 
@@ -155,18 +170,6 @@ public class QuarkusHelmWriterSessionListener {
         if (Strings.isNullOrEmpty(helmConfig.getName())) {
             throw new RuntimeException("Helm Chart name is required!");
         }
-    }
-
-    private Map<String, String> addResourceIfExists(HelmChartConfig helmConfig, String resourceName, Path inputDir,
-            Path outputDir) throws IOException {
-        File file = inputDir.resolve(resourceName).toFile();
-        if (!file.exists()) {
-            return Collections.emptyMap();
-        }
-
-        Path chartOutputDir = getChartOutputDir(helmConfig, outputDir).resolve(resourceName);
-        Files.copy(new FileInputStream(file), chartOutputDir);
-        return Collections.singletonMap(chartOutputDir.toString(), EMPTY);
     }
 
     private Map<String, String> addNotesIntoTemplatesFolder(HelmChartConfig helmConfig, Path inputDir, Path outputDir)

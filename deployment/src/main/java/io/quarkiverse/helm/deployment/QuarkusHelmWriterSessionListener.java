@@ -21,7 +21,6 @@ import static io.dekorate.helm.util.HelmTarArchiver.createTarBall;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -109,7 +108,7 @@ public class QuarkusHelmWriterSessionListener {
                 Map<String, Map<String, Object>> valuesByProfile = new HashMap<>();
                 artifacts.putAll(processTemplates(helmConfig, expressionConfigs, inputDir, outputDir, generatedFiles,
                         valuesReferences, prodValues, valuesByProfile));
-                artifacts.putAll(createChartYaml(helmConfig, project, outputDir));
+                artifacts.putAll(createChartYaml(helmConfig, project, inputDir, outputDir));
                 artifacts.putAll(
                         createValuesYaml(helmConfig, valuesReferences, inputDir, outputDir, prodValues, valuesByProfile));
 
@@ -265,23 +264,23 @@ public class QuarkusHelmWriterSessionListener {
             }
 
             // Create the values.<profile>.yaml file
-            artifacts.putAll(writeFileAsYaml(mergeValues(inputDir, values),
+            artifacts.putAll(writeFileAsYaml(mergeWithFileIfExists(inputDir, VALUES + YAML, values),
                     getChartOutputDir(helmConfig, outputDir).resolve(VALUES + "." + profile + YAML)));
         }
 
         // Next, we process the prod profile
-        artifacts.putAll(writeFileAsYaml(mergeValues(inputDir, prodValues),
+        artifacts.putAll(writeFileAsYaml(mergeWithFileIfExists(inputDir, VALUES + YAML, prodValues),
                 getChartOutputDir(helmConfig, outputDir).resolve(VALUES + YAML)));
 
         return artifacts;
     }
 
-    private Map<String, Object> mergeValues(Path inputDir, Map<String, Object> values) throws FileNotFoundException {
-        Map<String, Object> valuesAsMultiValueMap = toMultiValueMap(values);
-        File templateValuesFile = inputDir.resolve(VALUES + YAML).toFile();
+    private Map<String, Object> mergeWithFileIfExists(Path inputDir, String file, Map<String, Object> data) {
+        Map<String, Object> valuesAsMultiValueMap = toMultiValueMap(data);
+        File templateValuesFile = inputDir.resolve(file).toFile();
         if (templateValuesFile.exists()) {
             Map<String, Object> result = new HashMap<>();
-            Map<String, Object> yaml = Serialization.unmarshal(new FileInputStream(templateValuesFile),
+            Map<String, Object> yaml = Serialization.unmarshal(templateValuesFile,
                     new TypeReference<Map<String, Object>>() {
                     });
             result.putAll(yaml);
@@ -480,7 +479,7 @@ public class QuarkusHelmWriterSessionListener {
         return allResources;
     }
 
-    private Map<String, String> createChartYaml(HelmChartConfig helmConfig, Project project, Path outputDir)
+    private Map<String, String> createChartYaml(HelmChartConfig helmConfig, Project project, Path inputDir, Path outputDir)
             throws IOException {
         final Chart chart = new Chart();
         chart.setApiVersion(helmConfig.getApiVersion());
@@ -504,7 +503,14 @@ public class QuarkusHelmWriterSessionListener {
                 .collect(Collectors.toList()));
 
         Path yml = getChartOutputDir(helmConfig, outputDir).resolve(CHART_FILENAME).normalize();
-        return writeFileAsYaml(chart, yml);
+        File userChartFile = inputDir.resolve(CHART_FILENAME).toFile();
+        Object chartContent = chart;
+        if (userChartFile.exists()) {
+            chartContent = mergeWithFileIfExists(inputDir, CHART_FILENAME,
+                    Serialization.yamlMapper().readValue(Serialization.asYaml(chart), Map.class));
+        }
+
+        return writeFileAsYaml(chartContent, yml);
     }
 
     private Map<String, String> writeFileAsYaml(Object data, Path file) throws IOException {

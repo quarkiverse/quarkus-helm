@@ -35,6 +35,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -47,16 +48,17 @@ import io.dekorate.LoggerFactory;
 import io.dekorate.Session;
 import io.dekorate.WithConfigReferences;
 import io.dekorate.helm.config.HelmChartConfig;
-import io.dekorate.helm.listener.HelmWriterSessionListener;
+import io.dekorate.helm.config.HelmExpression;
 import io.dekorate.helm.model.Chart;
 import io.dekorate.helm.model.HelmDependency;
 import io.dekorate.helm.model.Maintainer;
-import io.dekorate.helm.util.HelmExpressionParser;
 import io.dekorate.project.Project;
 import io.dekorate.utils.Exec;
 import io.dekorate.utils.Maps;
 import io.dekorate.utils.Serialization;
 import io.dekorate.utils.Strings;
+import io.github.yamlpath.YamlExpressionParser;
+import io.github.yamlpath.YamlPath;
 
 public class QuarkusHelmWriterSessionListener {
 
@@ -91,23 +93,21 @@ public class QuarkusHelmWriterSessionListener {
      * @return the list of the Helm generated files.
      */
     public Map<String, String> writeHelmFiles(Session session, Project project,
-            HelmChartConfig helmConfig,
-            List<ConfigReference> valuesReferencesFromConfig,
-            Collection<ExpressionConfig> expressionConfigs,
-            Optional<String> tarFileClassifier,
+            HelmChartConfig helmConfig, List<ConfigReference> configReferences,
             Path inputDir,
-            Path outputDir, Collection<File> generatedFiles) {
+            Path outputDir,
+            Collection<File> generatedFiles) {
         Map<String, String> artifacts = new HashMap<>();
         if (helmConfig.isEnabled()) {
             validateHelmConfig(helmConfig);
-            List<ConfigReference> valuesReferences = mergeValuesReferencesFromDecorators(valuesReferencesFromConfig, session);
+            List<ConfigReference> valuesReferences = mergeValuesReferencesFromDecorators(configReferences, session);
 
             try {
                 LOGGER.info(String.format("Creating Helm Chart \"%s\"", helmConfig.getName()));
                 Map<String, Object> prodValues = new HashMap<>();
                 Map<String, Map<String, Object>> valuesByProfile = new HashMap<>();
-                artifacts.putAll(processTemplates(helmConfig, expressionConfigs, inputDir, outputDir, generatedFiles,
-                        valuesReferences, prodValues, valuesByProfile));
+                artifacts.putAll(processTemplates(helmConfig, inputDir, outputDir, generatedFiles, valuesReferences, prodValues,
+                        valuesByProfile));
                 artifacts.putAll(createChartYaml(helmConfig, project, inputDir, outputDir));
                 artifacts.putAll(
                         createValuesYaml(helmConfig, valuesReferences, inputDir, outputDir, prodValues, valuesByProfile));
@@ -120,7 +120,7 @@ public class QuarkusHelmWriterSessionListener {
                 // Final step: packaging
                 if (helmConfig.isCreateTarFile()) {
                     fetchDependencies(helmConfig, outputDir);
-                    artifacts.putAll(createTarball(helmConfig, project, outputDir, artifacts, tarFileClassifier));
+                    artifacts.putAll(createTarball(helmConfig, project, outputDir, artifacts));
                 }
 
             } catch (IOException e) {
@@ -199,7 +199,7 @@ public class QuarkusHelmWriterSessionListener {
         InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(notes);
         if (is == null) {
             // if not found, try to find it in the current classpath.
-            is = HelmWriterSessionListener.class.getResourceAsStream(notes);
+            is = io.dekorate.helm.listener.HelmWriterSessionListener.class.getResourceAsStream(notes);
         }
 
         return is;
@@ -229,12 +229,12 @@ public class QuarkusHelmWriterSessionListener {
         return valueReference.getPaths() != null && valueReference.getPaths().length > 0;
     }
 
-    private Map<String, String> createValuesYaml(HelmChartConfig helmConfig, List<ConfigReference> valuesReferences,
+    private Map<String, String> createValuesYaml(HelmChartConfig helmConfig, List<ConfigReference> configReferences,
             Path inputDir, Path outputDir, Map<String, Object> prodValues, Map<String, Map<String, Object>> valuesByProfile)
             throws IOException {
 
         // Populate user prod values without expression from properties
-        for (ConfigReference value : valuesReferences) {
+        for (ConfigReference value : configReferences) {
             if (!valueHasPath(value)) {
                 if (value.getValue() == null) {
                     throw new RuntimeException("The value mapping for " + value.getProperty() + " does not have "
@@ -307,13 +307,13 @@ public class QuarkusHelmWriterSessionListener {
                 .anyMatch(d -> Strings.equals(d, name));
     }
 
-    public Map<String, String> createTarball(HelmChartConfig helmConfig, Project project, Path outputDir,
-            Map<String, String> artifacts, Optional<String> tarFileClassifier) throws IOException {
+    private Map<String, String> createTarball(HelmChartConfig helmConfig, Project project, Path outputDir,
+            Map<String, String> artifacts) throws IOException {
 
         File tarballFile = outputDir.resolve(String.format("%s-%s%s.%s",
                 helmConfig.getName(),
                 getVersion(helmConfig, project),
-                tarFileClassifier.map(s -> "-" + s).orElse(EMPTY),
+                Strings.isNullOrEmpty(helmConfig.getTarFileClassifier()) ? EMPTY : "-" + helmConfig.getTarFileClassifier(),
                 helmConfig.getExtension()))
                 .toFile();
 
@@ -345,24 +345,24 @@ public class QuarkusHelmWriterSessionListener {
         return helmConfig.getVersion();
     }
 
-    private Map<String, String> processTemplates(HelmChartConfig helmConfig, Collection<ExpressionConfig> expressionConfigs,
-            Path inputDir, Path outputDir,
+    private Map<String, String> processTemplates(HelmChartConfig helmConfig, Path inputDir, Path outputDir,
             Collection<File> generatedFiles, List<ConfigReference> valuesReferences, Map<String, Object> prodValues,
             Map<String, Map<String, Object>> valuesByProfile) throws IOException {
+
         Map<String, String> templates = new HashMap<>();
         Path templatesDir = getChartOutputDir(helmConfig, outputDir).resolve(TEMPLATES);
         Files.createDirectories(templatesDir);
         List<Map<Object, Object>> resources = replaceValuesInYamls(helmConfig, generatedFiles, valuesReferences, prodValues,
                 valuesByProfile);
-
         Map<String, String> functionsByResource = processUserDefinedTemplates(inputDir, templates, templatesDir);
-
         // Split yamls in separated files by kind
         for (Map<Object, Object> resource : resources) {
             // Add user defined expressions
-            HelmExpressionParser parser = new HelmExpressionParser(Arrays.asList(resource));
-            for (ExpressionConfig expressionConfig : expressionConfigs) {
-                readAndSet(parser, expressionConfig.path, expressionConfig.expression);
+            if (helmConfig.getExpressions() != null) {
+                YamlExpressionParser parser = new YamlExpressionParser(Arrays.asList(resource));
+                for (HelmExpression expressionConfig : helmConfig.getExpressions()) {
+                    readAndSet(parser, expressionConfig.getPath(), expressionConfig.getExpression());
+                }
             }
 
             String kind = (String) resource.get(KIND);
@@ -438,15 +438,24 @@ public class QuarkusHelmWriterSessionListener {
                 continue;
             }
 
-            // Yaml as map of resources
-            List<Map<Object, Object>> resources = Serialization.unmarshalAsListOfMaps(generatedFile.toPath());
-
             // Read helm expression parsers
-            HelmExpressionParser parser = new HelmExpressionParser(resources);
+            YamlExpressionParser parser = YamlPath.from(new FileInputStream(generatedFile));
+            // Seen lookup by default values.yaml file.
+            Map<String, Object> seen = new HashMap<>();
 
             for (ConfigReference valueReference : valuesReferences) {
                 String valueReferenceProperty = Strings
                         .kebabToCamelCase(helmConfig.getValuesRootAlias() + "." + valueReference.getProperty());
+
+                if (seen.containsKey(valueReference.getProperty())) {
+                    if (Strings.isNotNullOrEmpty(valueReference.getProfile())) {
+                        Object value = Optional.ofNullable(valueReference.getValue())
+                                .orElse(seen.get(valueReference.getProperty()));
+                        getValues(prodValues, valuesByProfile, valueReference).put(valueReferenceProperty, value);
+                    }
+
+                    continue;
+                }
 
                 // Check whether path exists
                 for (String path : valueReference.getPaths()) {
@@ -458,31 +467,36 @@ public class QuarkusHelmWriterSessionListener {
 
                     Object value = Optional.ofNullable(valueReference.getValue()).orElse(found);
                     if (value != null) {
-                        String valueProfile = valueReference.getProfile();
-                        Map<String, Object> values = prodValues;
-                        if (Strings.isNotNullOrEmpty(valueProfile)) {
-                            values = valuesByProfile.get(valueProfile);
-                            if (values == null) {
-                                values = new HashMap<>();
-                                valuesByProfile.put(valueProfile, values);
-                            }
-                        }
-
-                        values.put(valueReferenceProperty, value);
+                        seen.put(valueReference.getProperty(), value);
+                        getValues(prodValues, valuesByProfile, valueReference).put(valueReferenceProperty, value);
                     }
                 }
             }
 
-            allResources.addAll(resources);
+            allResources.addAll(parser.getResources());
         }
 
         return allResources;
     }
 
+    private Map<String, Object> getValues(Map<String, Object> prodValues, Map<String, Map<String, Object>> valuesByProfile,
+            ConfigReference valueReference) {
+        String valueProfile = valueReference.getProfile();
+        Map<String, Object> values = prodValues;
+        if (Strings.isNotNullOrEmpty(valueProfile)) {
+            values = valuesByProfile.get(valueProfile);
+            if (values == null) {
+                values = new HashMap<>();
+                valuesByProfile.put(valueProfile, values);
+            }
+        }
+
+        return values;
+    }
+
     private Map<String, String> createChartYaml(HelmChartConfig helmConfig, Project project, Path inputDir, Path outputDir)
             throws IOException {
         final Chart chart = new Chart();
-        chart.setApiVersion(helmConfig.getApiVersion());
         chart.setName(helmConfig.getName());
         chart.setVersion(getVersion(helmConfig, project));
         chart.setDescription(helmConfig.getDescription());
@@ -492,6 +506,7 @@ public class QuarkusHelmWriterSessionListener {
                 .map(m -> new Maintainer(m.getName(), m.getEmail(), m.getUrl()))
                 .collect(Collectors.toList()));
         chart.setIcon(helmConfig.getIcon());
+        chart.setApiVersion(helmConfig.getApiVersion());
         chart.setKeywords(Arrays.asList(helmConfig.getKeywords()));
         chart.setDependencies(Arrays.stream(helmConfig.getDependencies())
                 .map(d -> new HelmDependency(d.getName(),
@@ -529,11 +544,12 @@ public class QuarkusHelmWriterSessionListener {
         return outputDir.resolve(helmConfig.getName());
     }
 
-    private Object readAndSet(HelmExpressionParser parser, String path, String expression) {
-        return parser.readAndSet(path, START_EXPRESSION_TOKEN +
+    private static Object readAndSet(YamlExpressionParser parser, String path, String expression) {
+        Set<Object> found = parser.readAndReplace(path, START_EXPRESSION_TOKEN +
                 expression.replaceAll(Pattern.quote(System.lineSeparator()), SEPARATOR_TOKEN)
                         .replaceAll(Pattern.quote("\""), SEPARATOR_QUOTES)
                 + END_EXPRESSION_TOKEN);
+        return found.stream().findFirst().orElse(null);
     }
 
     private static Map<String, Object> toMultiValueMap(Map<String, Object> map) {

@@ -120,8 +120,6 @@ public class HelmProcessor {
             Map<String, String> generated = helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), project,
                     dekorateHelmChartConfig,
                     valueReferencesFromConfig,
-                    config.expressions.values(),
-                    config.tarFileClassifier,
                     inputFolder,
                     chartOutputFolder,
                     filesInDeploymentTarget.getValue());
@@ -272,6 +270,8 @@ public class HelmProcessor {
                         .withCondition(defaultString(d.condition))
                         .withTags(defaultArray(d.tags))
                         .endDependency());
+        config.tarFileClassifier.ifPresent(builder::withTarFileClassifier);
+        config.expressions.values().forEach(e -> builder.addNewExpression(e.path, e.expression));
 
         return builder.build();
     }

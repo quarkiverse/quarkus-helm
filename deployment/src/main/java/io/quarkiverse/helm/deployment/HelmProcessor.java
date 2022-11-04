@@ -136,7 +136,7 @@ public class HelmProcessor {
         }
     }
 
-    @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
+    @BuildStep
     void disableDefaultHelmListener(BuildProducer<ConfiguratorBuildItem> helmConfiguration) {
         helmConfiguration.produce(new ConfiguratorBuildItem(new DisableDefaultHelmListener()));
     }

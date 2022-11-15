@@ -374,7 +374,7 @@ ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_MAINTAINERS__MAINTAINERS__NAME+++`
 endif::add-copy-button-to-env-var[]
 --|string 
-|required icon:exclamation-circle[title=Configuration property is required]
+|
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.maintainers.-maintainers-.email]]`link:#quarkus-helm_quarkus.helm.maintainers.-maintainers-.email[quarkus.helm.maintainers."maintainers".email]`
@@ -422,7 +422,7 @@ ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__NAME+++`
 endif::add-copy-button-to-env-var[]
 --|string 
-|required icon:exclamation-circle[title=Configuration property is required]
+|
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.version]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.version[quarkus.helm.dependencies."dependencies".version]`
@@ -582,7 +582,7 @@ ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__PROPERTY+++`
 endif::add-copy-button-to-env-var[]
 --|string 
-|required icon:exclamation-circle[title=Configuration property is required]
+|
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.paths]]`link:#quarkus-helm_quarkus.helm.values.-values-.paths[quarkus.helm.values."values".paths]`

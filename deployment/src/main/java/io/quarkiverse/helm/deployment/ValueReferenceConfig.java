@@ -12,7 +12,7 @@ public class ValueReferenceConfig {
      * The name of the property that will be present in the Helm values file.
      */
     @ConfigItem
-    String property;
+    Optional<String> property;
 
     /**
      * A comma-separated list of YAMLPath expressions to map the Dekorate auto-generated properties to the final

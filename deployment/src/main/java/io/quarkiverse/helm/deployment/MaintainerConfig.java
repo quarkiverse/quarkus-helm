@@ -11,7 +11,7 @@ public class MaintainerConfig {
      * Name of the maintainer.
      */
     @ConfigItem
-    String name;
+    Optional<String> name;
 
     /**
      * Email of the maintainer.

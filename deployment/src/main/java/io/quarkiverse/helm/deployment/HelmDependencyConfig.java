@@ -12,7 +12,7 @@ public class HelmDependencyConfig {
      * Name of the dependency.
      */
     @ConfigItem
-    String name;
+    Optional<String> name;
 
     /**
      * Version of the dependency.

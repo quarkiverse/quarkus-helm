@@ -237,8 +237,7 @@ quarkus.helm.name=my-chart
 quarkus.helm.description=Description of my Chart
 
 # Map all the metadata name resources
-quarkus.helm.values[0].property=name
-quarkus.helm.values[0].paths=metadata.name
+quarkus.helm.values.name.paths=metadata.name
 ----
 
 The resulting `values.yaml` file will look like as:
@@ -257,10 +256,9 @@ quarkus.helm.name=my-chart
 quarkus.helm.description=Description of my Chart
 
 # Map all the metadata name resources
-quarkus.helm.values[0].property=name
-quarkus.helm.values[0].paths=metadata.name
+quarkus.helm.values.name.paths=metadata.name
 ## Overwrite value:
-quarkus.helm.values[0].value=this-is-another-name
+quarkus.helm.values.name.value=this-is-another-name
 ----
 
 And the `values.yaml` file will now contain:
@@ -303,9 +301,8 @@ quarkus.helm.name=my-chart
 quarkus.helm.description=Description of my Chart
 
 # Map all the metadata name resources
-quarkus.helm.values[0].property=name
 ## Comma separated list of YAMLPath expressions:
-quarkus.helm.values[0].paths=metadata.name,(kind == Ingress).spec.rules.http.paths.backend.service.name
+quarkus.helm.values.name.paths=metadata.name,(kind == Ingress).spec.rules.http.paths.backend.service.name
 ----
 
 Now, the extension will first map the expression `metadata.name` and then the expression `(kind == Ingress).spec.rules.http.paths.backend.service.name` (this expression only applies to `Ingress` resources).
@@ -347,10 +344,9 @@ Let's now see how you can add this configuration using the Quarkus Helm extensio
 `application.properties`:
 [source,properties]
 ----
-quarkus.helm.dependencies.0.alias=database
-quarkus.helm.dependencies.0.name=postgresql
-quarkus.helm.dependencies.0.version=11.6.22
-quarkus.helm.dependencies.0.repository=https://charts.bitnami.com/bitnami
+quarkus.helm.dependencies.postgresql.alias=database
+quarkus.helm.dependencies.postgresql.version=11.6.22
+quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
 
 quarkus.helm.values.0.property=database.global.postgresql.auth.postgresPassword
 quarkus.helm.values.0.value=secret
@@ -383,11 +379,10 @@ The good news is that you can force the dependency installation order using the 
 
 [source,properties]
 ----
-quarkus.helm.dependencies.0.alias=database
-quarkus.helm.dependencies.0.name=postgresql
-quarkus.helm.dependencies.0.version=11.6.22
-quarkus.helm.dependencies.0.repository=https://charts.bitnami.com/bitnami
-quarkus.helm.dependencies.0.wait-for-service=chart-database:5432
+quarkus.helm.dependencies.postgresql.alias=database
+quarkus.helm.dependencies.postgresql.version=11.6.22
+quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
+quarkus.helm.dependencies.postgresql.wait-for-service=chart-database:5432
 ----
 
 [IMPORTANT]
@@ -536,10 +531,9 @@ quarkus.kubernetes.ingress.host=my-host
 # Helm Chart
 quarkus.helm.name=my-chart
 ## Overwrite the value of `dekorate.kubernetes.host` to `values-<profile-name>.yaml`:
-quarkus.helm.values[0].property=host
-quarkus.helm.values[0].paths=(kind == Ingress).spec.rules.host
-quarkus.helm.values[0].value=my-test-host
-quarkus.helm.values[0].profile=test
+quarkus.helm.values.host.paths=(kind == Ingress).spec.rules.host
+quarkus.helm.values.host.value=my-test-host
+quarkus.helm.values.host.profile=test
 ----
 
 This configuration will generate the `values.yaml` using the value set at the property `quarkus.kubernetes.ingress.host`:

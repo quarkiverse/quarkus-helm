@@ -199,18 +199,14 @@ jobs:
           quarkus.datasource.password=superman
           quarkus.kubernetes.deployment-target=kubernetes
 
-          quarkus.helm.dependencies.0.alias=db
-          quarkus.helm.dependencies.0.name=postgresql
-          quarkus.helm.dependencies.0.version=11.9.1
-          quarkus.helm.dependencies.0.repository=https://charts.bitnami.com/bitnami
-          quarkus.helm.dependencies.0.wait-for-service=quarkus-rest-heroes-db:5432
+          quarkus.helm.dependencies.postgresql.alias=db
+          quarkus.helm.dependencies.postgresql.version=11.9.1
+          quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
+          quarkus.helm.dependencies.postgresql.wait-for-service=quarkus-rest-heroes-db:5432
 
-          quarkus.helm.values.0.property=db.auth.database
-          quarkus.helm.values.0.value=heroes_database
-          quarkus.helm.values.1.property=db.auth.username
-          quarkus.helm.values.1.value=superman
-          quarkus.helm.values.2.property=db.auth.password
-          quarkus.helm.values.2.value=superman
+          quarkus.helm.values."db.auth.database".value=heroes_database
+          quarkus.helm.values."db.auth.username".value=superman
+          quarkus.helm.values."db.auth.password".value=superman
           EOF
 
           # generate helm manifests
@@ -309,34 +305,22 @@ jobs:
           quarkus.datasource.password=superman
           quarkus.kubernetes.deployment-target=openshift
 
-          quarkus.helm.dependencies.0.alias=db
-          quarkus.helm.dependencies.0.name=postgresql
-          quarkus.helm.dependencies.0.version=11.9.1
-          quarkus.helm.dependencies.0.repository=https://charts.bitnami.com/bitnami
-          quarkus.helm.dependencies.0.wait-for-service=quarkus-rest-heroes-db:5432
+          quarkus.helm.dependencies.postgresql.alias=db
+          quarkus.helm.dependencies.postgresql.version=11.9.1
+          quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
+          quarkus.helm.dependencies.postgresql.wait-for-service=quarkus-rest-heroes-db:5432
 
-          quarkus.helm.values.0.property=db.auth.database
-          quarkus.helm.values.0.value=heroes_database
-          quarkus.helm.values.1.property=db.auth.username
-          quarkus.helm.values.1.value=superman
-          quarkus.helm.values.2.property=db.auth.password
-          quarkus.helm.values.2.value=superman
-          quarkus.helm.values.3.property=db.volumePermissions.enabled
-          quarkus.helm.values.3.value-as-bool=false
-          quarkus.helm.values.4.property=db.volumePermissions.securityContext.runAsUser
-          quarkus.helm.values.4.value=auto
-          quarkus.helm.values.5.property=db.securityContext.enabled
-          quarkus.helm.values.5.value-as-bool=false
-          quarkus.helm.values.6.property=db.shmVolume.chmod.enabled
-          quarkus.helm.values.6.value-as-bool=false
-          quarkus.helm.values.7.property=db.primary.containerSecurityContext.enabled
-          quarkus.helm.values.7.value-as-bool=false
-          quarkus.helm.values.8.property=db.primary.containerSecurityContext.runAsUser
-          quarkus.helm.values.8.value=auto
-          quarkus.helm.values.9.property=db.primary.podSecurityContext.enabled
-          quarkus.helm.values.9.value-as-bool=false
-          quarkus.helm.values.10.property=db.primary.podSecurityContext.fsGroup
-          quarkus.helm.values.10.value=auto
+          quarkus.helm.values."db.auth.database".value=heroes_database
+          quarkus.helm.values."db.auth.username".value=superman
+          quarkus.helm.values."db.auth.password".value=superman
+          quarkus.helm.values."db.volumePermissions.enabled".value-as-bool=false
+          quarkus.helm.values."db.volumePermissions.securityContext.runAsUser".value=auto
+          quarkus.helm.values."db.securityContext.enabled".value-as-bool=false
+          quarkus.helm.values."db.shmVolume.chmod.enabled".value-as-bool=false
+          quarkus.helm.values."db.primary.containerSecurityContext.enabled".value-as-bool=false
+          quarkus.helm.values."db.primary.containerSecurityContext.runAsUser".value=auto
+          quarkus.helm.values."db.primary.podSecurityContext.enabled".value-as-bool=false
+          quarkus.helm.values."db.primary.podSecurityContext.fsGroup".value=auto
           EOF
 
           # start port-forward to allow pushing images to our registry

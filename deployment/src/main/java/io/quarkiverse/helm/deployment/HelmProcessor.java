@@ -58,10 +58,11 @@ public class HelmProcessor {
             return;
         }
 
-        for (HelmDependencyConfig dependency : config.dependencies.values()) {
+        for (Map.Entry<String, HelmDependencyConfig> entry : config.dependencies.entrySet()) {
+            HelmDependencyConfig dependency = entry.getValue();
             if (dependency.waitForService.isPresent()) {
                 ContainerBuilder container = new ContainerBuilder()
-                        .withName("wait-for-" + dependency.name)
+                        .withName("wait-for-" + defaultString(dependency.name, entry.getKey()))
                         .withImage(dependency.waitForServiceImage)
                         .withCommand("sh");
 
@@ -259,16 +260,19 @@ public class HelmProcessor {
         config.icon.ifPresent(builder::withIcon);
         config.home.ifPresent(builder::withHome);
         config.sources.ifPresent(builder::addAllToSources);
-        config.maintainers.values().forEach(
-                m -> builder.addNewMaintainer(m.name, defaultString(m.email), defaultString(m.url)));
-        config.dependencies.values()
-                .forEach(d -> builder.addNewDependency()
-                        .withName(d.name)
-                        .withAlias(defaultString(d.alias, d.name))
-                        .withVersion(d.version)
-                        .withRepository(d.repository)
-                        .withCondition(defaultString(d.condition))
-                        .withTags(defaultArray(d.tags))
+        config.maintainers.entrySet()
+                .forEach(e -> builder.addNewMaintainer(
+                        defaultString(e.getValue().name, e.getKey()),
+                        defaultString(e.getValue().email),
+                        defaultString(e.getValue().url)));
+        config.dependencies.entrySet()
+                .forEach(e -> builder.addNewDependency()
+                        .withName(defaultString(e.getValue().name, e.getKey()))
+                        .withAlias(defaultString(e.getValue().alias, defaultString(e.getValue().name, e.getKey())))
+                        .withVersion(e.getValue().version)
+                        .withRepository(e.getValue().repository)
+                        .withCondition(defaultString(e.getValue().condition))
+                        .withTags(defaultArray(e.getValue().tags))
                         .endDependency());
         config.tarFileClassifier.ifPresent(builder::withTarFileClassifier);
         config.expressions.values().forEach(e -> builder.addNewExpression(e.path, e.expression));
@@ -277,12 +281,12 @@ public class HelmProcessor {
     }
 
     private List<ConfigReference> toValueReferences(HelmChartConfig config) {
-        return config.values.values().stream()
-                .map(v -> new ConfigReference(v.property,
-                        defaultArray(v.paths),
-                        toValue(v),
-                        defaultString(v.expression),
-                        defaultString(v.profile)))
+        return config.values.entrySet().stream()
+                .map(e -> new ConfigReference(defaultString(e.getValue().property, e.getKey()),
+                        defaultArray(e.getValue().paths),
+                        toValue(e.getValue()),
+                        defaultString(e.getValue().expression),
+                        defaultString(e.getValue().profile)))
                 .collect(Collectors.toList());
     }
 

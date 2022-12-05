@@ -1,6 +1,7 @@
 package io.quarkiverse.helm.deployment;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import io.quarkus.runtime.annotations.ConfigGroup;
@@ -48,6 +49,13 @@ public class ValueReferenceConfig {
      */
     @ConfigItem
     Optional<Boolean> valueAsBool;
+
+    /**
+     * The map value that the property will have in the Helm values file.
+     * If not set, the extension will resolve it from the generated artifacts.
+     */
+    @ConfigItem
+    Map<String, String> valueAsMap;
 
     /**
      * If not provided, it will use `{{ .Values.<root alias>.<property> }}`.

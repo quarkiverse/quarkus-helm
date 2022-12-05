@@ -2,6 +2,7 @@ package io.quarkiverse.helm.tests.kubernetes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -18,6 +19,7 @@ import io.dekorate.utils.Strings;
 public class KubernetesWithTemplatesIT {
 
     private static final String CHART_NAME = "my-chart-with-templates";
+    private static final String FAVORITE = "favorite";
 
     @Test
     public void shouldHelmManifestsBeGenerated() throws IOException {
@@ -30,6 +32,23 @@ public class KubernetesWithTemplatesIT {
         assertNotNull(getResourceAsStream("templates/_helpers.tpl"));
         assertEquals(Strings.read(KubernetesWithTemplatesIT.class.getResourceAsStream("/expected-configmap.yaml")),
                 Strings.read(getResourceAsStream("templates/configmap.yaml")));
+    }
+
+    @Test
+    public void valuesShouldContainExpectedData() throws IOException {
+        Map<String, Object> values = Serialization.yamlMapper()
+                .readValue(getResourceAsStream("values.yaml"), Map.class);
+        assertNotNull(values, "Values is null!");
+
+        Map<String, Object> app = (Map<String, Object>) values.get("app");
+
+        assertTrue(app.containsKey(FAVORITE), "Does not contain `" + FAVORITE + "`");
+        assertTrue(app.get(FAVORITE) instanceof Map, "Value `" + FAVORITE + "` is not a map!");
+        Map<String, String> favoriteValues = (Map<String, String>) app.get(FAVORITE);
+
+        // Should contain car
+        assertEquals("Ford", favoriteValues.get("car"));
+        assertEquals("Apple", favoriteValues.get("fruit"));
     }
 
     private final InputStream getResourceAsStream(String file) throws FileNotFoundException {

@@ -17,12 +17,6 @@ public class HelmChartConfig {
     boolean enabled;
 
     /**
-     * The Chart API version. The default value is `v2`.
-     */
-    @ConfigItem(defaultValue = "v2")
-    String apiVersion;
-
-    /**
      * Name of the Helm chart.
      * If not set, it will use the application name.
      */
@@ -30,16 +24,16 @@ public class HelmChartConfig {
     Optional<String> name;
 
     /**
-     * Alias of the root element in the generated values file.
+     * Project's home page of the Helm chart. It must be a URL.
      */
-    @ConfigItem(defaultValue = "app")
-    String valuesRootAlias;
+    @ConfigItem
+    Optional<String> home;
 
     /**
-     * Notes template to be generated.
+     * The Helm chart list of URLs to source code for this project.
      */
-    @ConfigItem(defaultValue = "/NOTES.template.txt")
-    String notes;
+    @ConfigItem
+    Optional<List<String>> sources;
 
     /**
      * Version of the Helm chart.
@@ -55,28 +49,88 @@ public class HelmChartConfig {
     Optional<String> description;
 
     /**
-     * Icon of the Helm chart. It must be a URL to an SVG or PNG image.
-     */
-    @ConfigItem
-    Optional<String> icon;
-
-    /**
-     * Project's home page of the Helm chart. It must be a URL.
-     */
-    @ConfigItem
-    Optional<String> home;
-
-    /**
      * List of keywords to add to the chart.
      */
     @ConfigItem
     Optional<List<String>> keywords;
 
     /**
-     * The Helm chart list of URLs to source code for this project.
+     * The Helm chart list of maintainers.
      */
     @ConfigItem
-    Optional<List<String>> sources;
+    Map<String, MaintainerConfig> maintainers;
+
+    /**
+     * Icon of the Helm chart. It must be a URL to an SVG or PNG image.
+     */
+    @ConfigItem
+    Optional<String> icon;
+
+    /**
+     * The Chart API version. The default value is `v2`.
+     */
+    @ConfigItem(defaultValue = "v2")
+    String apiVersion;
+
+    /**
+     * The condition to enable this chart.
+     */
+    @ConfigItem
+    Optional<String> condition;
+
+    /**
+     * Tags of this chart.
+     */
+    @ConfigItem
+    Optional<String> tags;
+
+    /**
+     * The version of the application enclosed of this chart.
+     */
+    @ConfigItem
+    Optional<String> appVersion;
+
+    /**
+     * Whether this chart is deprecated.
+     */
+    @ConfigItem
+    Optional<Boolean> deprecated;
+
+    /**
+     * Annotations are additional mappings uninterpreted by Helm, made available for inspection by other applications.
+     */
+    @ConfigItem
+    Map<String, String> annotations;
+
+    /**
+     * KubeVersion is a SemVer constraint specifying the version of Kubernetes required.
+     */
+    @ConfigItem
+    Optional<String> kubeVersion;
+
+    /**
+     * The Helm chart list of dependencies.
+     */
+    @ConfigItem
+    Map<String, HelmDependencyConfig> dependencies;
+
+    /**
+     * Specifies the chart type: application or library.
+     */
+    @ConfigItem
+    Optional<String> type;
+
+    /**
+     * Alias of the root element in the generated values file.
+     */
+    @ConfigItem(defaultValue = "app")
+    String valuesRootAlias;
+
+    /**
+     * Notes template to be generated.
+     */
+    @ConfigItem(defaultValue = "/NOTES.template.txt")
+    String notes;
 
     /**
      * Extension of the Helm tarball file. Default is `tar.gz`.
@@ -87,6 +141,7 @@ public class HelmChartConfig {
     /**
      * Classifier to be appended into the generated Helm tarball file.
      */
+    @ConfigItem
     Optional<String> tarFileClassifier;
 
     /**
@@ -94,18 +149,6 @@ public class HelmChartConfig {
      */
     @ConfigItem(defaultValue = "false")
     boolean createTarFile;
-
-    /**
-     * The Helm chart list of maintainers.
-     */
-    @ConfigItem
-    Map<String, MaintainerConfig> maintainers;
-
-    /**
-     * The Helm chart list of dependencies.
-     */
-    @ConfigItem
-    Map<String, HelmDependencyConfig> dependencies;
 
     /**
      * The configuration references to be mapped into the Helm values file.

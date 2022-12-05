@@ -24,6 +24,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import io.dekorate.ConfigReference;
 import io.dekorate.Session;
 import io.dekorate.helm.config.HelmChartConfigBuilder;
+import io.dekorate.helm.config.HelmDependencyBuilder;
 import io.dekorate.kubernetes.config.ContainerBuilder;
 import io.dekorate.kubernetes.decorator.AddInitContainerDecorator;
 import io.dekorate.project.Project;
@@ -258,6 +259,13 @@ public class HelmProcessor {
         config.description.ifPresent(builder::withDescription);
         config.keywords.ifPresent(builder::addAllToKeywords);
         config.icon.ifPresent(builder::withIcon);
+        config.condition.ifPresent(builder::withCondition);
+        config.tags.ifPresent(builder::withTags);
+        config.appVersion.ifPresent(builder::withAppVersion);
+        config.deprecated.ifPresent(builder::withDeprecated);
+        config.annotations.entrySet().forEach(e -> builder.addNewAnnotation(e.getKey(), e.getValue()));
+        config.kubeVersion.ifPresent(builder::withKubeVersion);
+        config.type.ifPresent(builder::withType);
         config.home.ifPresent(builder::withHome);
         config.sources.ifPresent(builder::addAllToSources);
         config.maintainers.entrySet()
@@ -266,16 +274,24 @@ public class HelmProcessor {
                         defaultString(e.getValue().email),
                         defaultString(e.getValue().url)));
         config.dependencies.entrySet()
-                .forEach(e -> builder.addNewDependency()
-                        .withName(defaultString(e.getValue().name, e.getKey()))
-                        .withAlias(defaultString(e.getValue().alias, defaultString(e.getValue().name, e.getKey())))
-                        .withVersion(e.getValue().version)
-                        .withRepository(e.getValue().repository)
-                        .withCondition(defaultString(e.getValue().condition))
-                        .withTags(defaultArray(e.getValue().tags))
-                        .endDependency());
+                .forEach(e -> builder.addToDependencies(toDekorateHelmDependencyConfig(e.getKey(), e.getValue())));
         config.tarFileClassifier.ifPresent(builder::withTarFileClassifier);
         config.expressions.values().forEach(e -> builder.addNewExpression(e.path, e.expression));
+
+        return builder.build();
+    }
+
+    private io.dekorate.helm.config.HelmDependency toDekorateHelmDependencyConfig(String dependencyName,
+            HelmDependencyConfig dependency) {
+        HelmDependencyBuilder builder = new HelmDependencyBuilder()
+                .withName(defaultString(dependency.name, dependencyName))
+                .withAlias(defaultString(dependency.alias, defaultString(dependency.name, dependencyName)))
+                .withVersion(dependency.version)
+                .withRepository(dependency.repository)
+                .withCondition(defaultString(dependency.condition))
+                .withTags(defaultArray(dependency.tags));
+
+        dependency.enabled.ifPresent(builder::withEnabled);
 
         return builder.build();
     }

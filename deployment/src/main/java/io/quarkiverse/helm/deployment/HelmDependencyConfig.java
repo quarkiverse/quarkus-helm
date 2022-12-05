@@ -27,12 +27,6 @@ public class HelmDependencyConfig {
     String repository;
 
     /**
-     * Alias of the dependency.
-     */
-    @ConfigItem
-    Optional<String> alias;
-
-    /**
      * Dependency condition.
      */
     @ConfigItem
@@ -43,6 +37,18 @@ public class HelmDependencyConfig {
      */
     @ConfigItem
     Optional<List<String>> tags;
+
+    /**
+     * Whether this dependency should be loaded.
+     */
+    @ConfigItem
+    Optional<Boolean> enabled;
+
+    /**
+     * Alias of the dependency.
+     */
+    @ConfigItem
+    Optional<String> alias;
 
     /**
      * Instruct the application to wait for the service that should be installed as part of this Helm dependency.

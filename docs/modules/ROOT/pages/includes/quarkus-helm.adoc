@@ -26,6 +26,118 @@ endif::add-copy-button-to-env-var[]
 |`true`
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.name]]`link:#quarkus-helm_quarkus.helm.name[quarkus.helm.name]`
+
+[.description]
+--
+Name of the Helm chart. If not set, it will use the application name.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_NAME+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_NAME+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.home]]`link:#quarkus-helm_quarkus.helm.home[quarkus.helm.home]`
+
+[.description]
+--
+Project's home page of the Helm chart. It must be a URL.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_HOME+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_HOME+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.sources]]`link:#quarkus-helm_quarkus.helm.sources[quarkus.helm.sources]`
+
+[.description]
+--
+The Helm chart list of URLs to source code for this project.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_SOURCES+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_SOURCES+++`
+endif::add-copy-button-to-env-var[]
+--|list of string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.version]]`link:#quarkus-helm_quarkus.helm.version[quarkus.helm.version]`
+
+[.description]
+--
+Version of the Helm chart. If not set, it will use the application version.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VERSION+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VERSION+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.description]]`link:#quarkus-helm_quarkus.helm.description[quarkus.helm.description]`
+
+[.description]
+--
+The Helm chart single-sentence description.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_DESCRIPTION+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_DESCRIPTION+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.keywords]]`link:#quarkus-helm_quarkus.helm.keywords[quarkus.helm.keywords]`
+
+[.description]
+--
+List of keywords to add to the chart.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_KEYWORDS+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_KEYWORDS+++`
+endif::add-copy-button-to-env-var[]
+--|list of string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.icon]]`link:#quarkus-helm_quarkus.helm.icon[quarkus.helm.icon]`
+
+[.description]
+--
+Icon of the Helm chart. It must be a URL to an SVG or PNG image.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_ICON+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_ICON+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.api-version]]`link:#quarkus-helm_quarkus.helm.api-version[quarkus.helm.api-version]`
 
 [.description]
@@ -42,17 +154,97 @@ endif::add-copy-button-to-env-var[]
 |`v2`
 
 
-a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.name]]`link:#quarkus-helm_quarkus.helm.name[quarkus.helm.name]`
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.condition]]`link:#quarkus-helm_quarkus.helm.condition[quarkus.helm.condition]`
 
 [.description]
 --
-Name of the Helm chart. If not set, it will use the application name.
+The condition to enable this chart.
 
 ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_NAME+++[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_CONDITION+++[]
 endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_HELM_NAME+++`
+Environment variable: `+++QUARKUS_HELM_CONDITION+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.tags]]`link:#quarkus-helm_quarkus.helm.tags[quarkus.helm.tags]`
+
+[.description]
+--
+Tags of this chart.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_TAGS+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_TAGS+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.app-version]]`link:#quarkus-helm_quarkus.helm.app-version[quarkus.helm.app-version]`
+
+[.description]
+--
+The version of the application enclosed of this chart.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_APP_VERSION+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_APP_VERSION+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.deprecated]]`link:#quarkus-helm_quarkus.helm.deprecated[quarkus.helm.deprecated]`
+
+[.description]
+--
+Whether this chart is deprecated.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_DEPRECATED+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_DEPRECATED+++`
+endif::add-copy-button-to-env-var[]
+--|boolean 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.kube-version]]`link:#quarkus-helm_quarkus.helm.kube-version[quarkus.helm.kube-version]`
+
+[.description]
+--
+KubeVersion is a SemVer constraint specifying the version of Kubernetes required.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_KUBE_VERSION+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_KUBE_VERSION+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.type]]`link:#quarkus-helm_quarkus.helm.type[quarkus.helm.type]`
+
+[.description]
+--
+Specifies the chart type: application or library.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_TYPE+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_TYPE+++`
 endif::add-copy-button-to-env-var[]
 --|string 
 |
@@ -90,102 +282,6 @@ endif::add-copy-button-to-env-var[]
 |`/NOTES.template.txt`
 
 
-a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.version]]`link:#quarkus-helm_quarkus.helm.version[quarkus.helm.version]`
-
-[.description]
---
-Version of the Helm chart. If not set, it will use the application version.
-
-ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VERSION+++[]
-endif::add-copy-button-to-env-var[]
-ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_HELM_VERSION+++`
-endif::add-copy-button-to-env-var[]
---|string 
-|
-
-
-a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.description]]`link:#quarkus-helm_quarkus.helm.description[quarkus.helm.description]`
-
-[.description]
---
-The Helm chart single-sentence description.
-
-ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_DESCRIPTION+++[]
-endif::add-copy-button-to-env-var[]
-ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_HELM_DESCRIPTION+++`
-endif::add-copy-button-to-env-var[]
---|string 
-|
-
-
-a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.icon]]`link:#quarkus-helm_quarkus.helm.icon[quarkus.helm.icon]`
-
-[.description]
---
-Icon of the Helm chart. It must be a URL to an SVG or PNG image.
-
-ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_ICON+++[]
-endif::add-copy-button-to-env-var[]
-ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_HELM_ICON+++`
-endif::add-copy-button-to-env-var[]
---|string 
-|
-
-
-a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.home]]`link:#quarkus-helm_quarkus.helm.home[quarkus.helm.home]`
-
-[.description]
---
-Project's home page of the Helm chart. It must be a URL.
-
-ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_HOME+++[]
-endif::add-copy-button-to-env-var[]
-ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_HELM_HOME+++`
-endif::add-copy-button-to-env-var[]
---|string 
-|
-
-
-a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.keywords]]`link:#quarkus-helm_quarkus.helm.keywords[quarkus.helm.keywords]`
-
-[.description]
---
-List of keywords to add to the chart.
-
-ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_KEYWORDS+++[]
-endif::add-copy-button-to-env-var[]
-ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_HELM_KEYWORDS+++`
-endif::add-copy-button-to-env-var[]
---|list of string 
-|
-
-
-a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.sources]]`link:#quarkus-helm_quarkus.helm.sources[quarkus.helm.sources]`
-
-[.description]
---
-The Helm chart list of URLs to source code for this project.
-
-ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_SOURCES+++[]
-endif::add-copy-button-to-env-var[]
-ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_HELM_SOURCES+++`
-endif::add-copy-button-to-env-var[]
---|list of string 
-|
-
-
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.extension]]`link:#quarkus-helm_quarkus.helm.extension[quarkus.helm.extension]`
 
 [.description]
@@ -206,6 +302,8 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.tar-file-clas
 
 [.description]
 --
+Classifier to be appended into the generated Helm tarball file.
+
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_TAR_FILE_CLASSIFIER+++[]
 endif::add-copy-button-to-env-var[]
@@ -409,6 +507,22 @@ endif::add-copy-button-to-env-var[]
 |
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.annotations-annotations]]`link:#quarkus-helm_quarkus.helm.annotations-annotations[quarkus.helm.annotations]`
+
+[.description]
+--
+Annotations are additional mappings uninterpreted by Helm, made available for inspection by other applications.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_ANNOTATIONS+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_ANNOTATIONS+++`
+endif::add-copy-button-to-env-var[]
+--|`Map<String,String>` 
+|
+
+
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.name]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.name[quarkus.helm.dependencies."dependencies".name]`
 
 [.description]
@@ -457,22 +571,6 @@ endif::add-copy-button-to-env-var[]
 |required icon:exclamation-circle[title=Configuration property is required]
 
 
-a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.alias]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.alias[quarkus.helm.dependencies."dependencies".alias]`
-
-[.description]
---
-Alias of the dependency.
-
-ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__ALIAS+++[]
-endif::add-copy-button-to-env-var[]
-ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__ALIAS+++`
-endif::add-copy-button-to-env-var[]
---|string 
-|
-
-
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.condition]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.condition[quarkus.helm.dependencies."dependencies".condition]`
 
 [.description]
@@ -502,6 +600,38 @@ ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__TAGS+++`
 endif::add-copy-button-to-env-var[]
 --|list of string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.enabled]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.enabled[quarkus.helm.dependencies."dependencies".enabled]`
+
+[.description]
+--
+Whether this dependency should be loaded.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__ENABLED+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__ENABLED+++`
+endif::add-copy-button-to-env-var[]
+--|boolean 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.alias]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.alias[quarkus.helm.dependencies."dependencies".alias]`
+
+[.description]
+--
+Alias of the dependency.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__ALIAS+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__ALIAS+++`
+endif::add-copy-button-to-env-var[]
+--|string 
 |
 
 

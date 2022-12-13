@@ -122,6 +122,7 @@ public class HelmProcessor {
             Map<String, String> generated = helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), project,
                     dekorateHelmChartConfig,
                     valueReferencesFromConfig,
+                    config.addIfStatement,
                     inputFolder,
                     chartOutputFolder,
                     filesInDeploymentTarget.getValue());
@@ -148,6 +149,14 @@ public class HelmProcessor {
             if (!config.name.get().matches(NAME_FORMAT_REG_EXP)) {
                 throw new IllegalStateException(String.format("Wrong name '%s'. Regular expression used for validation "
                         + "is '%s'", config.name.get(), NAME_FORMAT_REG_EXP));
+            }
+        }
+
+        for (Map.Entry<String, AddIfStatementConfig> addIfStatement : config.addIfStatement.entrySet()) {
+            if (addIfStatement.getValue().onResourceKind.isEmpty() && addIfStatement.getValue().onResourceName.isEmpty()) {
+                throw new IllegalStateException(String.format("Either 'quarkus.helm.add-if-statement.%s.on-resource-kind' "
+                        + "or 'quarkus.helm.add-if-statement.%s.on-resource-kind' must be provided.",
+                        addIfStatement.getKey(), addIfStatement.getKey()));
             }
         }
     }

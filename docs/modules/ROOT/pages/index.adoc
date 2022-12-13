@@ -467,6 +467,29 @@ quarkus.helm.expressions.0.path=(kind == Service && metadata.name == quarkus-hel
 quarkus.helm.expressions.0.expression={{- template "mychart.labels" }}
 ----
 
+== Conditionally enable/disable resources
+
+Based on a boolean property that is available part of the `values.yaml`, you can specify whether you want to install or not any resource. For example, we want to install the generated Ingress resource only if I pass the following property `app.ingress.enabled=true` when installing the chart. Let's see how to do this using the `quarkus.helm.add-if-statement` properties:
+
+[source,properties]
+----
+quarkus.helm.add-if-statement."ingress.enabled".on-resource-kind=Ingress
+quarkus.helm.add-if-statement."ingress.enabled".with-default-value=false
+----
+
+This configuration will add the `app.ingress.enabled` property in the `values.yaml` file:
+
+[source,yaml]
+----
+---
+app:
+  ingress:
+    enabled: false
+----
+
+So, when installing the chart, the Ingress resource won't be installed by default.
+Now, to install it, you need to explicitly set the `app.ingress.enabled=true` property as `helm install quarkus local/chart --set app.ingress.enabled=false` and then the Ingress resource would be installed.
+
 == Push to Helm Repositories
 
 A https://helm.sh/docs/topics/chart_repository/[Helm chart repository] is a location where packaged charts can be used and shared across the community.

@@ -160,6 +160,26 @@ jobs:
             exit 1
           fi
 
+
+          # Verify the if statement works:
+          ## By default, the ingress "my-ingress" should have been installed
+          if [ $(kubectl get ingress/my-ingress -n $K8S_NAMESPACE -o jsonpath='{.metadata.name}' | grep my-ingress | wc -l) -ne 1 ]
+          then
+            echo "Ingress not found!"
+            exit 1
+          fi
+
+          ## Let's update our Helm chart by not installing the ingress
+          helm upgrade --devel quarkus-with-templates local/my-chart-with-templates -n $K8S_NAMESPACE --set app.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-with-templates:$VERSION --set favorite.drink=coca --set app.ingress.enabled=false
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-with-templates -n $K8S_NAMESPACE
+
+          ## Now, the ingress "my-ingress" should have NOT been installed
+          if [ $(kubectl get ingress/my-ingress -n $K8S_NAMESPACE -o jsonpath='{.metadata.name}' | grep my-ingress | wc -l) -ne 0 ]
+          then
+            echo "Ingress was found!"
+            exit 1
+          fi
+
       - name: Delete namespace "helmtemplates" using Helm
         run: kubectl delete namespace helmtemplates
 

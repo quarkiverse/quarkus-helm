@@ -50,7 +50,6 @@ import io.dekorate.WithConfigReferences;
 import io.dekorate.helm.config.Annotation;
 import io.dekorate.helm.config.HelmChartConfig;
 import io.dekorate.helm.config.HelmExpression;
-import io.dekorate.helm.config.ValueReference;
 import io.dekorate.helm.listener.HelmWriterSessionListener;
 import io.dekorate.helm.model.Chart;
 import io.dekorate.helm.model.HelmDependency;
@@ -74,11 +73,14 @@ public class QuarkusHelmWriterSessionListener {
     private static final List<String> ADDITIONAL_CHART_FILES = Arrays.asList("README.md", "LICENSE", "values.schema.json",
             "app-readme.md", "questions.yml", "questions.yaml", "requirements.yml", "requirements.yaml");
     private static final String KIND = "kind";
+    private static final String METADATA = "metadata";
+    private static final String NAME = "name";
     private static final String START_TAG = "{{";
     private static final String END_TAG = "}}";
     private static final String VALUES_START_TAG = START_TAG + " .Values.";
     private static final String VALUES_END_TAG = " " + END_TAG;
     private static final String EMPTY = "";
+    private static final String IF_STATEMENT_START_TAG = "{{- if .Values.%s }}";
     private static final String TEMPLATE_FUNCTION_START_TAG = "{{- define";
     private static final String TEMPLATE_FUNCTION_END_TAG = "{{- end }}";
     private static final String HELM_HELPER_PREFIX = "_";
@@ -95,21 +97,24 @@ public class QuarkusHelmWriterSessionListener {
      * @return the list of the Helm generated files.
      */
     public Map<String, String> writeHelmFiles(Session session, Project project,
-            io.dekorate.helm.config.HelmChartConfig helmConfig, List<ConfigReference> configReferences,
+            io.dekorate.helm.config.HelmChartConfig helmConfig,
+            List<ConfigReference> configReferences,
+            Map<String, AddIfStatementConfig> addIfStatements,
             Path inputDir,
             Path outputDir,
             Collection<File> generatedFiles) {
         Map<String, String> artifacts = new HashMap<>();
         if (helmConfig.isEnabled()) {
             validateHelmConfig(helmConfig);
-            List<ConfigReference> valuesReferences = mergeValuesReferencesFromDecorators(configReferences, session);
+            List<ConfigReference> valuesReferences = mergeValuesReferencesFromDecorators(configReferences,
+                    addIfStatements, session);
 
             try {
                 LOGGER.info(String.format("Creating Helm Chart \"%s\"", helmConfig.getName()));
                 Map<String, Object> prodValues = new HashMap<>();
                 Map<String, Map<String, Object>> valuesByProfile = new HashMap<>();
-                artifacts.putAll(processTemplates(helmConfig, inputDir, outputDir, generatedFiles, valuesReferences, prodValues,
-                        valuesByProfile));
+                artifacts.putAll(processTemplates(helmConfig, addIfStatements, inputDir, outputDir, generatedFiles,
+                        valuesReferences, prodValues, valuesByProfile));
                 artifacts.putAll(createChartYaml(helmConfig, project, inputDir, outputDir));
                 artifacts.putAll(
                         createValuesYaml(helmConfig, valuesReferences, inputDir, outputDir, prodValues, valuesByProfile));
@@ -217,10 +222,17 @@ public class QuarkusHelmWriterSessionListener {
     }
 
     private List<ConfigReference> mergeValuesReferencesFromDecorators(List<ConfigReference> configReferencesFromConfig,
+            Map<String, AddIfStatementConfig> addIfStatements,
             Session session) {
         List<ConfigReference> configReferences = new LinkedList<>();
         // From user
         configReferences.addAll(configReferencesFromConfig);
+
+        // From if statements: these are boolean values
+        for (Map.Entry<String, AddIfStatementConfig> addIfStatement : addIfStatements.entrySet()) {
+            String property = addIfStatement.getValue().property.orElse(addIfStatement.getKey());
+            configReferences.add(new ConfigReference(property, null, addIfStatement.getValue().withDefaultValue));
+        }
 
         // From decorators
         for (WithConfigReferences decorator : session.getResourceRegistry().getConfigReferences()) {
@@ -232,14 +244,6 @@ public class QuarkusHelmWriterSessionListener {
 
     private boolean valueHasPath(ConfigReference valueReference) {
         return valueReference.getPaths() != null && valueReference.getPaths().length > 0;
-    }
-
-    private ConfigReference toConfigReference(ValueReference valueReference) {
-        return new ConfigReference(valueReference.getProperty(),
-                valueReference.getPaths(),
-                Strings.isNullOrEmpty(valueReference.getValue()) ? null : valueReference.getValue(),
-                valueReference.getExpression(),
-                valueReference.getProfile());
     }
 
     private Map<String, String> createValuesYaml(io.dekorate.helm.config.HelmChartConfig helmConfig,
@@ -255,12 +259,7 @@ public class QuarkusHelmWriterSessionListener {
                             + "either a path or a default value. ");
                 }
 
-                String property = value.getProperty();
-                if (!startWithDependencyPrefix(value.getProperty(), helmConfig.getDependencies())) {
-                    property = helmConfig.getValuesRootAlias() + "." + value.getProperty();
-                }
-
-                prodValues.put(Strings.kebabToCamelCase(property), value.getValue());
+                prodValues.put(deductProperty(helmConfig, value.getProperty()), value.getValue());
             }
         }
 
@@ -287,6 +286,13 @@ public class QuarkusHelmWriterSessionListener {
                 getChartOutputDir(helmConfig, outputDir).resolve(VALUES + YAML)));
 
         return artifacts;
+    }
+
+    private String deductProperty(HelmChartConfig helmConfig, String property) {
+        if (!startWithDependencyPrefix(property, helmConfig.getDependencies())) {
+            property = helmConfig.getValuesRootAlias() + "." + property;
+        }
+        return Strings.kebabToCamelCase(property);
     }
 
     private Map<String, Object> mergeWithFileIfExists(Path inputDir, String file, Map<String, Object> data) {
@@ -360,9 +366,12 @@ public class QuarkusHelmWriterSessionListener {
         return helmConfig.getVersion();
     }
 
-    private Map<String, String> processTemplates(io.dekorate.helm.config.HelmChartConfig helmConfig, Path inputDir,
+    private Map<String, String> processTemplates(io.dekorate.helm.config.HelmChartConfig helmConfig,
+            Map<String, AddIfStatementConfig> addIfStatements,
+            Path inputDir,
             Path outputDir,
-            Collection<File> generatedFiles, List<ConfigReference> valuesReferences, Map<String, Object> prodValues,
+            Collection<File> generatedFiles, List<ConfigReference> valuesReferences,
+            Map<String, Object> prodValues,
             Map<String, Map<String, Object>> valuesByProfile) throws IOException {
 
         Map<String, String> templates = new HashMap<>();
@@ -393,6 +402,25 @@ public class QuarkusHelmWriterSessionListener {
                 adaptedString = functions + System.lineSeparator() + adaptedString;
             }
 
+            // Add if statements at resource level
+            for (Map.Entry<String, AddIfStatementConfig> addIfStatement : addIfStatements.entrySet()) {
+                if ((addIfStatement.getValue().onResourceKind.isEmpty()
+                        || addIfStatement.getValue().onResourceKind.get().equals(kind))
+                        && (addIfStatement.getValue().onResourceName.isEmpty()
+                                || addIfStatement.getValue().onResourceName.get().equals(getNameFromResource(resource)))) {
+
+                    String property = deductProperty(helmConfig, addIfStatement.getValue().property
+                            .orElse(addIfStatement.getKey()));
+
+                    adaptedString = String.format(IF_STATEMENT_START_TAG, property)
+                            + System.lineSeparator()
+                            + adaptedString
+                            + System.lineSeparator()
+                            + TEMPLATE_FUNCTION_END_TAG
+                            + System.lineSeparator();
+                }
+            }
+
             adaptedString = adaptedString
                     .replaceAll(Pattern.quote("\"" + START_TAG), START_TAG)
                     .replaceAll(Pattern.quote(END_TAG + "\""), END_TAG)
@@ -408,6 +436,18 @@ public class QuarkusHelmWriterSessionListener {
         }
 
         return templates;
+    }
+
+    private String getNameFromResource(Map<Object, Object> resource) {
+        Object metadata = resource.get(METADATA);
+        if (metadata != null && metadata instanceof Map) {
+            Object name = ((Map) metadata).get(NAME);
+            if (name != null) {
+                return name.toString();
+            }
+        }
+
+        return null;
     }
 
     private Map<String, String> processUserDefinedTemplates(Path inputDir, Map<String, String> templates, Path templatesDir)

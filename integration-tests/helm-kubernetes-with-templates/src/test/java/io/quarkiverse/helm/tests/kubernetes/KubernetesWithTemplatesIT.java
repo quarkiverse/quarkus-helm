@@ -32,6 +32,8 @@ public class KubernetesWithTemplatesIT {
         assertNotNull(getResourceAsStream("templates/_helpers.tpl"));
         assertEquals(Strings.read(KubernetesWithTemplatesIT.class.getResourceAsStream("/expected-configmap.yaml")),
                 Strings.read(getResourceAsStream("templates/configmap.yaml")));
+        assertEquals(Strings.read(KubernetesWithTemplatesIT.class.getResourceAsStream("/expected-ingress.yaml")),
+                Strings.read(getResourceAsStream("templates/ingress.yaml")));
     }
 
     @Test

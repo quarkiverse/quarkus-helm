@@ -858,4 +858,68 @@ endif::add-copy-button-to-env-var[]
 --|string 
 |required icon:exclamation-circle[title=Configuration property is required]
 
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.property]]`link:#quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.property[quarkus.helm.add-if-statement."add-if-statement".property]`
+
+[.description]
+--
+The property to use in the if statement.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_ADD_IF_STATEMENT__ADD_IF_STATEMENT__PROPERTY+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_ADD_IF_STATEMENT__ADD_IF_STATEMENT__PROPERTY+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.on-resource-kind]]`link:#quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.on-resource-kind[quarkus.helm.add-if-statement."add-if-statement".on-resource-kind]`
+
+[.description]
+--
+The resource kind where to include the if statement.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_ADD_IF_STATEMENT__ADD_IF_STATEMENT__ON_RESOURCE_KIND+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_ADD_IF_STATEMENT__ADD_IF_STATEMENT__ON_RESOURCE_KIND+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.on-resource-name]]`link:#quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.on-resource-name[quarkus.helm.add-if-statement."add-if-statement".on-resource-name]`
+
+[.description]
+--
+The resource kind where to include the if statement.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_ADD_IF_STATEMENT__ADD_IF_STATEMENT__ON_RESOURCE_NAME+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_ADD_IF_STATEMENT__ADD_IF_STATEMENT__ON_RESOURCE_NAME+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.with-default-value]]`link:#quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.with-default-value[quarkus.helm.add-if-statement."add-if-statement".with-default-value]`
+
+[.description]
+--
+The default value of the property
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_ADD_IF_STATEMENT__ADD_IF_STATEMENT__WITH_DEFAULT_VALUE+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_ADD_IF_STATEMENT__ADD_IF_STATEMENT__WITH_DEFAULT_VALUE+++`
+endif::add-copy-button-to-env-var[]
+--|boolean 
+|`true`
+
 |===

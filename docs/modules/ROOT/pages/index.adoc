@@ -1,11 +1,12 @@
-= Using Quarkus Helm
+[[helm-extension-for-quarkus]]
+= Helm Extension for Quarkus
 
 include::./includes/attributes.adoc[]
 
 :config-file: application.properties
 :extension-status: preview
 
-https://helm.sh/[Helm] is the package manager for Kubernetes that help to find, share, and use software that is built for Kubernetes.
+https://helm.sh/[Helm] is a package and install manager that standardizes and simplifies packaging and deployment of containerized applications with Kubernetes.
 
 Under the hood, the Quarkus Helm extension uses https://dekorate.io/[Dekorate] to generate the Helm chart manifests at build time.
 
@@ -23,7 +24,13 @@ Quarkus Helm Version,Quarkus Version
 0.0.6,Quarkus 2.12
 |===
 
-== Prerequisites
+Apart from all the features supported by the Quarkus Helm extension, in this documentation you will also find several examples about how to use this extension in:
+
+- xref:index.adoc#usage-helm-kubernetes[Kubernetes]
+- xref:index.adoc#usage-helm-openshift[OpenShift]
+
+[[usage-helm-kubernetes]]
+== Using the Helm Extension in Kubernetes
 
 To complete this guide, you need:
 
@@ -34,7 +41,7 @@ To complete this guide, you need:
 * https://helm.sh/docs/intro/install/[Helm command line] installed
 * Have connected/logged to a Kubernetes cluster
 
-== Create a Quarkus application with the Helm extension
+=== Create a Quarkus application with the Helm extension
 
 The Quarkus Helm extension will generate the Helm Chart of a Quarkus application.
 
@@ -93,9 +100,9 @@ For example, if your project use the Quarkus Kubernetes extension, then the helm
 The `<chart name>` is set from either the property `quarkus.helm.name` or the `@HelmChart` annotation or the Quarkus application.
 ====
 
-== Helm Usage
+=== Chart Installation
 
-Let's now see how to use the previously generated Helm resources on a Kubernetes cluster.
+Let's now see how to install the previously generated Helm resources on a Kubernetes cluster.
 
 First, you need to build the application container image and push it into a container registry. For doing this, Quarkus provides https://quarkus.io/guides/container-image[some container image extensions] to ease up this step. Let's add the Quarkus container image docker extension in this example:
 
@@ -151,25 +158,143 @@ helm upgrade helm-example ./target/helm/kubernetes/<chart name> --set app.replic
 helm uninstall helm-example
 ----
 
-== Alias name
+[[usage-helm-openshift]]
+== Using the Helm Extension in OpenShift
 
-The alias name is the name used to keep all the properties linked as:
+To complete this guide, you need:
 
-[source,yaml]
+* roughly 10 minutes
+* JDK 11+ installed with `JAVA_HOME` configured appropriately
+* Apache Maven {maven-version}
+* Docker installed
+* https://helm.sh/docs/intro/install/[Helm command line] installed
+* Have connected/logged to a OpenShift cluster
+
+=== Create a Quarkus application with the Helm extension
+
+The Quarkus Helm extension will generate the Helm Chart of a Quarkus application.
+
+In this example, we'll create a Quarkus application with the Quarkus Helm and the Quarkus OpenShift extensions by running the following command:
+
+[source,bash,subs=attributes+]
 ----
-app:
-  replicas: 3
+mvn io.quarkus.platform:quarkus-maven-plugin:{quarkus-version}:create \
+    -DprojectGroupId=org.acme \
+    -DprojectArtifactId=helm-quickstart \
+    -DclassName="org.acme.quickstart.GreetingResource" \
+    -Dpath="/hello" \
+    -Dextensions="resteasy-reactive,openshift,helm"
+cd helm-quickstart
 ----
 
-The alias name in the above example is "app" which is the default value. You can modify it using the property "quarkus.helm.values-root-alias=myAppName" and then the generated Helm resources will look like:
+If you already have your Quarkus project configured, you can add the `helm` extension to your project by running the following command in your project base directory:
 
-[source,yaml]
+[source,bash]
 ----
-myAppName:
-  replicas: 3
+./mvnw quarkus:add-extension -Dextensions="helm"
 ----
 
-== Mapping Values
+This command will add the following dependency to your `pom.xml` file:
+
+[source,xml,subs=attributes+]
+----
+<dependency>
+    <groupId>io.quarkiverse.helm</groupId>
+    <artifactId>quarkus-helm</artifactId>
+    <version>{quarkus-helm-version}</version>
+</dependency>
+----
+
+If you want to expose your application in OpenShift, you also need to enable the Route resource by adding the following configuration in your application properties:
+
+[source,properties]
+----
+quarkus.openshift.route.expose=true
+----
+
+Once we add the Quarkus Helm extension to your project, you can now generate the Helm resources by running the following Maven command:
+
+[source,bash]
+----
+./mvnw clean package
+----
+
+Then the helm resources will include the following templates at `target/helm/openshift/<chart name>/`:
+
+* Chart.yaml
+* values.yaml
+* /charts
+* /templates
+* /templates/deploymentconfig.yaml
+* /templates/route.yaml
+* /templates/service.yaml
+* /templates/NOTES.txt
+
+[TIP]
+====
+The `<chart name>` is set from either the property `quarkus.helm.name` or the `@HelmChart` annotation or the Quarkus application.
+====
+
+=== Chart Installation
+
+Let's now see how to install the previously generated Helm resources on a OpenShift cluster.
+
+First, you need to build the application container image and push it into a container registry. For doing this, Quarkus provides https://quarkus.io/guides/container-image[some container image extensions] to ease up this step. Let's add the Quarkus container image docker extension in this example:
+
+[source,bash]
+----
+./mvnw quarkus:add-extension -Dextensions="container-image-docker"
+----
+
+Now, we can generate the Helm resources and build/push the application container image at once by running the following Maven command:
+
+[source,bash]
+----
+./mvnw clean package -Dquarkus.container-image.builder=docker -Dquarkus.container-image.build=true -Dquarkus.container-image.push=true -Dquarkus.container-image.registry=<your container registry> -Dquarkus.container-image.group=<your container registry namespace>
+----
+
+[TIP]
+====
+Make sure the application container image is public and available to be used by your Kubernetes cluster.
+====
+
+Finally, let's use Helm to deploy it into the cluster:
+
+[source,bash]
+----
+helm install helm-example ./target/helm/openshift/<chart name>
+----
+
+The above command will use the default values, which are located in `./target/helm/openshift/<chart name>/values.yaml`.
+To override the default values, pass as parameter you own value file `--values /path/to/another.values.yaml` or set them using `--set key1=val1 --set key2=val2`.
+
+=== How can I update my deployment?
+
+- Either via the `upgrade` option of Helm command line:
+
+After making changes to your project and regenerating the Helm resources and the application container image, then you need to upgrade your deployment:
+
+[source,bash]
+----
+helm upgrade helm-example ./target/helm/openshift/<chart name>
+----
+
+- Or via the `set` option of Helm command line:
+
+[source,bash]
+----
+helm upgrade helm-example ./target/helm/openshift/<chart name> --set app.replicas=1
+----
+
+=== How can we delete my deployment?
+
+[source,bash]
+----
+helm uninstall helm-example
+----
+
+[[helm-values]]
+== Generating the Helm Values file
 
 By default, the Quarkus Helm extension will generate the Helm values file (`values.yaml`) by mapping the following pre-configured properties:
 
@@ -195,7 +320,7 @@ quarkus.helm.description=Description of my Chart
 quarkus.kubernetes.replicas=3
 ----
 
-The extension will generate the next Helm values file at `target/helm/kubernetes/<chart name>/values.yaml`:
+The extension will generate the next Helm values file at `target/helm/<deployment target>/<chart name>/values.yaml`:
 
 [source,yaml]
 ----
@@ -203,7 +328,7 @@ app:
   replicas: 3
 ----
 
-And the Deployment file at `target/helm/kubernetes/<chart name>/templates/deployment.yaml` will have a reference to this value:
+And the Deployment file at `target/helm/<deployment target>/<chart name>/templates/deployment.yaml` will have a reference to this value:
 
 [source,yaml]
 ----
@@ -217,7 +342,8 @@ spec:
 
 This is done transparently to users.
 
-=== Mapping user properties using YAMLPath expressions
+[[mapping-custom-values]]
+=== Adding custom properties to the Helm Values file using YAMLPath expressions
 
 As we have introduced in the previous section, the Quarkus Helm extension will automatically map some properties like the `replicas` or the `images` to the Values helm file. Still, some users might need to map more properties. For example, let's see the following YAML resource:
 
@@ -270,6 +396,7 @@ app:
   name: this-is-another-name
 ----
 
+[[mapping-multiple-properties-at-once]]
 === Mapping multiple properties at once
 
 What about if the properties are located in different places, for example:
@@ -308,7 +435,27 @@ quarkus.helm.values.name.paths=metadata.name,(kind == Ingress).spec.rules.http.p
 
 Now, the extension will first map the expression `metadata.name` and then the expression `(kind == Ingress).spec.rules.http.paths.backend.service.name` (this expression only applies to `Ingress` resources).
 
-== Dependencies
+[[set-alias-name]]
+=== Alias name
+
+The alias name is the name used to keep all the properties linked as:
+
+[source,yaml]
+----
+app:
+  replicas: 3
+----
+
+The alias name in the above example is "app" which is the default value. You can modify it using the property "quarkus.helm.values-root-alias=myAppName" and then the generated Helm resources will look like:
+
+[source,yaml]
+----
+myAppName:
+  replicas: 3
+----
+
+[[helm-dependencies]]
+== Adding Helm dependencies
 
 Sometimes, your application requires of some other services to work. The typical scenario is when your application needs of a database to store the application data in. In this scenario, you need to declare the database service as a https://helm.sh/docs/helm/helm_dependency/[Helm dependency]. For example, let's declare https://github.com/bitnami/charts/tree/master/bitnami/postgresql[the Postgres Bitnami Helm] dependency as database instance:
 
@@ -324,7 +471,7 @@ dependencies:
 
 [IMPORTANT]
 ====
-Before installing or packaging your Helm chart, you need to download the dependencies (you can use the Helm command `helm dependency update ./target/helm/kubernetes/<chart name>`)
+Before installing or packaging your Helm chart, you need to download the dependencies (you can use the Helm command `helm dependency update ./target/helm/<deployment target>/<chart name>`)
 ====
 
 Next, you can configure the dependencies adding the dependency configuration into the `values.yaml` file. For example, following the previous Postgres Bitnami dependency:
@@ -370,9 +517,10 @@ database: # the value in the `alias` property, or the `name` if unset.
         postgresPassword: secret
 ----
 
-This configuration will be aggregated in the autogenerated values file at `target/helm/kubernetes/<chart name>/values.yaml`.
+This configuration will be aggregated in the autogenerated values file at `target/helm/<deployment target>/<chart name>/values.yaml`.
 
-=== Dependencies Order
+[[helm-dependencies-install-in-order]]
+=== Install the Helm Dependencies in order
 
 By default, Helm will start the Helm dependencies and the application at the same time. This might cause issues when running your application (as one of the dependencies might not have been started yet, for example, the database).
 
@@ -407,7 +555,8 @@ initContainers:
 
 You can configure the image and the argument template to use with the properties `quarkus.helm.dependencies.XX.wait-for-service-image`, `quarkus.helm.dependencies.0.wait-for-service-port-command-template` and `quarkus.helm.dependencies.0.wait-for-service-only-command-template`.
 
-== Helm Expressions Support
+[[helm-expressions]]
+== Using Helm templates/functions
 
 The Quarkus Helm extension partially supports Helm extensions via https://helm.sh/docs/chart_template_guide/named_templates/[Helm templates] and https://helm.sh/docs/chart_template_guide/functions_and_pipelines/[functions]. You can make use of the templates and more complex functions using Helm expressions:
 
@@ -467,29 +616,7 @@ quarkus.helm.expressions.0.path=(kind == Service && metadata.name == quarkus-hel
 quarkus.helm.expressions.0.expression={{- template "mychart.labels" }}
 ----
 
-== Conditionally enable/disable resources
-
-Based on a boolean property that is available part of the `values.yaml`, you can specify whether you want to install or not any resource. For example, we want to install the generated Ingress resource only if I pass the following property `app.ingress.enabled=true` when installing the chart. Let's see how to do this using the `quarkus.helm.add-if-statement` properties:
-
-[source,properties]
-----
-quarkus.helm.add-if-statement."ingress.enabled".on-resource-kind=Ingress
-quarkus.helm.add-if-statement."ingress.enabled".with-default-value=false
-----
-
-This configuration will add the `app.ingress.enabled` property in the `values.yaml` file:
-
-[source,yaml]
-----
----
-app:
-  ingress:
-    enabled: false
-----
-
-So, when installing the chart, the Ingress resource won't be installed by default.
-Now, to install it, you need to explicitly set the `app.ingress.enabled=true` property as `helm install quarkus local/chart --set app.ingress.enabled=false` and then the Ingress resource would be installed.
-
+[[push-to-helm-repositories]]
 == Push to Helm Repositories
 
 A https://helm.sh/docs/topics/chart_repository/[Helm chart repository] is a location where packaged charts can be used and shared across the community.
@@ -540,6 +667,7 @@ helm repo add local http://localhost:8080
 helm install --devel my-quarkus local/quarkus-hello-world
 ----
 
+[[helm-profiles]]
 == Helm Profiles
 
 By default, all the properties are mapped to the same Helm values file `values.yaml`. However, the Quarkus Helm extension also supports the generation of Helm values by profiles.
@@ -575,6 +703,30 @@ But as you are now using a profile named `test` (see `quarkus.helm.values[0].pro
 app:
   host: my-test-host
 ----
+
+[[conditionally-enable-disable-resources]]
+== Conditionally enable/disable resources
+
+Based on a boolean property that is available part of the `values.yaml`, you can specify whether you want to install or not any resource. For example, we want to install the generated Ingress resource only if I pass the following property `app.ingress.enabled=true` when installing the chart. Let's see how to do this using the `quarkus.helm.add-if-statement` properties:
+
+[source,properties]
+----
+quarkus.helm.add-if-statement."ingress.enabled".on-resource-kind=Ingress
+quarkus.helm.add-if-statement."ingress.enabled".with-default-value=false
+----
+
+This configuration will add the `app.ingress.enabled` property in the `values.yaml` file:
+
+[source,yaml]
+----
+---
+app:
+  ingress:
+    enabled: false
+----
+
+So, when installing the chart, the Ingress resource won't be installed by default.
+Now, to install it, you need to explicitly set the `app.ingress.enabled=true` property as `helm install quarkus local/chart --set app.ingress.enabled=false` and then the Ingress resource would be installed.
 
 [[configuration-reference]]
 == Configuration Reference

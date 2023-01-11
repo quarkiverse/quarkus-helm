@@ -46,7 +46,6 @@ import io.dekorate.ConfigReference;
 import io.dekorate.Logger;
 import io.dekorate.LoggerFactory;
 import io.dekorate.Session;
-import io.dekorate.WithConfigReferences;
 import io.dekorate.helm.config.Annotation;
 import io.dekorate.helm.config.HelmChartConfig;
 import io.dekorate.helm.config.HelmExpression;
@@ -234,10 +233,15 @@ public class QuarkusHelmWriterSessionListener {
             configReferences.add(new ConfigReference(property, null, addIfStatement.getValue().withDefaultValue));
         }
 
-        // From decorators
-        for (WithConfigReferences decorator : session.getResourceRegistry().getConfigReferences()) {
-            configReferences.addAll(decorator.getConfigReferences());
-        }
+        // From decorators: We need to reverse the order as the latest decorator was the latest applied and hence the one
+        // we should use.
+        List<ConfigReference> configReferencesFromDecorators = session.getResourceRegistry().getConfigReferences()
+                .stream()
+                .flatMap(decorator -> decorator.getConfigReferences().stream())
+                .collect(Collectors.toList());
+
+        Collections.reverse(configReferencesFromDecorators);
+        configReferences.addAll(configReferencesFromDecorators);
 
         return configReferences;
     }
@@ -612,13 +616,6 @@ public class QuarkusHelmWriterSessionListener {
 
     private Path getChartOutputDir(HelmChartConfig helmConfig, Path outputDir) {
         return outputDir.resolve(helmConfig.getName());
-    }
-
-    private static List<File> listYamls(Path directory) {
-        return Stream.of(Optional.ofNullable(directory.toFile().listFiles()).orElse(new File[0]))
-                .filter(File::isFile)
-                .filter(f -> f.getName().toLowerCase().matches(YAML_REG_EXP))
-                .collect(Collectors.toList());
     }
 
     private static Object readAndSet(YamlExpressionParser parser, String path, String expression) {

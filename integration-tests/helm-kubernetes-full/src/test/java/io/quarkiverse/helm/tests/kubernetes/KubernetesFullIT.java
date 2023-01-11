@@ -54,7 +54,7 @@ public class KubernetesFullIT {
         Map<String, Object> helmExampleValues = (Map<String, Object>) values.get(ROOT_CONFIG_NAME);
 
         // Should contain image
-        assertNotNull(helmExampleValues.get("image"));
+        assertEquals("registry.com/name:version", helmExampleValues.get("image"));
         // Should contain replicas
         assertEquals(3, helmExampleValues.get("replicas"));
         // Should NOT contain not-found: as this property is ignored

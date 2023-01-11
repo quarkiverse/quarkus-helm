@@ -296,7 +296,7 @@ public class QuarkusHelmWriterSessionListener {
         if (!startWithDependencyPrefix(property, helmConfig.getDependencies())) {
             property = helmConfig.getValuesRootAlias() + "." + property;
         }
-        return Strings.kebabToCamelCase(property);
+        return property;
     }
 
     private Map<String, Object> mergeWithFileIfExists(Path inputDir, String file, Map<String, Object> data) {
@@ -506,8 +506,7 @@ public class QuarkusHelmWriterSessionListener {
             Map<String, Object> seen = new HashMap<>();
 
             for (ConfigReference valueReference : valuesReferences) {
-                String valueReferenceProperty = Strings
-                        .kebabToCamelCase(helmConfig.getValuesRootAlias() + "." + valueReference.getProperty());
+                String valueReferenceProperty = helmConfig.getValuesRootAlias() + "." + valueReference.getProperty();
 
                 if (seen.containsKey(valueReference.getProperty())) {
                     if (Strings.isNotNullOrEmpty(valueReference.getProfile())) {

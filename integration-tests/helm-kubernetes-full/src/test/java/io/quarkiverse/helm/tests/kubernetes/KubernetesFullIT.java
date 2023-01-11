@@ -60,9 +60,9 @@ public class KubernetesFullIT {
         // Should NOT contain not-found: as this property is ignored
         assertNull(helmExampleValues.get("not-found"));
         // Should contain number
-        assertEquals(12, helmExampleValues.get("typesNumber"));
+        assertEquals(12, helmExampleValues.get("types-number"));
         // Should contain boolean
-        assertEquals(true, helmExampleValues.get("typesBool"));
+        assertEquals(true, helmExampleValues.get("types-bool"));
         // Should contain overriden value
         assertEquals("override-host-in-helm", helmExampleValues.get("host"));
     }
@@ -85,7 +85,7 @@ public class KubernetesFullIT {
         // Should NOT contain not-found: as this property is ignored
         assertNull(helmExampleValues.get("not-found"));
         // Should contain vcs-url with the value from properties
-        assertEquals("Only for DEV!", helmExampleValues.get("commitId"));
+        assertEquals("Only for DEV!", helmExampleValues.get("commit-id"));
     }
 
     private final InputStream getResourceAsStream(String file) throws FileNotFoundException {

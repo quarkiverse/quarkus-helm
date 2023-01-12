@@ -58,6 +58,13 @@ public class ValueReferenceConfig {
     Map<String, String> valueAsMap;
 
     /**
+     * A list separated by comma that the property will have in the Helm values file.
+     * If not set, the extension will resolve it from the generated artifacts.
+     */
+    @ConfigItem
+    Optional<List<String>> valueAsList;
+
+    /**
      * If not provided, it will use `{{ .Values.<root alias>.<property> }}`.
      *
      * @return The complete Helm expression to be replaced with.

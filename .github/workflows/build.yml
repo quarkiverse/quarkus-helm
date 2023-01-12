@@ -136,7 +136,7 @@ jobs:
           helm repo update local
 
           # And install application from the Helm repository
-          helm install --devel quarkus-with-templates local/my-chart-with-templates -n $K8S_NAMESPACE --set app.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-with-templates:$VERSION --set favorite.drink=coca
+          helm install --devel quarkus-with-templates local/my-chart-with-templates -n $K8S_NAMESPACE --set app.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-with-templates:$VERSION --set app.favorite.drink=coca
           kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-with-templates -n $K8S_NAMESPACE
 
           if [ $(kubectl get configmap/my-configmap -n $K8S_NAMESPACE -o yaml | grep "drink: coca" | wc -l) -ne 1 ]
@@ -170,7 +170,7 @@ jobs:
           fi
 
           ## Let's update our Helm chart by not installing the ingress
-          helm upgrade --devel quarkus-with-templates local/my-chart-with-templates -n $K8S_NAMESPACE --set app.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-with-templates:$VERSION --set favorite.drink=coca --set app.ingress.enabled=false
+          helm upgrade --devel quarkus-with-templates local/my-chart-with-templates -n $K8S_NAMESPACE --set app.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-with-templates:$VERSION --set app.favorite.drink=coca --set app.ingress.enabled=false
           kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-with-templates -n $K8S_NAMESPACE
 
           ## Now, the ingress "my-ingress" should have NOT been installed

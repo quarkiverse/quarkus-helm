@@ -322,6 +322,8 @@ public class HelmProcessor {
             return v.valueAsBool.get();
         } else if (!v.valueAsMap.isEmpty()) {
             return v.valueAsMap;
+        } else if (v.valueAsList.isPresent()) {
+            return v.valueAsList.get();
         }
 
         return v.value.orElse(null);

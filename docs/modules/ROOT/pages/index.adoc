@@ -564,11 +564,11 @@ The Quarkus Helm extension partially supports Helm extensions via https://helm.s
 ----
 # Example of expressions
 quarkus.helm.expressions.0.path=(kind == Service).metadata.annotations.'app.quarkus.io/commit-id'
-quarkus.helm.expressions.0.expression={{ .Values.favorite.drink | default "tea" | quote }}
+quarkus.helm.expressions.0.expression={{ .Values.app.favorite.drink | default "tea" | quote }}
 
 # Example of multiline expression
 quarkus.helm.expressions.1.path=(kind == ConfigMap && metadata.name == my-configmap).data
-quarkus.helm.expressions.1.expression={{- range $key, $val := .Values.favorite }}\n\
+quarkus.helm.expressions.1.expression={{- range $key, $val := .Values.app.favorite }}\n\
 {{ indent 2 $key }}: {{ $val | quote }}\n\
 {{- end }}
 ----

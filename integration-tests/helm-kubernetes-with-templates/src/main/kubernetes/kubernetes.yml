@@ -5,6 +5,13 @@ metadata:
 data:
   myvalue: "Hello World"
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: names-configmap
+data:
+  myvalue: "Hello World"
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

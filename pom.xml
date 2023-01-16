@@ -8,7 +8,7 @@
   </parent>
   <groupId>io.quarkiverse.helm</groupId>
   <artifactId>quarkus-helm-parent</artifactId>
-  <version>0.2.3</version>
+  <version>0.2.4-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Quarkus - Helm - Parent</name>
   <modules>
@@ -66,8 +66,4 @@
       </plugins>
     </pluginManagement>
   </build>
-
-  <scm>
-    <tag>0.2.3</tag>
-  </scm>
 </project>

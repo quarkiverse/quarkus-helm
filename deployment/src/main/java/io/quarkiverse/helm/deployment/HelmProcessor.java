@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.jboss.logging.Logger;
 
 import io.dekorate.ConfigReference;
 import io.dekorate.Session;
@@ -42,6 +43,7 @@ import io.quarkus.kubernetes.spi.DekorateOutputBuildItem;
 import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
 public class HelmProcessor {
+    private static final Logger LOGGER = Logger.getLogger(HelmProcessor.class);
     private static final String NAME_FORMAT_REG_EXP = "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
 
     private static final String QUARKUS_KUBERNETES_NAME = "quarkus.kubernetes.name";
@@ -90,10 +92,26 @@ public class HelmProcessor {
 
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void generateResources(ApplicationInfoBuildItem app, OutputTargetBuildItem outputTarget,
-            DekorateOutputBuildItem dekorateOutput,
+            Optional<DekorateOutputBuildItem> dekorateOutput,
             List<GeneratedKubernetesResourceBuildItem> generatedResources,
             // this is added to ensure that the build step will be run
             BuildProducer<ArtifactResultBuildItem> dummy,
+            HelmChartConfig config) {
+        if (dekorateOutput.isPresent()) {
+            doGenerateResources(app, outputTarget, dekorateOutput.get(), generatedResources, config);
+        } else if (config.enabled) {
+            LOGGER.warn("Quarkus Helm extension is skipped since no Quarkus Kubernetes extension is configured. ");
+        }
+    }
+
+    @BuildStep
+    void disableDefaultHelmListener(BuildProducer<ConfiguratorBuildItem> helmConfiguration) {
+        helmConfiguration.produce(new ConfiguratorBuildItem(new DisableDefaultHelmListener()));
+    }
+
+    private void doGenerateResources(ApplicationInfoBuildItem app, OutputTargetBuildItem outputTarget,
+            DekorateOutputBuildItem dekorateOutput,
+            List<GeneratedKubernetesResourceBuildItem> generatedResources,
             HelmChartConfig config) {
         validate(config);
         Project project = (Project) dekorateOutput.getProject();
@@ -137,11 +155,6 @@ public class HelmProcessor {
                 pushToHelmRepository(new File(tarball), config.repository);
             }
         }
-    }
-
-    @BuildStep
-    void disableDefaultHelmListener(BuildProducer<ConfiguratorBuildItem> helmConfiguration) {
-        helmConfiguration.produce(new ConfiguratorBuildItem(new DisableDefaultHelmListener()));
     }
 
     private void validate(HelmChartConfig config) {

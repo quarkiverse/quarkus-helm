@@ -18,5 +18,6 @@
     <module>helm-kubernetes-with-templates</module>
     <module>helm-kubernetes-full</module>
     <module>helm-openshift-minimal</module>
+    <module>helm-without-kubernetes</module>
   </modules>
 </project>

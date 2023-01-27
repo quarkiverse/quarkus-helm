@@ -212,6 +212,13 @@ If you want to expose your application in OpenShift, you also need to enable the
 quarkus.openshift.route.expose=true
 ----
 
+And since the Quarkus OpenShift extension will also generate the Kubernetes manifests, you need to explicitly specify the deployment target you want to use:
+
+[source,properties]
+----
+quarkus.helm.repository.deployment-target=openshift
+----
+
 Once we add the Quarkus Helm extension to your project, you can now generate the Helm resources by running the following Maven command:
 
 [source,bash]

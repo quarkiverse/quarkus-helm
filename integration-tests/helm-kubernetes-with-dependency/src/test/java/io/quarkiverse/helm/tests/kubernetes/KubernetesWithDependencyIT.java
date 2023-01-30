@@ -1,6 +1,7 @@
 package io.quarkiverse.helm.tests.kubernetes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -9,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -41,6 +43,18 @@ public class KubernetesWithDependencyIT {
         assertEquals("my_db_name", auth.get("database"));
         assertEquals("secret", auth.get("postgresPassword"));
         assertEquals("value", auth.get("key"));
+    }
+
+    @Test
+    public void chartFileShouldContainDependencyValues() throws IOException {
+        Map<String, Object> values = Serialization.yamlMapper()
+                .readValue(getResourceAsStream("Chart.yaml"), Map.class);
+        List<Object> dependencies = (List<Object>) values.get("dependencies");
+        Map<String, Object> postgresql = (Map<String, Object>) dependencies.get(0);
+        assertEquals("postgresql", postgresql.get("name"));
+        assertEquals("11.6.22", postgresql.get("version"));
+        assertEquals("postgresql", postgresql.get("alias"));
+        assertFalse(postgresql.containsKey("enabled"));
     }
 
     private final InputStream getResourceAsStream(String file) throws FileNotFoundException {

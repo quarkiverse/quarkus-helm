@@ -3,3 +3,5 @@ postgresql:
     postgresql:
       auth:
         key: value
+app:
+  serviceType: NodePort

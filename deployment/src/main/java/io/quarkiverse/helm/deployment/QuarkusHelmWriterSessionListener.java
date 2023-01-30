@@ -308,6 +308,9 @@ public class QuarkusHelmWriterSessionListener {
                     new TypeReference<Map<String, Object>>() {
                     });
             result.putAll(yaml);
+            // first, incorporate the properties from the file
+            Maps.merge(valuesAsMultiValueMap, result);
+            // then, merge it with the generated data
             Maps.merge(result, valuesAsMultiValueMap);
             return result;
         }

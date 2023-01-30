@@ -36,6 +36,8 @@ public class KubernetesWithDependencyIT {
         Map<String, Object> values = Serialization.yamlMapper()
                 .readValue(getResourceAsStream("values.yaml"), Map.class);
         assertNotNull(values.containsKey(ROOT_CONFIG_NAME), "Does not contain `" + ROOT_CONFIG_NAME + "`");
+        Map<String, Object> app = (Map<String, Object>) values.get("app");
+        assertEquals("NodePort", app.get("serviceType"));
         Map<String, Object> dependencyValues = (Map<String, Object>) values.get("postgresql");
         Map<String, Object> global = (Map<String, Object>) dependencyValues.get("global");
         Map<String, Object> postgresql = (Map<String, Object>) global.get("postgresql");
@@ -46,7 +48,7 @@ public class KubernetesWithDependencyIT {
     }
 
     @Test
-    public void chartFileShouldContainDependencyValues() throws IOException {
+    public void chartFileShouldContainExpectedData() throws IOException {
         Map<String, Object> values = Serialization.yamlMapper()
                 .readValue(getResourceAsStream("Chart.yaml"), Map.class);
         List<Object> dependencies = (List<Object>) values.get("dependencies");

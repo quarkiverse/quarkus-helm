@@ -6,7 +6,6 @@ annotations:
       url: https://github.com/prometheus-operator/kube-prometheus
   artifacthub.io/operator: "true"
   catalog.cattle.io/auto-install: monitoring-crd=match
-name: it's replaced!
 apiVersion: v2
 appVersion: 0.50.0
 dependencies:

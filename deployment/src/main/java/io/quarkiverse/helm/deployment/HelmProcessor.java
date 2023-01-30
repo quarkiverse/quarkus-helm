@@ -311,9 +311,8 @@ public class HelmProcessor {
                 .withVersion(dependency.version)
                 .withRepository(dependency.repository)
                 .withCondition(defaultString(dependency.condition))
-                .withTags(defaultArray(dependency.tags));
-
-        dependency.enabled.ifPresent(builder::withEnabled);
+                .withTags(defaultArray(dependency.tags))
+                .withEnabled(dependency.enabled.orElse(true));
 
         return builder.build();
     }

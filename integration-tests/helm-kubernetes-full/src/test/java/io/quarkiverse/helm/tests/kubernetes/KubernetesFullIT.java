@@ -65,6 +65,8 @@ public class KubernetesFullIT {
         assertEquals(true, helmExampleValues.get("types-bool"));
         // Should contain overriden value
         assertEquals("override-host-in-helm", helmExampleValues.get("host"));
+        // Should contain commit-id
+        assertNull(helmExampleValues.get("commit-id"));
     }
 
     @Test

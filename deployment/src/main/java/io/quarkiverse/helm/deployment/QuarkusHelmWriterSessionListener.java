@@ -294,7 +294,10 @@ public class QuarkusHelmWriterSessionListener {
 
     private String deductProperty(HelmChartConfig helmConfig, String property) {
         if (!startWithDependencyPrefix(property, helmConfig.getDependencies())) {
-            property = helmConfig.getValuesRootAlias() + "." + property;
+            String prefix = helmConfig.getValuesRootAlias() + ".";
+            if (!property.startsWith(prefix)) {
+                property = prefix + property;
+            }
         }
         return property;
     }
@@ -509,12 +512,12 @@ public class QuarkusHelmWriterSessionListener {
             Map<String, Object> seen = new HashMap<>();
 
             for (ConfigReference valueReference : valuesReferences) {
-                String valueReferenceProperty = helmConfig.getValuesRootAlias() + "." + valueReference.getProperty();
+                String valueReferenceProperty = deductProperty(helmConfig, valueReference.getProperty());
 
-                if (seen.containsKey(valueReference.getProperty())) {
+                if (seen.containsKey(valueReferenceProperty)) {
                     if (Strings.isNotNullOrEmpty(valueReference.getProfile())) {
                         Object value = Optional.ofNullable(valueReference.getValue())
-                                .orElse(seen.get(valueReference.getProperty()));
+                                .orElse(seen.get(valueReferenceProperty));
                         getValues(prodValues, valuesByProfile, valueReference).put(valueReferenceProperty, value);
                     }
 
@@ -531,7 +534,7 @@ public class QuarkusHelmWriterSessionListener {
 
                     Object value = Optional.ofNullable(valueReference.getValue()).orElse(found);
                     if (value != null) {
-                        seen.put(valueReference.getProperty(), value);
+                        seen.put(valueReferenceProperty, value);
                         getValues(prodValues, valuesByProfile, valueReference).put(valueReferenceProperty, value);
                     }
                 }

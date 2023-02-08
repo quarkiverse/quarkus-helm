@@ -31,6 +31,7 @@ public class KubernetesFullIT {
         assertNotNull(getResourceAsStream("values.dev.yaml"));
         assertNotNull(getResourceAsStream("templates/deployment.yaml"));
         assertNotNull(getResourceAsStream("templates/NOTES.txt"));
+        assertNotNull(getResourceAsStream("crds/crontabs.stable.example.com.yaml"));
     }
 
     @Test

@@ -172,7 +172,7 @@ public class HelmChartConfig {
      * The input folder in which to place the user-defined Helm files. These files will be used as inputs to populate the
      * generated Helm files.
      * At the moment, the supported Helm files are: README.md, LICENSE, values.schema.json, app-readme.md or app-README.md,
-     * questions.yml or questions.yaml, and requirements.yml or requirements.yaml.
+     * questions.yml or questions.yaml, the "crds" directory, and requirements.yml or requirements.yaml.
      *
      * Moreover, you can provide a custom `values.yaml` or `Chart.yaml` and the content will be merged with the auto-generated
      * configuration.

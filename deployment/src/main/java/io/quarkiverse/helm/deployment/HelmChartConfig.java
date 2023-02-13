@@ -200,4 +200,11 @@ public class HelmChartConfig {
      */
     @ConfigItem
     public HelmRepository repository;
+
+    /**
+     * If enabled, the extension will check whether there are properties using system properties in the form of `${XXX}` and
+     * if so, it will expose these properties as env-var values within the generated container resource.
+     */
+    @ConfigItem(defaultValue = "true")
+    public boolean mapSystemProperties;
 }

@@ -159,60 +159,7 @@ Quarkus Helm needs either Quarkus Kubernetes or OpenShift to be present because 
 mvn quarkus:add-extension -Dextensions='kubernetes,helm'
 ----
 
-The first thing we need to do is to map the system properties we used to configure the datasource xref:example-crud.adoc#datasource-configuration[here] to the pod container environment properties:
-
-[source,properties]
-----
-quarkus.kubernetes.env.vars.POSTGRESQL_URL=any
-quarkus.kubernetes.env.vars.POSTGRESQL_USERNAME=any
-quarkus.kubernetes.env.vars.POSTGRESQL_PASSWORD=any
-----
-
-If you build your application again using `mvn clean pacakge`, the Kubernetes resources will be generated at `target/kubernetes/kubernetes.yml` which will contain a Deployment resource with these environment variables:
-
-[source,yaml]
-----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    app.kubernetes.io/version: 1.0.0-SNAPSHOT
-    app.kubernetes.io/name: demo
-  name: demo
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/version: 1.0.0-SNAPSHOT
-      app.kubernetes.io/name: demo
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/version: 1.0.0-SNAPSHOT
-        app.kubernetes.io/name: demo
-    spec:
-      containers:
-        - env:
-            - name: KUBERNETES_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: POSTGRESQL_URL
-              value: any
-            - name: POSTGRESQL_PASSWORD
-              value: any
-            - name: POSTGRESQL_USERNAME
-              value: any
-          image: quay.io/myuser/demo:0.0.1
-          imagePullPolicy: Always
-          name: demo
-          ports:
-            - containerPort: 8080
-              name: http
-              protocol: TCP
-----
-
-And if you go to the generated Helm chart at `target/helm/kubernetes/demo`, you will see that the file `values.yaml` is also mapping these variables:
+The Quarkus Helm extension will automatically map the system properties that are used in the application properties as pod container environment properties. So, if you go to the generated Helm chart at the `target/helm/kubernetes/demo` folder, you will see that the file `values.yaml` is also mapping these variables:
 
 [source,yaml]
 ----
@@ -220,9 +167,9 @@ app:
   serviceType: ClusterIP
   image: quay.io/jcarvaja/quarkus-example:latest
   envs:
-    POSTGRESQL_URL: any
-    POSTGRESQL_USERNAME: any
-    POSTGRESQL_PASSWORD: any
+    POSTGRESQL_URL: ""
+    POSTGRESQL_USERNAME: ""
+    POSTGRESQL_PASSWORD: ""
 ----
 
 And that these values will be used in the deployment template at `templates/deployment.yaml`:

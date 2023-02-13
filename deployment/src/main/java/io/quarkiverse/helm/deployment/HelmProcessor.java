@@ -1,5 +1,6 @@
 package io.quarkiverse.helm.deployment;
 
+import static io.github.yamlpath.utils.StringUtils.EMPTY;
 import static io.quarkiverse.helm.deployment.HelmChartUploader.pushToHelmRepository;
 import static io.quarkus.deployment.Capability.OPENSHIFT;
 
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.ConfigValue;
 import org.jboss.logging.Logger;
 
 import io.dekorate.ConfigReference;
@@ -29,6 +31,8 @@ import io.dekorate.helm.config.HelmDependencyBuilder;
 import io.dekorate.kubernetes.config.ContainerBuilder;
 import io.dekorate.kubernetes.decorator.AddInitContainerDecorator;
 import io.dekorate.project.Project;
+import io.dekorate.utils.Strings;
+import io.quarkiverse.helm.deployment.decorators.LowPriorityAddEnvVarDecorator;
 import io.quarkus.deployment.Capabilities;
 import io.quarkus.deployment.IsNormal;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -52,7 +56,42 @@ public class HelmProcessor {
     private static final String QUARKUS_CONTAINER_IMAGE_NAME = "quarkus.container-image.name";
     private static final String SERVICE_NAME_PLACEHOLDER = "::service-name";
     private static final String SERVICE_PORT_PLACEHOLDER = "::service-port";
-    private static final String SERVICE_SPLIT = ":";
+    private static final String SPLIT = ":";
+    private static final String PROPERTIES_CONFIG_SOURCE = "PropertiesConfigSource";
+    private static final String SYSTEM_PROPERTY_START = "${";
+    private static final String SYSTEM_PROPERTY_END = "}";
+
+    @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
+    void mapSystemPropertiesIfEnabled(Capabilities capabilities, ApplicationInfoBuildItem info, HelmChartConfig helmConfig,
+            BuildProducer<DecoratorBuildItem> decorators) {
+        if (helmConfig.mapSystemProperties) {
+            String deploymentName = getDeploymentName(capabilities, info);
+
+            Config config = ConfigProvider.getConfig();
+            config.getPropertyNames().forEach(propName -> {
+                ConfigValue propValue = config.getConfigValue(propName);
+                String rawValue = propValue.getRawValue();
+                if (isPropertiesConfigSource(propValue.getSourceName()) && isSystemProperty(rawValue)) {
+                    while (isSystemProperty(rawValue)) {
+                        int start = rawValue.indexOf(SYSTEM_PROPERTY_START);
+                        int end = rawValue.indexOf(SYSTEM_PROPERTY_END, start);
+                        String systemProperty = rawValue.substring(start + SYSTEM_PROPERTY_START.length(), end);
+                        String defaultValue = EMPTY;
+                        if (systemProperty.contains(SPLIT)) {
+                            String[] systemPropertyWithDefaultValue = systemProperty.split(SPLIT);
+                            systemProperty = systemPropertyWithDefaultValue[0];
+                            defaultValue = systemPropertyWithDefaultValue[1];
+                        }
+
+                        decorators.produce(new DecoratorBuildItem(
+                                new LowPriorityAddEnvVarDecorator(deploymentName, systemProperty, defaultValue)));
+
+                        rawValue = rawValue.substring(end + SYSTEM_PROPERTY_END.length());
+                    }
+                }
+            });
+        }
+    }
 
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void configureHelmDependencyOrder(Capabilities capabilities, ApplicationInfoBuildItem info, HelmChartConfig config,
@@ -70,9 +109,9 @@ public class HelmProcessor {
                         .withCommand("sh");
 
                 String service = dependency.waitForService.get();
-                if (service.contains(SERVICE_SPLIT)) {
+                if (service.contains(SPLIT)) {
                     // it's service name and service port
-                    String[] parts = service.split(SERVICE_SPLIT);
+                    String[] parts = service.split(SPLIT);
                     String serviceName = parts[0];
                     String servicePort = parts[1];
                     container.withArguments("-c", dependency.waitForServicePortCommandTemplate
@@ -370,5 +409,13 @@ public class HelmProcessor {
         return resourceName
                 .or(() -> config.getOptionalValue(QUARKUS_CONTAINER_IMAGE_NAME, String.class))
                 .orElse(info.getName());
+    }
+
+    private boolean isPropertiesConfigSource(String sourceName) {
+        return Strings.isNotNullOrEmpty(sourceName) && sourceName.startsWith(PROPERTIES_CONFIG_SOURCE);
+    }
+
+    private boolean isSystemProperty(String rawValue) {
+        return Strings.isNotNullOrEmpty(rawValue) && rawValue.contains(SYSTEM_PROPERTY_START);
     }
 }

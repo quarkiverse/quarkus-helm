@@ -1,0 +1,403 @@
+[[example-crud]]
+= Example: How to generate the Helm Chart of a REST CRUD Quarkus application
+
+In this example, we're going to create a very simple REST CRUD application in Quarkus. Then, we'll configure it to build the application image, and push it to a container registry, so Kubernetes can pull this image from. Next, we'll configure the Quarkus Kubernetes and Helm extensions to generate the Helm chart and push it into a Helm repository. Finally, we'll see how to install the generated Helm chart into Kubernetes from the Helm repository.
+
+== Prerequisites
+
+* Maven 3.8+
+* Java 17+
+* Have logged into a Kubernetes cluster
+* Have installed the Helm command line
+
+== Create application
+
+Our application will simply manage fruits. For doing this, we'll use the following extensions:
+
+* https://quarkus.io/guides/resteasy-reactive#json-serialisation[RESTEASY Reactive Jackson]: REST and JSON support
+* https://quarkus.io/guides/rest-data-panache[Hibernate ORM REST Data with Panache]: Database support, plus auto generation of CRUD resources from entities
+* https://quarkus.io/guides/datasource#jdbc-datasource-2[JDBC Postgresql]: JDBC driver for Postgresql
+
+Let's create our application from scratch:
+
+[source,bash,subs=attributes+]
+----
+mvn io.quarkus.platform:quarkus-maven-plugin:{quarkus-version}:create \
+    -DprojectGroupId=org.acme \
+    -DprojectArtifactId=example \
+    -Dextensions="resteasy-reactive,hibernate-orm-rest-data-panache,jdbc-postgresql"
+cd example
+----
+
+The generated application will contain the following Hello resource:
+
+[source,java]
+----
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+@Path("/hello")
+public class GreetingResource {
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String hello() {
+        return "Hello from RESTEasy Reactiv aaaaae";
+    }
+}
+----
+
+So, if we start our application, for example running the Maven command `mvn quarkus:dev` (Quarkus DEV mode) , we could call it using `http://localhost:8080/hello`.
+
+To continue with, let's add our first Fruit entity:
+
+[source,java]
+----
+@Entity
+public class Fruit extends PanacheEntity {
+    public String name;
+}
+----
+
+Note that by extending to the PanacheEntity class, we're adding a `id` column to our Fruit entity as primary key of type Long. So, our Fruit entity will have two columns: `id` and `name` columns.
+
+Because we want to generate the CRUD resources of the Fruit entity, let's configure the https://quarkus.io/guides/rest-data-panache[Hibernate ORM REST Data with Panache] extension by simply adding the following interface:
+
+[source,java]
+----
+public interface FruitResource extends PanacheEntityResource<Fruit, Long> {
+}
+----
+
+And that's all we would need to expose the CRUD (list, get, update, delete) endpoints. If we start our application again in DEV mode (`mvn quarkus:dev`), we could retrieve the list of fruits by calling `http://localhost:8080/fruit`. However, as we don't have data yet, the list is empty. So, let's add some initial data by adding the file `import.sql` into `src/main/resources`:
+
+[source,sql]
+----
+insert into Fruit(id, name) values (1, 'apple');
+insert into Fruit(id, name) values (2, 'banana');
+----
+
+And if we try `http://localhost:8080/fruit` again, we should see these fruits now!
+
+[source,json]
+----
+[{"id":  1, "name": "apple"}, {"id":  2, "name": "banana"}]
+----
+
+But how could it work if we didn't specify any database yet? That's the magic of running the application in DEV mode. This mode will transparently start a database in your local machine and provide the configuration, so your application works with this database.
+
+* How does DEV mode know which database engine to start?
+
+DEV mode will check the JDBC driver you have configured in your project. In this example, we used `jdbc-postgresql`, so it will start a Postgresql database.
+
+* What properties is DEV mode adding to our application?
+
+There are a few, but the most important properties are:
+
+[source,properties]
+----
+quarkus.datasource.jdbc.url=<the JDBC url>
+quarkus.datasource.username=<the database username>
+quarkus.datasource.password=<the database password>
+----
+
+Therefore, to execute our application, we would need to provide these properties to use a running Postgresql database. The problem is that we don't know where is the Postgresql database that we'll use in Kubernetes! Then, one approach to address this situation is to provide these properties using environment properties:
+
+[[datasource-configuration]]
+[source,properties]
+----
+quarkus.datasource.jdbc.url=${POSTGRESQL_URL}
+quarkus.datasource.username=${POSTGRESQL_USERNAME}
+quarkus.datasource.password=${POSTGRESQL_PASSWORD}
+----
+
+We'll see in the following sections, how to populate these environment properties when installing the application in Kubernetes.
+
+== Configure the container image
+
+We need to package our application into a container image, so Kubernetes can pull this image and start the application.
+Fortunately, Quarkus provides several https://quarkus.io/guides/container-image[container image extensions] to create this container image either using https://quarkus.io/guides/container-image#docker[Docker], https://quarkus.io/guides/container-image#jib[JIB] or https://quarkus.io/guides/container-image#buildpack[Buildpack].
+
+In this example, we'll use the container image Docker extension, let's add it:
+
+[source,bash,subs=attributes+]
+----
+mvn quarkus:add-extension -Dextensions='container-image-docker'
+----
+
+Note that if you're using or going to use the Quarkus OpenShift extension, this automatically brings https://quarkus.io/guides/container-image#s2i[the container image s2i] extension, and hence Quarkus will fail to build because you're now using two container image extensions: docker and s2i. To solve this, you need to explicitly specify that you want to use the container image docker extension by adding:
+
+[source,properties]
+----
+quarkus.container-image.builder=docker
+----
+
+Next, we need to enable the container image build and also the push property:
+
+[source,properties]
+----
+quarkus.container-image.build=true
+quarkus.container-image.push=true
+quarkus.container-image.image=<CONTAINER REGISTRY>/<USERNAME>/<APP NAME>:<APP TAG>
+----
+
+Note that you need to provide the right `quarkus.container-image.image` using a container registry you have logged in, for example: `quarkus.container-image.image=quay.io/myuser/demo:0.0.1` (here, the container registry is `quay.io`, but you could use Docker Hub as well).
+
+When building your application using maven `mvn clean package`, now you will see that the container image is built and pushed into the container registry we have configured.
+
+Next, let's generate the Kubernetes resources and the Helm chart.
+
+[[configure-quarkus-helm]]
+== Configure Quarkus Helm
+
+Quarkus Helm needs either Quarkus Kubernetes or OpenShift to be present because it uses the manifests generated by any of these extensions as source. Let's use the Quarkus Kubernetes extension here, along to the Quarkus Helm extension:
+
+[source,bash,subs=attributes+]
+----
+mvn quarkus:add-extension -Dextensions='kubernetes,helm'
+----
+
+The first thing we need to do is to map the system properties we used to configure the datasource xref:example-crud.adoc#datasource-configuration[here] to the pod container environment properties:
+
+[source,properties]
+----
+quarkus.kubernetes.env.vars.POSTGRESQL_URL=any
+quarkus.kubernetes.env.vars.POSTGRESQL_USERNAME=any
+quarkus.kubernetes.env.vars.POSTGRESQL_PASSWORD=any
+----
+
+If you build your application again using `mvn clean pacakge`, the Kubernetes resources will be generated at `target/kubernetes/kubernetes.yml` which will contain a Deployment resource with these environment variables:
+
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/version: 1.0.0-SNAPSHOT
+    app.kubernetes.io/name: demo
+  name: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/version: 1.0.0-SNAPSHOT
+      app.kubernetes.io/name: demo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/version: 1.0.0-SNAPSHOT
+        app.kubernetes.io/name: demo
+    spec:
+      containers:
+        - env:
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POSTGRESQL_URL
+              value: any
+            - name: POSTGRESQL_PASSWORD
+              value: any
+            - name: POSTGRESQL_USERNAME
+              value: any
+          image: quay.io/myuser/demo:0.0.1
+          imagePullPolicy: Always
+          name: demo
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+----
+
+And if you go to the generated Helm chart at `target/helm/kubernetes/demo`, you will see that the file `values.yaml` is also mapping these variables:
+
+[source,yaml]
+----
+app:
+  serviceType: ClusterIP
+  image: quay.io/jcarvaja/quarkus-example:latest
+  envs:
+    POSTGRESQL_URL: any
+    POSTGRESQL_USERNAME: any
+    POSTGRESQL_PASSWORD: any
+----
+
+And that these values will be used in the deployment template at `templates/deployment.yaml`:
+
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/version: 1.0.0-SNAPSHOT
+    app.kubernetes.io/name: helm-quickstart
+  name: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/version: 1.0.0-SNAPSHOT
+      app.kubernetes.io/name: demo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/version: 1.0.0-SNAPSHOT
+        app.kubernetes.io/name: demo
+    spec:
+      containers:
+        - env:
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POSTGRESQL_URL
+              value: {{ .Values.app.envs.POSTGRESQL_URL }}
+            - name: POSTGRESQL_PASSWORD
+              value: {{ .Values.app.envs.POSTGRESQL_PASSWORD }}
+            - name: POSTGRESQL_USERNAME
+              value: {{ .Values.app.envs.POSTGRESQL_USERNAME }}
+          image: {{ .Values.app.image }}
+          imagePullPolicy: Always
+          name: demo
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+----
+
+Thanks to these replacements that the Quarkus Helm does, we can overwrite the default values when installing the Helm chart into Kubernetes!
+
+Let's now define a Helm dependency to start a Postgresql database when we install the Helm chart:
+
+[source,properties]
+----
+quarkus.helm.dependencies.postgresql.version=11.9.1
+quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
+quarkus.helm.dependencies.postgresql.wait-for-service=demo-db:5432
+----
+
+Note that we'll add the property `quarkus.helm.dependencies.postgresql.wait-for-service=demo-db:5432`, so our application waits for this service before starting (you can go xref:index.adoc#helm-dependencies-install-in-order[here] to know more about this feature).
+
+This Helm dependency will start https://bitnami.com/stack/postgresql/helm[the Postgresql database] provided by Bitnami. According to the Bitnami documentation, to configure the database name, user and password we need to provide the following properties:
+
+* postgresql.auth.database
+* postgresql.auth.username
+* postgresql.auth.password
+
+Therefore, we need to configure Quarkus Helm to map these properties into the generated `values.yaml` file by adding:
+
+[source,properties]
+----
+quarkus.helm.values."postgresql.auth.database".value=demo_database
+quarkus.helm.values."postgresql.auth.username".value=user
+quarkus.helm.values."postgresql.auth.password".value=supersecret
+----
+
+Note that Bitnami images require root access to work which is incompatible with how OpenShift works, so if you want to install the Helm chart into OpenShift, you would also need to disable the root access by providing the following properties to the Postgresql dependency:
+
+[source,properties]
+----
+quarkus.helm.values."postgresql.volumePermissions.enabled".value-as-bool=false
+quarkus.helm.values."postgresql.volumePermissions.securityContext.runAsUser".value=auto
+quarkus.helm.values."postgresql.securityContext.enabled".value-as-bool=false
+quarkus.helm.values."postgresql.shmVolume.chmod.enabled".value-as-bool=false
+quarkus.helm.values."postgresql.primary.containerSecurityContext.enabled".value-as-bool=false
+quarkus.helm.values."postgresql.primary.containerSecurityContext.runAsUser".value=auto
+quarkus.helm.values."postgresql.primary.podSecurityContext.enabled".value-as-bool=false
+quarkus.helm.values."postgresql.primary.podSecurityContext.fsGroup".value=auto
+----
+
+And finally, we also need to overwrite the correct values of the environment properties:
+
+[source,properties]
+----
+quarkus.helm.values."app.envs.POSTGRESQL_URL".value=jdbc:postgresql://demo-db:5432/demo_database
+quarkus.helm.values."app.envs.POSTGRESQL_USERNAME".value=user
+quarkus.helm.values."app.envs.POSTGRESQL_PASSWORD".value=supersecret
+----
+
+Now, if we build again our project and check the generated Helm chart folder, we'll see that the Chart.yaml file will have the expected Postgresql dependency:
+
+[source,yaml]
+----
+name: demo
+version: 1.0.0-SNAPSHOT
+apiVersion: v2
+dependencies:
+  - name: postgresql
+    version: 11.9.1
+    repository: https://charts.bitnami.com/bitnami
+    alias: postgresql
+----
+
+And it will be properly configured because the `values.yml` file will have the expected configuration:
+
+[source,yaml]
+----
+app:
+  serviceType: ClusterIP
+  image: quay.io/jcarvaja/quarkus-example:latest
+  envs:
+    POSTGRESQL_URL: jdbc:postgresql://demo-db:5432/demo_database
+    POSTGRESQL_USERNAME: user
+    POSTGRESQL_PASSWORD: supersecret
+postgresql:
+  auth:
+    password: supersecret
+    database: demo_database
+    username: user
+----
+
+== Installation
+
+We can several ways to install the generated Helm chart:
+
+=== A. Directly using the Helm chart folder
+
+[source,bash,subs=attributes+]
+----
+helm install --dependency-update demo ./target/helm/kubernetes/demo
+----
+
+Note that the flag `--dependency-update` is necessary to download the Postgresql dependency before installing the Helm chart.
+
+=== B. From a Helm repository
+
+For this method, you need to push the generated Helm chart into a Helm repository. To know more about this feature, please go to xref:index.adoc#push-to-helm-repositories[this section].
+
+For example, to use the https://chartmuseum.com/[ChartMuseum] Helm repository and perform the push of the generated Helm chart when building your application:
+
+[source,properties]
+----
+quarkus.helm.repository.type=CHARTMUSEUM
+quarkus.helm.repository.url=<URL OF CHARTMUSEUM>/api/charts
+quarkus.helm.repository.push=true
+----
+
+Note that if you're using the OpenShift extension, multiple deployment targets will be automatically generated: one for Kubernetes and another one for OpenShift (with the OpenShift specific resources). In this case, two Helm charts will be also generated: one for Kubernetes and another one for OpenShift, so when pushing the Helm chart into a Helm repository, you need to select only one by using the property `quarkus.helm.repository.deployment-target`. For example:
+
+[source,properties]
+----
+quarkus.helm.repository.deployment-target=openshift
+----
+
+After building your application and pushing the Helm chart into the Helm repository, you can now install the Helm chart from the Helm repository:
+
+[source,bash,subs=attributes+]
+----
+# registering the chartmuseum repository into your local machine
+helm repo add chartmuseum <URL OF CHARTMUSEUM>
+
+# and install it
+helm install demo chartmuseum/demo
+----
+
+=== C. Using a Continuous Delivery (CD) platform
+
+A continuous delivery platform will automatically watch for changes in either a GIT or Helm repository and deploy the application or synchronize a running application in Kubernetes.
+
+You can know more about this method in xref:example-argocd.adoc[this example] which uses ArgoCD as Continuous Delivery platform which is really well integrated with Helm.

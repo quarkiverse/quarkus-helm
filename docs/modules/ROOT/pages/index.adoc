@@ -15,6 +15,8 @@ Before getting started, make sure you're using the right Quarkus Helm version th
 [%header,format=csv]
 |===
 Quarkus Helm Version,Quarkus Version
+0.2.6,Quarkus 2.16+
+0.2.5,Quarkus 2.16+
 0.2.4,Quarkus 2.16+
 0.2.3,Quarkus 2.16+
 0.2.2,Quarkus 2.16+
@@ -31,6 +33,8 @@ Apart from all the features supported by the Quarkus Helm extension, in this doc
 
 - xref:index.adoc#usage-helm-kubernetes[Kubernetes]
 - xref:index.adoc#usage-helm-openshift[OpenShift]
+- xref:example-crud.adoc[Example: How to generate the Helm Chart of a REST CRUD Quarkus application]
+- xref:example-argocd.adoc[Example: How to configure a Continuous Delivery (CD) workflow using Quarkus Helm and ArgoCD]
 
 [[usage-helm-kubernetes]]
 == Using the Helm Extension in Kubernetes

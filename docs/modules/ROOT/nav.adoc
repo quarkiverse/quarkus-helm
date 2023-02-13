@@ -11,4 +11,6 @@
 ** xref:index.adoc#push-to-helm-repositories[Push to Helm Repositories]
 ** xref:index.adoc#helm-profiles[Helm Profiles]
 ** xref:index.adoc#conditionally-enable-disable-resources[Conditionally enable/disable resources]
+* xref:example-crud.adoc[Example: How to generate the Helm Chart of a REST CRUD Quarkus application]
+* xref:example-argocd.adoc[Example: How to configure a Continuous Delivery (CD) workflow using Quarkus Helm and ArgoCD]
 * xref:includes/quarkus-helm.adoc[Configuration Reference]

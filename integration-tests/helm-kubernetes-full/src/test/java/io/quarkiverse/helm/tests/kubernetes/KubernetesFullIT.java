@@ -68,6 +68,16 @@ public class KubernetesFullIT {
         assertEquals("override-host-in-helm", helmExampleValues.get("host"));
         // Should contain foo
         assertEquals("bar", helmExampleValues.get("foo"));
+        Map<String, Object> envs = (Map<String, Object>) helmExampleValues.get("envs");
+        // Should contain system property OVERRIDE_PATH
+        assertEquals("", envs.get("OVERRIDE_PATH"));
+        // Should contain system property OVERRIDE_PART1 which is one part of an existing property
+        assertEquals("", envs.get("OVERRIDE_PART1"));
+        // Should contain system property OVERRIDE_PART2 which is one part with default value of an existing property
+        assertEquals("default", envs.get("OVERRIDE_PART2"));
+        // Should contain system property OVERRIDE_PORT which value is specified
+        // using "quarkus.kubernetes.env.vars.OVERRIDE_PORT=8081"
+        assertEquals("8081", envs.get("OVERRIDE_PORT"));
     }
 
     @Test

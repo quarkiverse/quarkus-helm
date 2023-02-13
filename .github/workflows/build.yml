@@ -215,8 +215,8 @@ jobs:
           quarkus.hibernate-orm.sql-load-script=initialize-tables.sql
           quarkus.hibernate-orm.database.generation=drop-and-create
           quarkus.datasource.reactive.url=postgresql://quarkus-rest-heroes-db:5432/heroes_database
-          quarkus.datasource.username=superman
-          quarkus.datasource.password=superman
+          quarkus.datasource.username=${DATASOURCE_USER}
+          quarkus.datasource.password=${DATASOURCE_PASSWORD:superman}
           quarkus.kubernetes.deployment-target=kubernetes
 
           quarkus.helm.dependencies.postgresql.alias=db
@@ -227,6 +227,7 @@ jobs:
           quarkus.helm.values."db.auth.database".value=heroes_database
           quarkus.helm.values."db.auth.username".value=superman
           quarkus.helm.values."db.auth.password".value=superman
+          quarkus.helm.values."app.envs.DATASOURCE_USER".value=superman
           EOF
 
           # generate helm manifests

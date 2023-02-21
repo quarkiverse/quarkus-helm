@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -49,6 +50,7 @@ import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 public class HelmProcessor {
     private static final Logger LOGGER = Logger.getLogger(HelmProcessor.class);
     private static final String NAME_FORMAT_REG_EXP = "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
+    private static final String BUILD_TIME_PROPERTIES = "/build-time-list";
 
     private static final String QUARKUS_KUBERNETES_NAME = "quarkus.kubernetes.name";
     private static final String QUARKUS_KNATIVE_NAME = "quarkus.knative.name";
@@ -60,18 +62,21 @@ public class HelmProcessor {
     private static final String PROPERTIES_CONFIG_SOURCE = "PropertiesConfigSource";
     private static final String SYSTEM_PROPERTY_START = "${";
     private static final String SYSTEM_PROPERTY_END = "}";
+    // Lazy loaded when calling `isBuildTimeProperty(xxx)`.
+    private static Set<String> buildProperties;
 
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void mapSystemPropertiesIfEnabled(Capabilities capabilities, ApplicationInfoBuildItem info, HelmChartConfig helmConfig,
             BuildProducer<DecoratorBuildItem> decorators) {
         if (helmConfig.mapSystemProperties) {
             String deploymentName = getDeploymentName(capabilities, info);
-
             Config config = ConfigProvider.getConfig();
-            config.getPropertyNames().forEach(propName -> {
+            for (String propName : config.getPropertyNames()) {
                 ConfigValue propValue = config.getConfigValue(propName);
                 String rawValue = propValue.getRawValue();
-                if (isPropertiesConfigSource(propValue.getSourceName()) && isSystemProperty(rawValue)) {
+                if (isPropertiesConfigSource(propValue.getSourceName())
+                        && isSystemProperty(rawValue)
+                        && !isBuildTimeProperty(propValue.getName())) {
                     while (isSystemProperty(rawValue)) {
                         int start = rawValue.indexOf(SYSTEM_PROPERTY_START);
                         int end = rawValue.indexOf(SYSTEM_PROPERTY_END, start);
@@ -89,7 +94,7 @@ public class HelmProcessor {
                         rawValue = rawValue.substring(end + SYSTEM_PROPERTY_END.length());
                     }
                 }
-            });
+            }
         }
     }
 
@@ -413,6 +418,26 @@ public class HelmProcessor {
 
     private boolean isPropertiesConfigSource(String sourceName) {
         return Strings.isNotNullOrEmpty(sourceName) && sourceName.startsWith(PROPERTIES_CONFIG_SOURCE);
+    }
+
+    private boolean isBuildTimeProperty(String name) {
+        if (buildProperties == null) {
+            buildProperties = new HashSet<>();
+            try {
+                Scanner scanner = new Scanner(new File(HelmProcessor.class.getResource(BUILD_TIME_PROPERTIES).getFile()));
+                while (scanner.hasNextLine()) {
+                    buildProperties.add(scanner.nextLine());
+                }
+            } catch (Exception e) {
+                LOGGER.debugf("Can't read the build time properties file at '%s'. Caused by: %s",
+                        BUILD_TIME_PROPERTIES,
+                        e.getMessage());
+            }
+        }
+
+        return buildProperties.stream().anyMatch(build -> name.matches(build) // It's a regular expression
+                || (build.endsWith(".") && name.startsWith(build)) // contains with
+                || name.equals(build)); // or it's equal to
     }
 
     private boolean isSystemProperty(String rawValue) {

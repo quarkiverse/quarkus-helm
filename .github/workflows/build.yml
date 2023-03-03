@@ -198,7 +198,7 @@ jobs:
           cd quarkus-super-heroes/rest-heroes
 
           # install Quarkus Helm extension
-          mvn quarkus:add-extension -Dextensions="io.quarkiverse.helm:quarkus-helm:$QUARKUS_HELM_VERSION"
+          ./mvnw quarkus:add-extension -Dextensions="io.quarkiverse.helm:quarkus-helm:$QUARKUS_HELM_VERSION"
 
           # remove the third party installations via templates (we'll install these services via Helm dependencies :) )
           rm -rf src/main/kubernetes
@@ -231,7 +231,7 @@ jobs:
           EOF
 
           # generate helm manifests
-          mvn clean package -DskipTests \
+          ./mvnw clean package -DskipTests \
             -Dquarkus.platform.version=$QUARKUS_VERSION -Dquarkus.platform.group-id=io.quarkus \
             -Dquarkus.container-image.builder=docker \
             -Dquarkus.container-image.build=true \
@@ -306,7 +306,7 @@ jobs:
           cd quarkus-super-heroes/rest-heroes
 
           # install Quarkus Helm extension
-          mvn quarkus:add-extension -Dextensions="io.quarkiverse.helm:quarkus-helm:$QUARKUS_HELM_VERSION"
+          ./mvnw quarkus:add-extension -Dextensions="io.quarkiverse.helm:quarkus-helm:$QUARKUS_HELM_VERSION"
 
           # remove the third party installations via templates (we'll install these services via Helm dependencies :) )
           rm -rf src/main/kubernetes
@@ -350,7 +350,7 @@ jobs:
           PF_REGISTRY_PID=$!
 
           # generate helm manifests
-          mvn clean package -DskipTests \
+          ./mvnw clean package -DskipTests \
             -Dquarkus.platform.version=$QUARKUS_VERSION -Dquarkus.platform.group-id=io.quarkus \
             -Dquarkus.container-image.builder=docker \
             -Dquarkus.container-image.build=true \

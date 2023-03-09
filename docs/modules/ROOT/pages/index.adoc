@@ -15,6 +15,7 @@ Before getting started, make sure you're using the right Quarkus Helm version th
 [%header,format=csv]
 |===
 Quarkus Helm Version,Quarkus Version
+0.2.7,Quarkus 2.16+
 0.2.6,Quarkus 2.16+
 0.2.5,Quarkus 2.16+
 0.2.4,Quarkus 2.16+

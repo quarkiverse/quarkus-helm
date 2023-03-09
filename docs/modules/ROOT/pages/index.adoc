@@ -710,7 +710,7 @@ app:
   host: my-host
 ----
 
-But as you are now using a profile named `test` (see `quarkus.helm.values[0].profile`) in one of your mapped properties, it will also generate a `values-test.yaml` file with the content:
+But as you are now using a profile named `test` (see `quarkus.helm.values.host.profile`) in one of your mapped properties, it will also generate a `values-test.yaml` file with the content:
 
 [source,yaml]
 ----

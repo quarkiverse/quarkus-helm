@@ -75,7 +75,7 @@ public class HelmProcessor {
         Config config = ConfigProvider.getConfig();
         for (String propName : config.getPropertyNames()) {
             ConfigValue propValue = config.getConfigValue(propName);
-            if(!isConfigValueMappable(propValue)) {
+            if (!isConfigValueMappable(propValue)) {
                 continue;
             }
             String rawValue = propValue.getRawValue();
@@ -111,7 +111,7 @@ public class HelmProcessor {
 
         for (Map.Entry<String, HelmDependencyConfig> entry : config.dependencies.entrySet()) {
             HelmDependencyConfig dependency = entry.getValue();
-            if(dependency.waitForService.isEmpty()) {
+            if (dependency.waitForService.isEmpty()) {
                 continue;
             }
             ContainerBuilder container = new ContainerBuilder()

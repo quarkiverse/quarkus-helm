@@ -75,30 +75,29 @@ public class HelmProcessor {
         Config config = ConfigProvider.getConfig();
         for (String propName : config.getPropertyNames()) {
             ConfigValue propValue = config.getConfigValue(propName);
+            if(!isConfigValueMappable(propValue)) {
+                continue;
+            }
             String rawValue = propValue.getRawValue();
-            if (isPropertiesConfigSource(propValue.getSourceName())
-                    && isSystemProperty(rawValue)
-                    && !isBuildTimeProperty(propValue.getName())) {
-                while (isSystemProperty(rawValue)) {
-                    int start = rawValue.indexOf(SYSTEM_PROPERTY_START);
-                    int end = rawValue.indexOf(SYSTEM_PROPERTY_END, start);
-                    String systemProperty = rawValue.substring(start + SYSTEM_PROPERTY_START.length(), end);
-                    String defaultValue = EMPTY;
-                    if (systemProperty.contains(SPLIT)) {
-                        String[] systemPropertyWithDefaultValue = systemProperty.split(SPLIT);
-                        systemProperty = systemPropertyWithDefaultValue[0];
-                        defaultValue = systemPropertyWithDefaultValue[1];
-                    }
-
-                    // Set value to environment variable value or fallback if null
-                    String systemValue = System.getenv(systemProperty);
-                    defaultValue = systemValue != null ? systemValue : defaultValue;
-
-                    decorators.produce(new DecoratorBuildItem(
-                            new LowPriorityAddEnvVarDecorator(deploymentName, systemProperty, defaultValue)));
-
-                    rawValue = rawValue.substring(end + SYSTEM_PROPERTY_END.length());
+            while (isSystemProperty(rawValue)) {
+                int start = rawValue.indexOf(SYSTEM_PROPERTY_START);
+                int end = rawValue.indexOf(SYSTEM_PROPERTY_END, start);
+                String systemProperty = rawValue.substring(start + SYSTEM_PROPERTY_START.length(), end);
+                String defaultValue = EMPTY;
+                if (systemProperty.contains(SPLIT)) {
+                    String[] systemPropertyWithDefaultValue = systemProperty.split(SPLIT);
+                    systemProperty = systemPropertyWithDefaultValue[0];
+                    defaultValue = systemPropertyWithDefaultValue[1];
                 }
+
+                // Set value to environment variable value or fallback if null
+                String systemValue = System.getenv(systemProperty);
+                defaultValue = systemValue != null ? systemValue : defaultValue;
+
+                decorators.produce(new DecoratorBuildItem(
+                        new LowPriorityAddEnvVarDecorator(deploymentName, systemProperty, defaultValue)));
+
+                rawValue = rawValue.substring(end + SYSTEM_PROPERTY_END.length());
             }
         }
     }
@@ -422,8 +421,11 @@ public class HelmProcessor {
                 .orElse(info.getName());
     }
 
-    private boolean isPropertiesConfigSource(String sourceName) {
-        return Strings.isNotNullOrEmpty(sourceName) && sourceName.startsWith(PROPERTIES_CONFIG_SOURCE);
+    private boolean isConfigValueMappable(ConfigValue configValue){
+        return Strings.isNotNullOrEmpty(configValue.getSourceName())
+                && configValue.getSourceName().startsWith(PROPERTIES_CONFIG_SOURCE)
+                && isSystemProperty(configValue.getRawValue())
+                && !isBuildTimeProperty(configValue.getName());
     }
 
     private boolean isBuildTimeProperty(String name) {

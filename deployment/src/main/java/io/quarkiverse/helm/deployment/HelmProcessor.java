@@ -68,7 +68,7 @@ public class HelmProcessor {
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void mapSystemPropertiesIfEnabled(Capabilities capabilities, ApplicationInfoBuildItem info, HelmChartConfig helmConfig,
             BuildProducer<DecoratorBuildItem> decorators) {
-        if(!helmConfig.mapSystemProperties) {
+        if (!helmConfig.mapSystemProperties) {
             return;
         }
         String deploymentName = getDeploymentName(capabilities, info);

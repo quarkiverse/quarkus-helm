@@ -68,34 +68,36 @@ public class HelmProcessor {
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void mapSystemPropertiesIfEnabled(Capabilities capabilities, ApplicationInfoBuildItem info, HelmChartConfig helmConfig,
             BuildProducer<DecoratorBuildItem> decorators) {
-        if (helmConfig.mapSystemProperties) {
-            String deploymentName = getDeploymentName(capabilities, info);
-            Config config = ConfigProvider.getConfig();
-            for (String propName : config.getPropertyNames()) {
-                ConfigValue propValue = config.getConfigValue(propName);
-                String rawValue = propValue.getRawValue();
-                if (isPropertiesConfigSource(propValue.getSourceName())
-                        && isSystemProperty(rawValue)
-                        && !isBuildTimeProperty(propValue.getName())) {
-                    while (isSystemProperty(rawValue)) {
-                        int start = rawValue.indexOf(SYSTEM_PROPERTY_START);
-                        int end = rawValue.indexOf(SYSTEM_PROPERTY_END, start);
-                        String systemProperty = rawValue.substring(start + SYSTEM_PROPERTY_START.length(), end);
-                        String defaultValue = EMPTY;
-                        if (systemProperty.contains(SPLIT)) {
-                            String[] systemPropertyWithDefaultValue = systemProperty.split(SPLIT);
-                            systemProperty = systemPropertyWithDefaultValue[0];
-                            defaultValue = systemPropertyWithDefaultValue[1];
-                        }
-
-                        // Check whether the system property is provided:
-                        defaultValue = System.getProperty(systemProperty, defaultValue);
-
-                        decorators.produce(new DecoratorBuildItem(
-                                new LowPriorityAddEnvVarDecorator(deploymentName, systemProperty, defaultValue)));
-
-                        rawValue = rawValue.substring(end + SYSTEM_PROPERTY_END.length());
+        if(!helmConfig.mapSystemProperties){
+            return;
+        }
+        String deploymentName = getDeploymentName(capabilities, info);
+        Config config = ConfigProvider.getConfig();
+        for (String propName : config.getPropertyNames()) {
+            ConfigValue propValue = config.getConfigValue(propName);
+            String rawValue = propValue.getRawValue();
+            if (isPropertiesConfigSource(propValue.getSourceName())
+                    && isSystemProperty(rawValue)
+                    && !isBuildTimeProperty(propValue.getName())) {
+                while (isSystemProperty(rawValue)) {
+                    int start = rawValue.indexOf(SYSTEM_PROPERTY_START);
+                    int end = rawValue.indexOf(SYSTEM_PROPERTY_END, start);
+                    String systemProperty = rawValue.substring(start + SYSTEM_PROPERTY_START.length(), end);
+                    String defaultValue = EMPTY;
+                    if (systemProperty.contains(SPLIT)) {
+                        String[] systemPropertyWithDefaultValue = systemProperty.split(SPLIT);
+                        systemProperty = systemPropertyWithDefaultValue[0];
+                        defaultValue = systemPropertyWithDefaultValue[1];
                     }
+
+                    // Set value to environment variable value or fallback if null
+                    String systemValue = System.getenv(systemProperty);
+                    defaultValue = systemValue != null ? systemValue : defaultValue;
+
+                    decorators.produce(new DecoratorBuildItem(
+                            new LowPriorityAddEnvVarDecorator(deploymentName, systemProperty, defaultValue)));
+
+                    rawValue = rawValue.substring(end + SYSTEM_PROPERTY_END.length());
                 }
             }
         }
@@ -110,30 +112,31 @@ public class HelmProcessor {
 
         for (Map.Entry<String, HelmDependencyConfig> entry : config.dependencies.entrySet()) {
             HelmDependencyConfig dependency = entry.getValue();
-            if (dependency.waitForService.isPresent()) {
-                ContainerBuilder container = new ContainerBuilder()
-                        .withName("wait-for-" + defaultString(dependency.name, entry.getKey()))
-                        .withImage(dependency.waitForServiceImage)
-                        .withCommand("sh");
-
-                String service = dependency.waitForService.get();
-                if (service.contains(SPLIT)) {
-                    // it's service name and service port
-                    String[] parts = service.split(SPLIT);
-                    String serviceName = parts[0];
-                    String servicePort = parts[1];
-                    container.withArguments("-c", dependency.waitForServicePortCommandTemplate
-                            .replaceAll(SERVICE_NAME_PLACEHOLDER, serviceName)
-                            .replaceAll(SERVICE_PORT_PLACEHOLDER, servicePort));
-
-                } else {
-                    container.withArguments("-c", dependency.waitForServiceOnlyCommandTemplate
-                            .replaceAll(SERVICE_NAME_PLACEHOLDER, service));
-                }
-
-                decorators.produce(new DecoratorBuildItem(
-                        new AddInitContainerDecorator(getDeploymentName(capabilities, info), container.build())));
+            if(dependency.waitForService.isEmpty()){
+                continue;
             }
+            ContainerBuilder container = new ContainerBuilder()
+                    .withName("wait-for-" + defaultString(dependency.name, entry.getKey()))
+                    .withImage(dependency.waitForServiceImage)
+                    .withCommand("sh");
+
+            String service = dependency.waitForService.get();
+            if (service.contains(SPLIT)) {
+                // it's service name and service port
+                String[] parts = service.split(SPLIT);
+                String serviceName = parts[0];
+                String servicePort = parts[1];
+                container.withArguments("-c", dependency.waitForServicePortCommandTemplate
+                        .replaceAll(SERVICE_NAME_PLACEHOLDER, serviceName)
+                        .replaceAll(SERVICE_PORT_PLACEHOLDER, servicePort));
+
+            } else {
+                container.withArguments("-c", dependency.waitForServiceOnlyCommandTemplate
+                        .replaceAll(SERVICE_NAME_PLACEHOLDER, service));
+            }
+
+            decorators.produce(new DecoratorBuildItem(
+                    new AddInitContainerDecorator(getDeploymentName(capabilities, info), container.build())));
         }
     }
 

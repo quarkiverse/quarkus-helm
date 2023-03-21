@@ -68,7 +68,7 @@ public class HelmProcessor {
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void mapSystemPropertiesIfEnabled(Capabilities capabilities, ApplicationInfoBuildItem info, HelmChartConfig helmConfig,
             BuildProducer<DecoratorBuildItem> decorators) {
-        if(!helmConfig.mapSystemProperties){
+        if(!helmConfig.mapSystemProperties) {
             return;
         }
         String deploymentName = getDeploymentName(capabilities, info);
@@ -421,7 +421,7 @@ public class HelmProcessor {
                 .orElse(info.getName());
     }
 
-    private boolean isConfigValueMappable(ConfigValue configValue){
+    private boolean isConfigValueMappable(ConfigValue configValue) {
         return Strings.isNotNullOrEmpty(configValue.getSourceName())
                 && configValue.getSourceName().startsWith(PROPERTIES_CONFIG_SOURCE)
                 && isSystemProperty(configValue.getRawValue())

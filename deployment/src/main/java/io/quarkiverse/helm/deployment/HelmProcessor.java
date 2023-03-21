@@ -111,7 +111,7 @@ public class HelmProcessor {
 
         for (Map.Entry<String, HelmDependencyConfig> entry : config.dependencies.entrySet()) {
             HelmDependencyConfig dependency = entry.getValue();
-            if(dependency.waitForService.isEmpty()){
+            if(dependency.waitForService.isEmpty()) {
                 continue;
             }
             ContainerBuilder container = new ContainerBuilder()

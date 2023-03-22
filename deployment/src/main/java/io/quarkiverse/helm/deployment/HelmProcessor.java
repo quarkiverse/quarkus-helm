@@ -1,5 +1,6 @@
 package io.quarkiverse.helm.deployment;
 
+import static io.dekorate.utils.Strings.defaultIfEmpty;
 import static io.github.yamlpath.utils.StringUtils.EMPTY;
 import static io.quarkiverse.helm.deployment.HelmChartUploader.pushToHelmRepository;
 import static io.quarkus.deployment.Capability.OPENSHIFT;
@@ -89,7 +90,7 @@ public class HelmProcessor {
                         }
 
                         // Check whether the system property is provided:
-                        defaultValue = System.getProperty(systemProperty, defaultValue);
+                        defaultValue = defaultIfEmpty(getPropertyFromSystem(systemProperty), defaultValue);
 
                         decorators.produce(new DecoratorBuildItem(
                                 new LowPriorityAddEnvVarDecorator(deploymentName, systemProperty, defaultValue)));
@@ -99,6 +100,11 @@ public class HelmProcessor {
                 }
             }
         }
+    }
+
+    private String getPropertyFromSystem(String propertyName) {
+        return Optional.ofNullable(System.getProperty(propertyName))
+                .orElseGet(() -> System.getenv(propertyName));
     }
 
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })

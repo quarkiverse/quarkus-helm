@@ -37,7 +37,9 @@ jobs:
           check-latest: true
           cache: 'maven'
       - name: Build with Maven
-        run: mvn -B formatter:validate install --file pom.xml
+        run: |
+          export FROM_SYSTEM_ENV=bar
+          mvn -B formatter:validate install --file pom.xml -DFROM_SYSTEM_PROPERTY=foo -Dtest-system-properties=true
 
   verify-in-kubernetes:
     name: Verify Extension in Kubernetes

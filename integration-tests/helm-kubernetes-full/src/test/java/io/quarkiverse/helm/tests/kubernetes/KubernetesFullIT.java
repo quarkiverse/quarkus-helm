@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import io.dekorate.utils.Serialization;
 
@@ -101,6 +102,19 @@ public class KubernetesFullIT {
         assertNull(helmExampleValues.get("not-found"));
         // Should contain foo with the value from properties
         assertEquals("Only for DEV!", helmExampleValues.get("foo"));
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = "test-system-properties", matches = "true")
+    public void valuesShouldContainDataFromSystem() throws IOException {
+        Map<String, Object> values = Serialization.yamlMapper()
+                .readValue(getResourceAsStream("values.yaml"), Map.class);
+        assertNotNull(values, "Values is null!");
+        Map<String, Object> helmExampleValues = (Map<String, Object>) values.get(ROOT_CONFIG_NAME);
+        Map<String, Object> envs = (Map<String, Object>) helmExampleValues.get("envs");
+        // Should use system properties
+        assertEquals("foo", envs.get("FROM_SYSTEM_PROPERTY"));
+        assertEquals("bar", envs.get("FROM_SYSTEM_ENV"));
     }
 
     private final InputStream getResourceAsStream(String file) throws FileNotFoundException {

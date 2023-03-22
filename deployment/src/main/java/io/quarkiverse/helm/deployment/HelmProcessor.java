@@ -89,7 +89,11 @@ public class HelmProcessor {
                         }
 
                         // Check whether the system property is provided:
-                        defaultValue = System.getProperty(systemProperty, defaultValue);
+                        if (System.getProperty(systemProperty) != null) {
+                            defaultValue = System.getProperty(systemProperty);
+                        } else if (System.getenv(systemProperty) != null) {
+                            defaultValue = System.getenv(systemProperty);
+                        }
 
                         decorators.produce(new DecoratorBuildItem(
                                 new LowPriorityAddEnvVarDecorator(deploymentName, systemProperty, defaultValue)));

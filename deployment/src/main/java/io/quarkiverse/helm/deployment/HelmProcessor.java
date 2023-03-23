@@ -1,8 +1,10 @@
 package io.quarkiverse.helm.deployment;
 
-import static io.dekorate.utils.Strings.defaultIfEmpty;
 import static io.github.yamlpath.utils.StringUtils.EMPTY;
 import static io.quarkiverse.helm.deployment.HelmChartUploader.pushToHelmRepository;
+import static io.quarkiverse.helm.deployment.utils.SystemPropertiesUtils.getPropertyFromSystem;
+import static io.quarkiverse.helm.deployment.utils.SystemPropertiesUtils.getSystemProperties;
+import static io.quarkiverse.helm.deployment.utils.SystemPropertiesUtils.hasSystemProperties;
 import static io.quarkus.deployment.Capability.OPENSHIFT;
 
 import java.io.File;
@@ -61,8 +63,6 @@ public class HelmProcessor {
     private static final String SERVICE_PORT_PLACEHOLDER = "::service-port";
     private static final String SPLIT = ":";
     private static final String PROPERTIES_CONFIG_SOURCE = "PropertiesConfigSource";
-    private static final String SYSTEM_PROPERTY_START = "${";
-    private static final String SYSTEM_PROPERTY_END = "}";
     // Lazy loaded when calling `isBuildTimeProperty(xxx)`.
     private static Set<String> buildProperties;
 
@@ -75,36 +75,11 @@ public class HelmProcessor {
             for (String propName : config.getPropertyNames()) {
                 ConfigValue propValue = config.getConfigValue(propName);
                 String rawValue = propValue.getRawValue();
-                if (isPropertiesConfigSource(propValue.getSourceName())
-                        && isSystemProperty(rawValue)
-                        && !isBuildTimeProperty(propValue.getName())) {
-                    while (isSystemProperty(rawValue)) {
-                        int start = rawValue.indexOf(SYSTEM_PROPERTY_START);
-                        int end = rawValue.indexOf(SYSTEM_PROPERTY_END, start);
-                        String systemProperty = rawValue.substring(start + SYSTEM_PROPERTY_START.length(), end);
-                        String defaultValue = EMPTY;
-                        if (systemProperty.contains(SPLIT)) {
-                            String[] systemPropertyWithDefaultValue = systemProperty.split(SPLIT);
-                            systemProperty = systemPropertyWithDefaultValue[0];
-                            defaultValue = systemPropertyWithDefaultValue[1];
-                        }
-
-                        // Check whether the system property is provided:
-                        defaultValue = defaultIfEmpty(getPropertyFromSystem(systemProperty), defaultValue);
-
-                        decorators.produce(new DecoratorBuildItem(
-                                new LowPriorityAddEnvVarDecorator(deploymentName, systemProperty, defaultValue)));
-
-                        rawValue = rawValue.substring(end + SYSTEM_PROPERTY_END.length());
-                    }
+                if (isPropertiesConfigSource(propValue.getSourceName()) && !isBuildTimeProperty(propValue.getName())) {
+                    mapProperty(deploymentName, decorators, rawValue);
                 }
             }
         }
-    }
-
-    private String getPropertyFromSystem(String propertyName) {
-        return Optional.ofNullable(System.getProperty(propertyName))
-                .orElseGet(() -> System.getenv(propertyName));
     }
 
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
@@ -410,6 +385,36 @@ public class HelmProcessor {
         return optional.map(l -> l.toArray(new String[0])).orElse(new String[0]);
     }
 
+    private String mapProperty(String deploymentName, BuildProducer<DecoratorBuildItem> decorators, String property) {
+        if (!hasSystemProperties(property)) {
+            return property;
+        }
+
+        String lastPropertyValue = property;
+        for (String systemProperty : getSystemProperties(property)) {
+            String defaultValue = EMPTY;
+            if (systemProperty.contains(SPLIT)) {
+                int splitPosition = systemProperty.indexOf(SPLIT);
+                defaultValue = systemProperty.substring(splitPosition + SPLIT.length());
+                systemProperty = systemProperty.substring(0, splitPosition);
+
+                if (hasSystemProperties(defaultValue)) {
+                    defaultValue = mapProperty(deploymentName, decorators, defaultValue);
+                }
+            }
+
+            // Check whether the system property is provided:
+            defaultValue = getPropertyFromSystem(systemProperty, defaultValue);
+
+            decorators.produce(new DecoratorBuildItem(
+                    new LowPriorityAddEnvVarDecorator(deploymentName, systemProperty, defaultValue)));
+
+            lastPropertyValue = defaultValue;
+        }
+
+        return lastPropertyValue;
+    }
+
     public static String getDeploymentName(Capabilities capabilities, ApplicationInfoBuildItem info) {
         Config config = ConfigProvider.getConfig();
         Optional<String> resourceName;
@@ -447,9 +452,5 @@ public class HelmProcessor {
         return buildProperties.stream().anyMatch(build -> name.matches(build) // It's a regular expression
                 || (build.endsWith(".") && name.startsWith(build)) // contains with
                 || name.equals(build)); // or it's equal to
-    }
-
-    private boolean isSystemProperty(String rawValue) {
-        return Strings.isNotNullOrEmpty(rawValue) && rawValue.contains(SYSTEM_PROPERTY_START);
     }
 }

@@ -1,5 +1,5 @@
 :quarkus-version: 3.0.0.Beta1
-:quarkus-helm-version: 0.2.8
+:quarkus-helm-version: 1.0.0
 :maven-version: 3.8.1+
 
 :quarkus-org-url: https://github.com/quarkusio

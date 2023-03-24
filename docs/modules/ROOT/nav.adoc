@@ -3,6 +3,7 @@
 ** xref:index.adoc#usage-helm-openshift[Getting Started with OpenShift]
 ** xref:index.adoc#helm-values[Generating the Helm Values file]
 *** xref:index.adoc#mapping-custom-values[Adding custom properties to the Helm Values file using YAMLPath expressions]
+*** xref:index.adoc#mapping-system-properties[Mapping System Properties]
 *** xref:index.adoc#mapping-multiple-properties-at-once[Adding properties from multiple locations]
 *** xref:index.adoc#set-alias-name[Configure root name for Values.yaml]
 ** xref:index.adoc#helm-dependencies[Adding Helm dependencies]

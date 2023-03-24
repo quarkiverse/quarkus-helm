@@ -15,6 +15,8 @@ Before getting started, make sure you're using the right Quarkus Helm version th
 [%header,format=csv]
 |===
 Quarkus Helm Version,Quarkus Version
+1.0.0,Quarkus 3+
+0.2.8,Quarkus 2.16+
 0.2.7,Quarkus 2.16+
 0.2.6,Quarkus 2.16+
 0.2.5,Quarkus 2.16+
@@ -410,6 +412,66 @@ And the `values.yaml` file will now contain:
 app:
   name: this-is-another-name
 ----
+
+[[mapping-system-properties]]
+=== Mapping System Properties
+
+It's a very common use case to expose some properties to be configurable when installing the Helm chart. For example, the data source JDBC url:
+
+[source,properties]
+----
+quarkus.datasource.jdbc.url=jdbc:postgresql://host:1111/database
+quarkus.datasource.username=user
+quarkus.datasource.password=pass
+----
+
+If we add the above properties into the `application.properties` file, the connection to the datasource is hardcoded to use a Postgresql instance at `jdbc:postgresql://host:1111/database`, and you won't be able to change it when installing the Helm chart.
+
+To allow some properties to be configurable at installing the Helm chart, you have several options:
+
+- Using the https://quarkus.io/guides/kubernetes-config[Quarkus Kubernetes Config] extension.
+
+This extension allows mounting ConfigMap and/or Secret resources where to take the application properties from. You can find more information about how to use it, in https://quarkus.io/guides/kubernetes-config[the official guide].
+
+- Using system properties:
+
+You can map the actual configuration you would like to change at installing the Helm chart using system properties, for example:
+
+[source,properties]
+----
+quarkus.datasource.jdbc.url=${POSTGRESQL_URL:jdbc:postgresql://host:1111/database}
+quarkus.datasource.username=${POSTGRESQL_USERNAME:user}
+quarkus.datasource.password=${POSTGRESQL_PASSWORD:pass}
+----
+
+[TIP]
+====
+In Quarkus, you can specify system properties using the pattern `${NAME-OF-THE-PROPERTY:DEFAULT-VALUE}` where Quarkus will try to load the system property `NAME-OF-THE-PROPERTY` and if not found or set, it will use the value `DEFAULT-VALUE`.
+====
+
+Next, the Quarkus Helm extension will detect that you're using system properties in your application properties file and will configure the env var resources at the generated Deployment resource, and also map these properties into the generated Helm Chart values file:
+
+[source,yaml]
+----
+---
+app:
+  envs:
+    POSTGRESQL_URL: jdbc:postgresql://host:1111/database
+    POSTGRESQL_USERNAME: user
+    POSTGRESQL_PASSWORD: pass
+----
+
+Therefore, you can now change these values when installing or updating the Helm chart by using:
+
+[source,bash]
+----
+helm install helm-example ./target/helm/kubernetes/<chart name> --set app.envs.POSTGRESQL_URL=foo --set app.envs.POSTGRESQL_USERNAME=bar --set app.envs.POSTGRESQL_PASSWORD=tar
+----
+
+[IMPORTANT]
+====
+The mapping of system properties is enabled by default. If you want to disable it, you need to add this property `quarkus.helm.map-system-properties=false` into the application properties file.
+====
 
 [[mapping-multiple-properties-at-once]]
 === Mapping multiple properties at once

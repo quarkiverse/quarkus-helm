@@ -453,13 +453,32 @@ Next, the Quarkus Helm extension will detect that you're using system properties
 
 [source,yaml]
 ----
----
 app:
   envs:
     POSTGRESQL_URL: jdbc:postgresql://host:1111/database
     POSTGRESQL_USERNAME: user
     POSTGRESQL_PASSWORD: pass
 ----
+
+[TIP]
+====
+The Quarkus Helm extension does not force you to use a specific naming convention and by consequence, you can declare the system property using one the following:
+
+1. Uppercase and underscore separating the words. Example: `POSTGRESQL_URL`,
+2. Camel case format. Example: `postgresqlUrl`,
+3. Separated by dots. Example: `postgresql.url`
+
+The extension will use the property names declared as such under the `envs` properties, except for the case of the separated by dots (example: `postgresql.url`) that will be split the words as follows:
+
+[source,yaml]
+----
+app:
+  envs:
+    postgresql:
+      url: jdbc:postgresql://host:1111/database
+----
+
+====
 
 Therefore, you can now change these values when installing or updating the Helm chart by using:
 
@@ -796,7 +815,6 @@ This configuration will add the `app.ingress.enabled` property in the `values.ya
 
 [source,yaml]
 ----
----
 app:
   ingress:
     enabled: false

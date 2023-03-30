@@ -53,6 +53,7 @@ import io.dekorate.ConfigReference;
 import io.dekorate.Logger;
 import io.dekorate.LoggerFactory;
 import io.dekorate.Session;
+import io.dekorate.helm.config.AddIfStatement;
 import io.dekorate.helm.config.Annotation;
 import io.dekorate.helm.config.HelmChartConfig;
 import io.dekorate.helm.config.HelmExpression;
@@ -103,7 +104,6 @@ public class QuarkusHelmWriterSessionListener {
     public Map<String, String> writeHelmFiles(Session session, Project project,
             io.dekorate.helm.config.HelmChartConfig helmConfig,
             List<ConfigReference> configReferences,
-            Map<String, AddIfStatementConfig> addIfStatements,
             Path inputDir,
             Path outputDir,
             Collection<File> generatedFiles) {
@@ -111,13 +111,13 @@ public class QuarkusHelmWriterSessionListener {
         if (helmConfig.isEnabled()) {
             validateHelmConfig(helmConfig);
             List<ConfigReference> valuesReferences = mergeValuesReferencesFromDecorators(configReferences,
-                    addIfStatements, session);
+                    helmConfig.getAddIfStatements(), session);
 
             try {
                 LOGGER.info(String.format("Creating Helm Chart \"%s\"", helmConfig.getName()));
                 ValuesHolder values = populateValues(helmConfig, valuesReferences);
-                artifacts.putAll(processTemplates(helmConfig, addIfStatements, inputDir, outputDir, generatedFiles,
-                        valuesReferences, values));
+                artifacts.putAll(processTemplates(helmConfig, helmConfig.getAddIfStatements(), inputDir, outputDir,
+                        generatedFiles, valuesReferences, values));
                 artifacts.putAll(createChartYaml(helmConfig, project, inputDir, outputDir));
                 artifacts.putAll(createValuesYaml(helmConfig, inputDir, outputDir, values));
 
@@ -231,16 +231,16 @@ public class QuarkusHelmWriterSessionListener {
     }
 
     private List<ConfigReference> mergeValuesReferencesFromDecorators(List<ConfigReference> configReferencesFromConfig,
-            Map<String, AddIfStatementConfig> addIfStatements,
+            AddIfStatement[] addIfStatements,
             Session session) {
         List<ConfigReference> configReferences = new LinkedList<>();
         // From user
         configReferences.addAll(configReferencesFromConfig);
 
         // From if statements: these are boolean values
-        for (Map.Entry<String, AddIfStatementConfig> addIfStatement : addIfStatements.entrySet()) {
-            String property = addIfStatement.getValue().property.orElse(addIfStatement.getKey());
-            configReferences.add(new ConfigReference(property, null, addIfStatement.getValue().withDefaultValue));
+        for (AddIfStatement addIfStatement : addIfStatements) {
+            configReferences.add(new ConfigReference(addIfStatement.getProperty(), null,
+                    addIfStatement.getWithDefaultValue()));
         }
 
         // From decorators: We need to reverse the order as the latest decorator was the latest applied and hence the one
@@ -349,7 +349,7 @@ public class QuarkusHelmWriterSessionListener {
     }
 
     private Map<String, String> processTemplates(io.dekorate.helm.config.HelmChartConfig helmConfig,
-            Map<String, AddIfStatementConfig> addIfStatements,
+            AddIfStatement[] addIfStatements,
             Path inputDir,
             Path outputDir,
             Collection<File> generatedFiles, List<ConfigReference> valuesReferences,
@@ -383,14 +383,13 @@ public class QuarkusHelmWriterSessionListener {
             }
 
             // Add if statements at resource level
-            for (Map.Entry<String, AddIfStatementConfig> addIfStatement : addIfStatements.entrySet()) {
-                if ((addIfStatement.getValue().onResourceKind.isEmpty()
-                        || addIfStatement.getValue().onResourceKind.get().equals(kind))
-                        && (addIfStatement.getValue().onResourceName.isEmpty()
-                                || addIfStatement.getValue().onResourceName.get().equals(getNameFromResource(resource)))) {
+            for (AddIfStatement addIfStatement : addIfStatements) {
+                if ((addIfStatement.getOnResourceKind().isEmpty()
+                        || addIfStatement.getOnResourceKind().equals(kind))
+                        && (addIfStatement.getOnResourceName().isEmpty()
+                                || addIfStatement.getOnResourceName().equals(getNameFromResource(resource)))) {
 
-                    String property = deductProperty(helmConfig, addIfStatement.getValue().property
-                            .orElse(addIfStatement.getKey()));
+                    String property = deductProperty(helmConfig, addIfStatement.getProperty());
 
                     adaptedString = String.format(IF_STATEMENT_START_TAG, property)
                             + System.lineSeparator()

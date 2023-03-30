@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -53,6 +54,7 @@ import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 public class HelmProcessor {
     private static final Logger LOGGER = Logger.getLogger(HelmProcessor.class);
     private static final String NAME_FORMAT_REG_EXP = "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
+    private static final List<String> HELM_INVALID_CHARACTERS = Arrays.asList("-");
     private static final String BUILD_TIME_PROPERTIES = "/build-time-list";
 
     private static final String QUARKUS_KUBERNETES_NAME = "quarkus.kubernetes.name";
@@ -168,7 +170,6 @@ public class HelmProcessor {
             Map<String, String> generated = helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), project,
                     dekorateHelmChartConfig,
                     valueReferencesFromConfig,
-                    config.addIfStatement,
                     inputFolder,
                     chartOutputFolder,
                     filesInDeploymentTarget.getValue());
@@ -194,10 +195,34 @@ public class HelmProcessor {
         }
 
         for (Map.Entry<String, AddIfStatementConfig> addIfStatement : config.addIfStatement.entrySet()) {
+            String name = addIfStatement.getValue().property.orElse(addIfStatement.getKey());
             if (addIfStatement.getValue().onResourceKind.isEmpty() && addIfStatement.getValue().onResourceName.isEmpty()) {
                 throw new IllegalStateException(String.format("Either 'quarkus.helm.add-if-statement.%s.on-resource-kind' "
                         + "or 'quarkus.helm.add-if-statement.%s.on-resource-kind' must be provided.",
                         addIfStatement.getKey(), addIfStatement.getKey()));
+            }
+
+            if (HELM_INVALID_CHARACTERS.stream().anyMatch(name::contains)) {
+                throw new RuntimeException(
+                        String.format("The property of the `add-if-statement` '%s' is invalid. Can't use '-' characters.",
+                                name));
+            }
+        }
+
+        for (Map.Entry<String, HelmDependencyConfig> dependency : config.dependencies.entrySet()) {
+            String name = dependency.getValue().name.orElse(dependency.getKey());
+            if (dependency.getValue().condition.isPresent()
+                    && HELM_INVALID_CHARACTERS.stream().anyMatch(dependency.getValue().condition.get()::contains)) {
+                throw new RuntimeException(
+                        String.format("Condition of the dependency '%s' is invalid. Can't use '-' characters.", name));
+            }
+        }
+
+        for (Map.Entry<String, ValueReferenceConfig> value : config.values.entrySet()) {
+            String name = value.getValue().property.orElse(value.getKey());
+            if (HELM_INVALID_CHARACTERS.stream().anyMatch(name::contains)) {
+                throw new RuntimeException(
+                        String.format("Property of the value '%s' is invalid. Can't use '-' characters.", name));
             }
         }
     }
@@ -327,6 +352,14 @@ public class HelmProcessor {
                 .forEach(e -> builder.addToDependencies(toDekorateHelmDependencyConfig(e.getKey(), e.getValue())));
         config.tarFileClassifier.ifPresent(builder::withTarFileClassifier);
         config.expressions.values().forEach(e -> builder.addNewExpression(e.path, e.expression));
+        config.addIfStatement.entrySet()
+                .forEach(e -> {
+                    builder.addNewAddIfStatement(
+                            defaultString(e.getValue().property, e.getKey()),
+                            defaultString(e.getValue().onResourceKind),
+                            defaultString(e.getValue().onResourceName),
+                            e.getValue().withDefaultValue);
+                });
 
         return builder.build();
     }

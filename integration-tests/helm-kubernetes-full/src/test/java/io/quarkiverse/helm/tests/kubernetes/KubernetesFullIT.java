@@ -64,11 +64,11 @@ public class KubernetesFullIT {
         // Should contain replicas
         assertEquals(3, app.get("replicas"));
         // Should NOT contain not-found: as this property is ignored
-        assertNull(app.get("not-found"));
+        assertNull(app.get("notFound"));
         // Should contain number
-        assertEquals(12, app.get("types-number"));
+        assertEquals(12, app.get("typesNumber"));
         // Should contain boolean
-        assertEquals(true, app.get("types-bool"));
+        assertEquals(true, app.get("typesBool"));
         // Should contain overridden value
         assertEquals("override-host-in-helm", app.get("host"));
         // Should contain foo
@@ -112,7 +112,7 @@ public class KubernetesFullIT {
         // Should contain replicas
         assertEquals(3, helmExampleValues.get("replicas"));
         // Should NOT contain not-found: as this property is ignored
-        assertNull(helmExampleValues.get("not-found"));
+        assertNull(helmExampleValues.get("notFound"));
         // Should contain foo with the value from properties
         assertEquals("Only for DEV!", helmExampleValues.get("foo"));
     }

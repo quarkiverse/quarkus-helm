@@ -53,23 +53,27 @@ public class KubernetesFullIT {
 
         assertNotNull(values.containsKey(ROOT_CONFIG_NAME), "Does not contain `" + ROOT_CONFIG_NAME + "`");
         assertNotNull(values.get(ROOT_CONFIG_NAME) instanceof Map, "Value `" + ROOT_CONFIG_NAME + "` is not a map!");
-        Map<String, Object> helmExampleValues = (Map<String, Object>) values.get(ROOT_CONFIG_NAME);
+        Map<String, Object> app = (Map<String, Object>) values.get(ROOT_CONFIG_NAME);
 
         // Should contain image
-        assertEquals("registry.com/name:version", helmExampleValues.get("image"));
+        assertEquals("registry.com/name:version", app.get("image"));
         // Should contain replicas
-        assertEquals(3, helmExampleValues.get("replicas"));
+        assertEquals(3, app.get("replicas"));
         // Should NOT contain not-found: as this property is ignored
-        assertNull(helmExampleValues.get("not-found"));
+        assertNull(app.get("not-found"));
         // Should contain number
-        assertEquals(12, helmExampleValues.get("types-number"));
+        assertEquals(12, app.get("types-number"));
         // Should contain boolean
-        assertEquals(true, helmExampleValues.get("types-bool"));
+        assertEquals(true, app.get("types-bool"));
         // Should contain overriden value
-        assertEquals("override-host-in-helm", helmExampleValues.get("host"));
+        assertEquals("override-host-in-helm", app.get("host"));
         // Should contain foo
-        assertEquals("bar", helmExampleValues.get("foo"));
-        Map<String, Object> envs = (Map<String, Object>) helmExampleValues.get("envs");
+        assertEquals("bar", app.get("foo"));
+        // Should add properties set as conditions in dependencies
+        assertEquals(true, app.get("dependencyBeEnabled"));
+
+        // Envs:
+        Map<String, Object> envs = (Map<String, Object>) app.get("envs");
         // Should contain system property OVERRIDE_PATH
         assertEquals("", envs.get("OVERRIDE_PATH"));
         // Should contain system property OVERRIDE_PART1 which is one part of an existing property

@@ -277,6 +277,13 @@ public class QuarkusHelmWriterSessionListener {
             }
         }
 
+        // Populate expressions from conditions
+        for (io.dekorate.helm.config.HelmDependency dependency : helmConfig.getDependencies()) {
+            if (Strings.isNotNullOrEmpty(dependency.getCondition())) {
+                prodValues.put(deductProperty(helmConfig, dependency.getCondition()), true);
+            }
+        }
+
         Map<String, String> artifacts = new HashMap<>();
 
         // first, we process the values in each profile

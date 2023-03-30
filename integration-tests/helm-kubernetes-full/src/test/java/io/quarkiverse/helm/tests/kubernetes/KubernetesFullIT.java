@@ -69,7 +69,7 @@ public class KubernetesFullIT {
         assertEquals(12, app.get("types-number"));
         // Should contain boolean
         assertEquals(true, app.get("types-bool"));
-        // Should contain overriden value
+        // Should contain overridden value
         assertEquals("override-host-in-helm", app.get("host"));
         // Should contain foo
         assertEquals("bar", app.get("foo"));
@@ -92,6 +92,8 @@ public class KubernetesFullIT {
         assertEquals("nestedValue", envs.get("NESTED_PROPERTY"));
         // Build time properties should not be mapped
         assertNull(envs.get("BUILD_TIME_PROPERTY"));
+        // Should not create a nested app property
+        assertNull(envs.get(ROOT_CONFIG_NAME));
     }
 
     @Test

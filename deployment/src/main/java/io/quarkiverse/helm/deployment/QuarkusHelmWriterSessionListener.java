@@ -17,6 +17,7 @@
 package io.quarkiverse.helm.deployment;
 
 import static io.dekorate.helm.util.HelmTarArchiver.createTarBall;
+import static io.quarkiverse.helm.deployment.utils.HelmConfigUtils.deductProperty;
 import static io.quarkiverse.helm.deployment.utils.MapUtils.toMultiValueSortedMap;
 import static io.quarkiverse.helm.deployment.utils.MapUtils.toMultiValueUnsortedMap;
 
@@ -40,7 +41,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -309,16 +309,6 @@ public class QuarkusHelmWriterSessionListener {
         return artifacts;
     }
 
-    private String deductProperty(HelmChartConfig helmConfig, String property) {
-        if (!startWithDependencyPrefix(property, helmConfig.getDependencies())) {
-            String prefix = helmConfig.getValuesRootAlias() + ".";
-            if (!property.startsWith(prefix)) {
-                property = prefix + property;
-            }
-        }
-        return property;
-    }
-
     private Map<String, Object> mergeWithFileIfExists(Path inputDir, String file, Map<String, Object> valuesAsMultiValueMap) {
         File templateValuesFile = inputDir.resolve(file).toFile();
         if (templateValuesFile.exists()) {
@@ -335,22 +325,6 @@ public class QuarkusHelmWriterSessionListener {
         }
 
         return valuesAsMultiValueMap;
-    }
-
-    private boolean startWithDependencyPrefix(String property, io.dekorate.helm.config.HelmDependency[] dependencies) {
-        if (dependencies == null || dependencies.length == 0) {
-            return false;
-        }
-
-        String[] parts = property.split(Pattern.quote("."));
-        if (parts.length <= 1) {
-            return false;
-        }
-
-        String name = parts[0];
-        return Stream.of(dependencies)
-                .map(d -> Strings.defaultIfEmpty(d.getAlias(), d.getName()))
-                .anyMatch(d -> Strings.equals(d, name));
     }
 
     private Map<String, String> createTarball(io.dekorate.helm.config.HelmChartConfig helmConfig, Project project,

@@ -10,7 +10,8 @@ import io.quarkus.runtime.annotations.ConfigItem;
 @ConfigGroup
 public class ValueReferenceConfig {
     /**
-     * The name of the property that will be present in the Helm values file.
+     * The name of the property that will be present in the Helm values file. If the property starts with `@.`, then the
+     * property won't be added under the root element in the generated `values.yaml` file.
      */
     @ConfigItem
     Optional<String> property;

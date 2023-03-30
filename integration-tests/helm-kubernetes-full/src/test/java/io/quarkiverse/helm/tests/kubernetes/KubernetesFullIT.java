@@ -53,8 +53,12 @@ public class KubernetesFullIT {
 
         assertNotNull(values.containsKey(ROOT_CONFIG_NAME), "Does not contain `" + ROOT_CONFIG_NAME + "`");
         assertNotNull(values.get(ROOT_CONFIG_NAME) instanceof Map, "Value `" + ROOT_CONFIG_NAME + "` is not a map!");
-        Map<String, Object> app = (Map<String, Object>) values.get(ROOT_CONFIG_NAME);
 
+        // Rootless properties
+        assertEquals("rootless-property", values.get("prop"));
+
+        // App
+        Map<String, Object> app = (Map<String, Object>) values.get(ROOT_CONFIG_NAME);
         // Should contain image
         assertEquals("registry.com/name:version", app.get("image"));
         // Should contain replicas

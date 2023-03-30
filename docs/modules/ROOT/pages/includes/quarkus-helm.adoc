@@ -591,7 +591,7 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.
 
 [.description]
 --
-Dependency condition.
+Dependency condition. If the property starts with `@.`, then the property won't be added under the root element in the generated `values.yaml` file.
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_DEPENDENCIES__DEPENDENCIES__CONDITION+++[]
@@ -719,7 +719,7 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-value
 
 [.description]
 --
-The name of the property that will be present in the Helm values file.
+The name of the property that will be present in the Helm values file. If the property starts with `@.`, then the property won't be added under the root element in the generated `values.yaml` file.
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES__VALUES__PROPERTY+++[]
@@ -895,7 +895,7 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.add-if-statem
 
 [.description]
 --
-The property to use in the if statement.
+The property to use in the if statement. If the property starts with `@.`, then the property won't be added under the root element in the generated `values.yaml` file.
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_ADD_IF_STATEMENT__ADD_IF_STATEMENT__PROPERTY+++[]

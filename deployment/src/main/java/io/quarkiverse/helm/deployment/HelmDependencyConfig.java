@@ -27,7 +27,8 @@ public class HelmDependencyConfig {
     String repository;
 
     /**
-     * Dependency condition.
+     * Dependency condition. If the property starts with `@.`, then the property won't be added under the root element in the
+     * generated `values.yaml` file.
      */
     @ConfigItem
     Optional<String> condition;

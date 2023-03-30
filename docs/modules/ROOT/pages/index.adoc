@@ -413,6 +413,31 @@ app:
   name: this-is-another-name
 ----
 
+[[using-values-in-application-properties]]
+=== Using values in the application properties
+
+We can directly use the configuration from the generated Values yaml file in the `application.properties` file. For example, if the generated `values.yaml` contains:
+
+[source,yaml]
+----
+app:
+  greetings: Hello
+----
+
+We can map this value into the `application.properties` as this property was a system property:
+
+[source,properties]
+----
+greetings.message=${app.greetings}
+----
+
+Now, when installing the Helm chart, we can configure the greetings message by doing:
+
+[source,bash]
+----
+helm install helm-example ./target/helm/kubernetes/<chart name> --set app.greetings=Hola
+----
+
 [[mapping-system-properties]]
 === Mapping System Properties
 

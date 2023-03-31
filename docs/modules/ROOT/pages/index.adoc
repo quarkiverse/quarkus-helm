@@ -15,7 +15,8 @@ Before getting started, make sure you're using the right Quarkus Helm version th
 [%header,format=csv]
 |===
 Quarkus Helm Version,Quarkus Version
-1.0.0,Quarkus 3+
+1.0.1,Quarkus 3.0.0.CR+
+1.0.0,Quarkus 3.0.0.Alpha - Quarkus 3.0.0.Beta
 0.2.8,Quarkus 2.16+
 0.2.7,Quarkus 2.16+
 0.2.6,Quarkus 2.16+
@@ -675,6 +676,24 @@ initContainers:
 ----
 
 You can configure the image and the argument template to use with the properties `quarkus.helm.dependencies.XX.wait-for-service-image`, `quarkus.helm.dependencies.0.wait-for-service-port-command-template` and `quarkus.helm.dependencies.0.wait-for-service-only-command-template`.
+
+[[helm-validation]]
+== Validating the input
+
+Helm allows validating the input provided by the user when installing/updating the Helm charts. For example, we might want that the minimum value of the replicas is 3, so if users set a lesser value, Helm rejects it.
+
+These validation rules are specified in the `values.schema.json` file which this extension will automatically generate with:
+- A description of the automatically mapped properties.
+- The structure of the properties.
+
+Therefore, to implement your validation rule, all you would need is to set the minimum value for `app.replicas` to 3 as follows:
+
+[source,properties]
+----
+quarkus.helm.values-schema.properties.replicas.minimum=3
+----
+
+Apart from minimum, you can also specify a maximum value, or a pattern that the value has to follow or use the required flag.
 
 [[helm-expressions]]
 == Using Helm templates/functions

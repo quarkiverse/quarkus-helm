@@ -72,4 +72,34 @@ public class ValueReferenceConfig {
      */
     @ConfigItem
     Optional<String> expression;
+
+    /**
+     * Description of the property.
+     */
+    @ConfigItem
+    Optional<String> description;
+
+    /**
+     * Minimum value allowed for this property.
+     */
+    @ConfigItem
+    Optional<Integer> minimum;
+
+    /**
+     * Maximum value allowed for this property.
+     */
+    @ConfigItem
+    Optional<Integer> maximum;
+
+    /**
+     * Pattern to validate the value of this property.
+     */
+    @ConfigItem
+    Optional<String> pattern;
+
+    /**
+     * If true, then this property is mandatory.
+     */
+    @ConfigItem(defaultValue = "false")
+    boolean required;
 }

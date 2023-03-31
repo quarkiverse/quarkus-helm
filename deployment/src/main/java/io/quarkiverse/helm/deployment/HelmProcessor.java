@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +34,10 @@ import io.dekorate.ConfigReference;
 import io.dekorate.Session;
 import io.dekorate.helm.config.HelmChartConfigBuilder;
 import io.dekorate.helm.config.HelmDependencyBuilder;
+import io.dekorate.helm.config.ValuesSchema;
+import io.dekorate.helm.config.ValuesSchemaBuilder;
+import io.dekorate.helm.config.ValuesSchemaProperty;
+import io.dekorate.helm.config.ValuesSchemaPropertyBuilder;
 import io.dekorate.kubernetes.config.ContainerBuilder;
 import io.dekorate.kubernetes.decorator.AddInitContainerDecorator;
 import io.dekorate.project.Project;
@@ -327,6 +332,8 @@ public class HelmProcessor {
                 .withApiVersion(config.apiVersion)
                 .withName(config.name.orElse(app.getName()))
                 .withCreateTarFile(config.createTarFile || config.repository.push)
+                .withCreateValuesSchemaFile(config.createValuesSchemaFile)
+                .withCreateReadmeFile(config.createReadmeFile)
                 .withVersion(config.version.orElse(app.getVersion()))
                 .withExtension(config.extension)
                 .withValuesRootAlias(config.valuesRootAlias)
@@ -358,10 +365,35 @@ public class HelmProcessor {
                             defaultString(e.getValue().property, e.getKey()),
                             defaultString(e.getValue().onResourceKind),
                             defaultString(e.getValue().onResourceName),
-                            e.getValue().withDefaultValue);
+                            e.getValue().withDefaultValue,
+                            e.getValue().description);
                 });
 
+        builder.withValuesSchema(toValuesSchema(config.valuesSchema));
+
         return builder.build();
+    }
+
+    private ValuesSchema toValuesSchema(ValuesSchemaConfig valuesSchema) {
+        List<ValuesSchemaProperty> properties = new ArrayList<>();
+        for (Map.Entry<String, ValuesSchemaPropertyConfig> property : valuesSchema.properties.entrySet()) {
+            String name = property.getValue().name.orElse(property.getKey());
+
+            properties.add(new ValuesSchemaPropertyBuilder()
+                    .withName(name)
+                    .withType(property.getValue().type)
+                    .withDescription(defaultString(property.getValue().description))
+                    .withMaximum(property.getValue().maximum.orElse(Integer.MAX_VALUE))
+                    .withMinimum(property.getValue().minimum.orElse(Integer.MIN_VALUE))
+                    .withRequired(property.getValue().required)
+                    .withPattern(defaultString(property.getValue().pattern))
+                    .build());
+        }
+
+        return new ValuesSchemaBuilder()
+                .withTitle(valuesSchema.title)
+                .withProperties(properties.toArray(new ValuesSchemaProperty[0]))
+                .build();
     }
 
     private io.dekorate.helm.config.HelmDependency toDekorateHelmDependencyConfig(String dependencyName,
@@ -380,11 +412,17 @@ public class HelmProcessor {
 
     private List<ConfigReference> toValueReferences(HelmChartConfig config) {
         return config.values.entrySet().stream()
-                .map(e -> new ConfigReference(defaultString(e.getValue().property, e.getKey()),
-                        defaultArray(e.getValue().paths),
-                        toValue(e.getValue()),
-                        defaultString(e.getValue().expression),
-                        defaultString(e.getValue().profile)))
+                .map(e -> new ConfigReference.Builder(defaultString(e.getValue().property, e.getKey()),
+                        defaultArray(e.getValue().paths))
+                        .withValue(toValue(e.getValue()))
+                        .withDescription(defaultString(e.getValue().description, EMPTY))
+                        .withExpression(defaultString(e.getValue().expression))
+                        .withProfile(defaultString(e.getValue().profile))
+                        .withRequired(e.getValue().required)
+                        .withPattern(defaultString(e.getValue().pattern))
+                        .withMaximum(e.getValue().maximum.orElse(Integer.MAX_VALUE))
+                        .withMinimum(e.getValue().minimum.orElse(Integer.MIN_VALUE))
+                        .build())
                 .collect(Collectors.toList());
     }
 

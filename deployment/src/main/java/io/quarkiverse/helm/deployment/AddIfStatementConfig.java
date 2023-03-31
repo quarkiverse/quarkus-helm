@@ -32,4 +32,10 @@ public class AddIfStatementConfig {
      */
     @ConfigItem(defaultValue = "true")
     boolean withDefaultValue;
+
+    /**
+     * Provide custom description of the `add-if-statement` property.
+     */
+    @ConfigItem(defaultValue = "Determine if the resource should be installed or not.")
+    String description;
 }

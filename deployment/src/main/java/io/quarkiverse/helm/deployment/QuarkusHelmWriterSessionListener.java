@@ -18,8 +18,8 @@ package io.quarkiverse.helm.deployment;
 
 import static io.dekorate.helm.util.HelmTarArchiver.createTarBall;
 import static io.quarkiverse.helm.deployment.utils.HelmConfigUtils.deductProperty;
-import static io.quarkiverse.helm.deployment.utils.MapUtils.toMultiValueSortedMap;
 import static io.quarkiverse.helm.deployment.utils.MapUtils.toMultiValueUnsortedMap;
+import static io.quarkiverse.helm.deployment.utils.ValuesSchemaUtils.createSchema;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.END_EXPRESSION_TOKEN;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.SEPARATOR_QUOTES;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.SEPARATOR_TOKEN;
@@ -61,6 +61,8 @@ import io.dekorate.helm.listener.HelmWriterSessionListener;
 import io.dekorate.helm.model.Chart;
 import io.dekorate.helm.model.HelmDependency;
 import io.dekorate.helm.model.Maintainer;
+import io.dekorate.helm.util.HelmConfigUtils;
+import io.dekorate.helm.util.MapUtils;
 import io.dekorate.project.Project;
 import io.dekorate.utils.Exec;
 import io.dekorate.utils.Maps;
@@ -68,6 +70,7 @@ import io.dekorate.utils.Serialization;
 import io.dekorate.utils.Strings;
 import io.github.yamlpath.YamlExpressionParser;
 import io.github.yamlpath.YamlPath;
+import io.quarkiverse.helm.deployment.utils.ReadmeBuilder;
 import io.quarkiverse.helm.deployment.utils.ValuesHolder;
 
 public class QuarkusHelmWriterSessionListener {
@@ -78,8 +81,10 @@ public class QuarkusHelmWriterSessionListener {
     private static final String TEMPLATES = "templates";
     private static final String CHARTS = "charts";
     private static final String NOTES = "NOTES.txt";
-    private static final List<String> ADDITIONAL_CHART_FILES = Arrays.asList("README.md", "LICENSE", "values.schema.json",
-            "app-readme.md", "questions.yml", "questions.yaml", "requirements.yml", "requirements.yaml", "crds");
+    private static final String VALUES_SCHEMA = "values.schema.json";
+    private static final String README = "README.md";
+    private static final List<String> ADDITIONAL_CHART_FILES = Arrays.asList("LICENSE", "app-readme.md",
+            "questions.yml", "questions.yaml", "requirements.yml", "requirements.yaml", "crds");
     private static final String KIND = "kind";
     private static final String METADATA = "metadata";
     private static final String NAME = "name";
@@ -110,8 +115,7 @@ public class QuarkusHelmWriterSessionListener {
         Map<String, String> artifacts = new HashMap<>();
         if (helmConfig.isEnabled()) {
             validateHelmConfig(helmConfig);
-            List<ConfigReference> valuesReferences = mergeValuesReferencesFromDecorators(configReferences,
-                    helmConfig.getAddIfStatements(), session);
+            List<ConfigReference> valuesReferences = mergeValuesReferencesFromDecorators(helmConfig, configReferences, session);
 
             try {
                 LOGGER.info(String.format("Creating Helm Chart \"%s\"", helmConfig.getName()));
@@ -149,21 +153,30 @@ public class QuarkusHelmWriterSessionListener {
         Map<String, String> artifacts = new HashMap<>();
         for (File source : inputDir.toFile().listFiles()) {
             if (ADDITIONAL_CHART_FILES.stream().anyMatch(source.getName()::equalsIgnoreCase)) {
-                Path destination = getChartOutputDir(helmConfig, outputDir).resolve(source.getName());
-                if (source.isDirectory()) {
-                    Files.createDirectory(destination);
-                    for (File file : source.listFiles()) {
-                        Files.copy(new FileInputStream(file), destination.resolve(file.getName()));
-                    }
-                } else {
-                    Files.copy(new FileInputStream(source), destination);
-                }
-
-                artifacts.put(destination.toString(), EMPTY);
+                artifacts.putAll(addAdditionalResource(helmConfig, outputDir, source));
             }
         }
 
         return artifacts;
+    }
+
+    private Map<String, String> addAdditionalResource(HelmChartConfig helmConfig, Path outputDir, File source)
+            throws IOException {
+        if (!source.exists()) {
+            return Collections.emptyMap();
+        }
+
+        Path destination = getChartOutputDir(helmConfig, outputDir).resolve(source.getName());
+        if (source.isDirectory()) {
+            Files.createDirectory(destination);
+            for (File file : source.listFiles()) {
+                Files.copy(new FileInputStream(file), destination.resolve(file.getName()));
+            }
+        } else {
+            Files.copy(new FileInputStream(source), destination);
+        }
+
+        return Collections.singletonMap(destination.toString(), EMPTY);
     }
 
     private void fetchDependencies(io.dekorate.helm.config.HelmChartConfig helmConfig, Path outputDir) {
@@ -230,17 +243,20 @@ public class QuarkusHelmWriterSessionListener {
         return Collections.singletonMap(emptyChartsDir.toString(), EMPTY);
     }
 
-    private List<ConfigReference> mergeValuesReferencesFromDecorators(List<ConfigReference> configReferencesFromConfig,
-            AddIfStatement[] addIfStatements,
+    private List<ConfigReference> mergeValuesReferencesFromDecorators(HelmChartConfig helmConfig,
+            List<ConfigReference> configReferencesFromConfig,
             Session session) {
         List<ConfigReference> configReferences = new LinkedList<>();
         // From user
         configReferences.addAll(configReferencesFromConfig);
 
         // From if statements: these are boolean values
-        for (AddIfStatement addIfStatement : addIfStatements) {
-            configReferences.add(new ConfigReference(addIfStatement.getProperty(), null,
-                    addIfStatement.getWithDefaultValue()));
+        for (AddIfStatement addIfStatement : helmConfig.getAddIfStatements()) {
+            configReferences
+                    .add(new ConfigReference.Builder(deductProperty(helmConfig, addIfStatement.getProperty()), new String[0])
+                            .withDescription(addIfStatement.getDescription())
+                            .withValue(addIfStatement.getWithDefaultValue())
+                            .build());
         }
 
         // From decorators: We need to reverse the order as the latest decorator was the latest applied and hence the one
@@ -263,32 +279,59 @@ public class QuarkusHelmWriterSessionListener {
     private Map<String, String> createValuesYaml(io.dekorate.helm.config.HelmChartConfig helmConfig,
             Path inputDir, Path outputDir, ValuesHolder valuesHolder)
             throws IOException {
-        Map<String, Object> prodValues = valuesHolder.getProdValues();
-        Map<String, Map<String, Object>> valuesByProfile = valuesHolder.getValuesByProfile();
+        Map<String, ValuesHolder.HelmValueHolder> prodValues = valuesHolder.getProdValues();
+        Map<String, Map<String, ValuesHolder.HelmValueHolder>> valuesByProfile = valuesHolder.getValuesByProfile();
 
         Map<String, String> artifacts = new HashMap<>();
 
         // first, we process the values in each profile
-        for (Map.Entry<String, Map<String, Object>> valuesInProfile : valuesByProfile.entrySet()) {
+        for (Map.Entry<String, Map<String, ValuesHolder.HelmValueHolder>> valuesInProfile : valuesByProfile.entrySet()) {
             String profile = valuesInProfile.getKey();
-            Map<String, Object> values = valuesInProfile.getValue();
+            Map<String, ValuesHolder.HelmValueHolder> values = valuesInProfile.getValue();
             // Populate the profiled values with the one from prod if the key does not exist
-            for (Map.Entry<String, Object> prodValue : prodValues.entrySet()) {
+            for (Map.Entry<String, ValuesHolder.HelmValueHolder> prodValue : prodValues.entrySet()) {
                 if (!values.containsKey(prodValue.getKey())) {
                     values.put(prodValue.getKey(), prodValue.getValue());
                 }
             }
 
             // Create the values.<profile>.yaml file
-            artifacts.putAll(writeFileAsYaml(mergeWithFileIfExists(inputDir, VALUES + YAML, toMultiValueSortedMap(values)),
+            artifacts.putAll(writeFileAsYaml(mergeWithFileIfExists(inputDir, VALUES + YAML, toValuesMap(values)),
                     getChartOutputDir(helmConfig, outputDir).resolve(VALUES + "." + profile + YAML)));
         }
 
         // Next, we process the prod profile
-        artifacts.putAll(writeFileAsYaml(mergeWithFileIfExists(inputDir, VALUES + YAML, toMultiValueSortedMap(prodValues)),
+        artifacts.putAll(writeFileAsYaml(mergeWithFileIfExists(inputDir, VALUES + YAML, toValuesMap(prodValues)),
                 getChartOutputDir(helmConfig, outputDir).resolve(VALUES + YAML)));
 
+        // Next, the "values.schema.json" file
+        if (helmConfig.isCreateValuesSchemaFile()) {
+            Map<String, Object> schemaAsMap = createSchema(helmConfig, prodValues);
+            artifacts.putAll(
+                    writeFileAsJson(mergeWithFileIfExists(inputDir, VALUES_SCHEMA, MapUtils.toMultiValueSortedMap(schemaAsMap)),
+                            getChartOutputDir(helmConfig, outputDir).resolve(VALUES_SCHEMA)));
+        } else {
+            artifacts.putAll(addAdditionalResource(helmConfig, outputDir, inputDir.resolve(VALUES_SCHEMA).toFile()));
+        }
+
+        // Next, the "README.md" file
+        if (helmConfig.isCreateReadmeFile()) {
+            String readmeContent = ReadmeBuilder.build(helmConfig, prodValues);
+            artifacts.putAll(writeFile(readmeContent, getChartOutputDir(helmConfig, outputDir).resolve(README)));
+        } else {
+            artifacts.putAll(addAdditionalResource(helmConfig, outputDir, inputDir.resolve(README).toFile()));
+        }
+
         return artifacts;
+    }
+
+    private Map<String, Object> toValuesMap(Map<String, ValuesHolder.HelmValueHolder> holder) {
+        Map<String, Object> values = new HashMap<>();
+        for (Map.Entry<String, ValuesHolder.HelmValueHolder> value : holder.entrySet()) {
+            values.put(value.getKey(), value.getValue().value);
+        }
+
+        return MapUtils.toMultiValueSortedMap(values);
     }
 
     private Map<String, Object> mergeWithFileIfExists(Path inputDir, String file, Map<String, Object> valuesAsMultiValueMap) {
@@ -482,7 +525,10 @@ public class QuarkusHelmWriterSessionListener {
         // Populate expressions from conditions
         for (io.dekorate.helm.config.HelmDependency dependency : helmConfig.getDependencies()) {
             if (Strings.isNotNullOrEmpty(dependency.getCondition())) {
-                values.put(deductProperty(helmConfig, dependency.getCondition()), true);
+                ConfigReference configReference = new ConfigReference.Builder(dependency.getCondition(), new String[0])
+                        .withDescription("Flag to enable/disable the dependency '" + dependency.getName() + "'")
+                        .build();
+                values.put(HelmConfigUtils.deductProperty(helmConfig, dependency.getCondition()), configReference, true);
             }
         }
 
@@ -523,8 +569,8 @@ public class QuarkusHelmWriterSessionListener {
                     String environmentProperty = getEnvironmentPropertyName(valueReference);
 
                     // Try to find the value from the current values
-                    Map<String, Object> current = values.get(valueReference.getProfile());
-                    for (Map.Entry<String, Object> currentValue : current.entrySet()) {
+                    Map<String, ValuesHolder.HelmValueHolder> current = values.get(valueReference.getProfile());
+                    for (Map.Entry<String, ValuesHolder.HelmValueHolder> currentValue : current.entrySet()) {
                         if (currentValue.getKey().endsWith(environmentProperty)) {
                             // found, we use this value instead of generating an additional envs.xxx=yyy property
                             valueReferenceProperty = currentValue.getKey();
@@ -567,7 +613,7 @@ public class QuarkusHelmWriterSessionListener {
 
         if (seen.containsKey(property)) {
             if (Strings.isNotNullOrEmpty(profile)) {
-                values.putIfAbsent(property, Optional.ofNullable(value).orElse(seen.get(property)), profile);
+                values.putIfAbsent(property, valueReference, Optional.ofNullable(value).orElse(seen.get(property)), profile);
             }
 
             for (String path : valueReference.getPaths()) {
@@ -584,7 +630,7 @@ public class QuarkusHelmWriterSessionListener {
             Object actualValue = Optional.ofNullable(value).orElse(found);
             if (actualValue != null) {
                 seen.put(property, actualValue);
-                values.putIfAbsent(property, actualValue, profile);
+                values.putIfAbsent(property, valueReference, actualValue, profile);
             }
         }
     }
@@ -637,6 +683,11 @@ public class QuarkusHelmWriterSessionListener {
 
     private Map<String, String> writeFileAsYaml(Object data, Path file) throws IOException {
         String value = Serialization.asYaml(data);
+        return writeFile(value, file);
+    }
+
+    private Map<String, String> writeFileAsJson(Object data, Path file) throws IOException {
+        String value = Serialization.asJson(data);
         return writeFile(value, file);
     }
 

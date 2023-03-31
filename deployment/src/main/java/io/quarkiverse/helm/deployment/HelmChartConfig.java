@@ -151,6 +151,19 @@ public class HelmChartConfig {
     boolean createTarFile;
 
     /**
+     * Whether to generate the `values.schema.json` file that is used to validate the Helm Chart input values.
+     */
+    @ConfigItem(defaultValue = "true")
+    boolean createValuesSchemaFile;
+
+    /**
+     * Whether to generate the `README.md` file that includes the Chart description and table with the configurable parameters
+     * and their default values.
+     */
+    @ConfigItem(defaultValue = "true")
+    boolean createReadmeFile;
+
+    /**
      * The configuration references to be mapped into the Helm values file.
      */
     @ConfigItem
@@ -207,4 +220,9 @@ public class HelmChartConfig {
      */
     @ConfigItem(defaultValue = "true")
     public boolean mapSystemProperties;
+
+    /**
+     * Configuration for the `values.schema.json` file.
+     */
+    public ValuesSchemaConfig valuesSchema;
 }

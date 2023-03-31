@@ -85,7 +85,10 @@ public final class ReadmeBuilder {
         // Title:
         // # {chart.name}
         builder.writeHeader(H1, helmConfig.getName());
-        builder.writeLine(helmConfig.getDescription());
+        if (Strings.isNotNullOrEmpty(helmConfig.getDescription())) {
+            builder.writeLine(helmConfig.getDescription());
+        }
+
         // Configuration:
         builder.writeHeader(H2, "Configuration");
         builder.writeLine("The following table lists the configurable parameters and their default values.");

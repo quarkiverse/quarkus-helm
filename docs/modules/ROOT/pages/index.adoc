@@ -56,7 +56,7 @@ To complete this guide, you need:
 
 The Quarkus Helm extension will generate the Helm Chart of a Quarkus application.
 
-In this example, we'll create a Quarkus application with the Quarkus Helm and the Quarkus Kubernetes extensions by running the following command:
+In this example, we'll create a Quarkus application with the Quarkus Helm extension by running the following command:
 
 [source,bash,subs=attributes+]
 ----
@@ -65,7 +65,7 @@ mvn io.quarkus.platform:quarkus-maven-plugin:{quarkus-version}:create \
     -DprojectArtifactId=helm-quickstart \
     -DclassName="org.acme.quickstart.GreetingResource" \
     -Dpath="/hello" \
-    -Dextensions="resteasy-reactive,kubernetes,helm"
+    -Dextensions="resteasy-reactive,helm"
 cd helm-quickstart
 ----
 
@@ -87,15 +87,14 @@ This command will add the following dependency to your `pom.xml` file:
 </dependency>
 ----
 
-Once we add the Quarkus Helm extension to your project, you can now generate the Helm resources by running the following Maven command:
+After you add the Quarkus Helm extension to your project, you can now generate the Helm resources by running the following Maven command:
 
 [source,bash]
 ----
 ./mvnw clean package
 ----
 
-Depending on the Quarkus Kubernetes extensions that you are using in your project, the Helm resources will include some resources or others.
-For example, if your project use the Quarkus Kubernetes extension, then the helm resources will include the following templates at `target/helm/kubernetes/<chart name>/`:
+When using the Quarkus Helm extension, the Quarkus Kubernetes extension will be transitively loaded as well. So, the helm resources will include the following templates at `target/helm/kubernetes/<chart name>/`:
 
 * Chart.yaml
 * values.yaml

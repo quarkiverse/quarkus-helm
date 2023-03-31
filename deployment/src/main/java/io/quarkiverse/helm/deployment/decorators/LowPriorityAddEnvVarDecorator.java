@@ -52,6 +52,6 @@ public class LowPriorityAddEnvVarDecorator extends AddEnvVarDecorator {
         String path = "(metadata.name == " + getDeploymentName() + ").spec.template.spec.containers.(name == "
                 + getContainerName() + ")" + envFilter;
 
-        return new ConfigReference(property, path, value);
+        return new ConfigReference.Builder(property, path).withValue(value).build();
     }
 }

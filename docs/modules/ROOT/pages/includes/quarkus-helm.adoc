@@ -330,6 +330,38 @@ endif::add-copy-button-to-env-var[]
 |`false`
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.create-values-schema-file]]`link:#quarkus-helm_quarkus.helm.create-values-schema-file[quarkus.helm.create-values-schema-file]`
+
+[.description]
+--
+Whether to generate the `values.schema.json` file that is used to validate the Helm Chart input values.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_CREATE_VALUES_SCHEMA_FILE+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_CREATE_VALUES_SCHEMA_FILE+++`
+endif::add-copy-button-to-env-var[]
+--|boolean 
+|`true`
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.create-readme-file]]`link:#quarkus-helm_quarkus.helm.create-readme-file[quarkus.helm.create-readme-file]`
+
+[.description]
+--
+Whether to generate the `README.md` file that includes the Chart description and table with the configurable parameters and their default values.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_CREATE_README_FILE+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_CREATE_README_FILE+++`
+endif::add-copy-button-to-env-var[]
+--|boolean 
+|`true`
+
+
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.input-directory]]`link:#quarkus-helm_quarkus.helm.input-directory[quarkus.helm.input-directory]`
 
 [.description]
@@ -473,6 +505,22 @@ Environment variable: `+++QUARKUS_HELM_MAP_SYSTEM_PROPERTIES+++`
 endif::add-copy-button-to-env-var[]
 --|boolean 
 |`true`
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.title]]`link:#quarkus-helm_quarkus.helm.values-schema.title[quarkus.helm.values-schema.title]`
+
+[.description]
+--
+Title of the values schema json file.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES_SCHEMA_TITLE+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES_SCHEMA_TITLE+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|`Values`
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.maintainers.-maintainers-.name]]`link:#quarkus-helm_quarkus.helm.maintainers.-maintainers-.name[quarkus.helm.maintainers."maintainers".name]`
@@ -859,6 +907,86 @@ endif::add-copy-button-to-env-var[]
 |
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.description]]`link:#quarkus-helm_quarkus.helm.values.-values-.description[quarkus.helm.values."values".description]`
+
+[.description]
+--
+Description of the property.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES__VALUES__DESCRIPTION+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__DESCRIPTION+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.minimum]]`link:#quarkus-helm_quarkus.helm.values.-values-.minimum[quarkus.helm.values."values".minimum]`
+
+[.description]
+--
+Minimum value allowed for this property.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES__VALUES__MINIMUM+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__MINIMUM+++`
+endif::add-copy-button-to-env-var[]
+--|int 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.maximum]]`link:#quarkus-helm_quarkus.helm.values.-values-.maximum[quarkus.helm.values."values".maximum]`
+
+[.description]
+--
+Maximum value allowed for this property.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES__VALUES__MAXIMUM+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__MAXIMUM+++`
+endif::add-copy-button-to-env-var[]
+--|int 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.pattern]]`link:#quarkus-helm_quarkus.helm.values.-values-.pattern[quarkus.helm.values."values".pattern]`
+
+[.description]
+--
+Pattern to validate the value of this property.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES__VALUES__PATTERN+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__PATTERN+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.required]]`link:#quarkus-helm_quarkus.helm.values.-values-.required[quarkus.helm.values."values".required]`
+
+[.description]
+--
+If true, then this property is mandatory.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES__VALUES__REQUIRED+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__REQUIRED+++`
+endif::add-copy-button-to-env-var[]
+--|boolean 
+|`false`
+
+
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.expressions.-expressions-.path]]`link:#quarkus-helm_quarkus.helm.expressions.-expressions-.path[quarkus.helm.expressions."expressions".path]`
 
 [.description]
@@ -953,5 +1081,133 @@ Environment variable: `+++QUARKUS_HELM_ADD_IF_STATEMENT__ADD_IF_STATEMENT__WITH_
 endif::add-copy-button-to-env-var[]
 --|boolean 
 |`true`
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.description]]`link:#quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.description[quarkus.helm.add-if-statement."add-if-statement".description]`
+
+[.description]
+--
+Provide custom description of the `add-if-statement` property.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_ADD_IF_STATEMENT__ADD_IF_STATEMENT__DESCRIPTION+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_ADD_IF_STATEMENT__ADD_IF_STATEMENT__DESCRIPTION+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|`Determine if the resource should be installed or not.`
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.properties.-properties-.name]]`link:#quarkus-helm_quarkus.helm.values-schema.properties.-properties-.name[quarkus.helm.values-schema.properties."properties".name]`
+
+[.description]
+--
+Name of the property to add or update. Example: `app.replicas`.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES_SCHEMA_PROPERTIES__PROPERTIES__NAME+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES_SCHEMA_PROPERTIES__PROPERTIES__NAME+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.properties.-properties-.description]]`link:#quarkus-helm_quarkus.helm.values-schema.properties.-properties-.description[quarkus.helm.values-schema.properties."properties".description]`
+
+[.description]
+--
+Description of the property.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES_SCHEMA_PROPERTIES__PROPERTIES__DESCRIPTION+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES_SCHEMA_PROPERTIES__PROPERTIES__DESCRIPTION+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.properties.-properties-.type]]`link:#quarkus-helm_quarkus.helm.values-schema.properties.-properties-.type[quarkus.helm.values-schema.properties."properties".type]`
+
+[.description]
+--
+Type of the property.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES_SCHEMA_PROPERTIES__PROPERTIES__TYPE+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES_SCHEMA_PROPERTIES__PROPERTIES__TYPE+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|`string`
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.properties.-properties-.minimum]]`link:#quarkus-helm_quarkus.helm.values-schema.properties.-properties-.minimum[quarkus.helm.values-schema.properties."properties".minimum]`
+
+[.description]
+--
+Minimum value allowed for this property.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES_SCHEMA_PROPERTIES__PROPERTIES__MINIMUM+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES_SCHEMA_PROPERTIES__PROPERTIES__MINIMUM+++`
+endif::add-copy-button-to-env-var[]
+--|int 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.properties.-properties-.maximum]]`link:#quarkus-helm_quarkus.helm.values-schema.properties.-properties-.maximum[quarkus.helm.values-schema.properties."properties".maximum]`
+
+[.description]
+--
+Maximum value allowed for this property.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES_SCHEMA_PROPERTIES__PROPERTIES__MAXIMUM+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES_SCHEMA_PROPERTIES__PROPERTIES__MAXIMUM+++`
+endif::add-copy-button-to-env-var[]
+--|int 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.properties.-properties-.pattern]]`link:#quarkus-helm_quarkus.helm.values-schema.properties.-properties-.pattern[quarkus.helm.values-schema.properties."properties".pattern]`
+
+[.description]
+--
+Pattern to validate the value of this property.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES_SCHEMA_PROPERTIES__PROPERTIES__PATTERN+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES_SCHEMA_PROPERTIES__PROPERTIES__PATTERN+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.properties.-properties-.required]]`link:#quarkus-helm_quarkus.helm.values-schema.properties.-properties-.required[quarkus.helm.values-schema.properties."properties".required]`
+
+[.description]
+--
+If true, then this property is mandatory.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES_SCHEMA_PROPERTIES__PROPERTIES__REQUIRED+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES_SCHEMA_PROPERTIES__PROPERTIES__REQUIRED+++`
+endif::add-copy-button-to-env-var[]
+--|boolean 
+|`false`
 
 |===

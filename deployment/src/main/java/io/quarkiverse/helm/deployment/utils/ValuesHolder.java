@@ -8,35 +8,35 @@ import io.dekorate.ConfigReference;
 import io.dekorate.utils.Strings;
 
 public class ValuesHolder {
-    private final Map<String, Object> prodValues = new HashMap<>();
-    private final Map<String, Map<String, Object>> valuesByProfile = new HashMap<>();
+    private final Map<String, HelmValueHolder> prodValues = new HashMap<>();
+    private final Map<String, Map<String, HelmValueHolder>> valuesByProfile = new HashMap<>();
 
-    public Map<String, Object> getProdValues() {
+    public Map<String, HelmValueHolder> getProdValues() {
         return Collections.unmodifiableMap(prodValues);
     }
 
-    public Map<String, Map<String, Object>> getValuesByProfile() {
+    public Map<String, Map<String, HelmValueHolder>> getValuesByProfile() {
         return Collections.unmodifiableMap(valuesByProfile);
     }
 
-    public void put(String property, ConfigReference value) {
-        put(property, value.getValue(), value.getProfile());
+    public void put(String property, ConfigReference config) {
+        put(property, config, config.getValue(), config.getProfile());
     }
 
-    public void put(String property, Object value, String profile) {
-        get(profile).put(property, value);
+    public void put(String property, ConfigReference config, Object value) {
+        prodValues.put(property, new HelmValueHolder(value, config));
     }
 
-    public void putIfAbsent(String property, Object value, String profile) {
-        get(profile).putIfAbsent(property, value);
+    public void put(String property, ConfigReference config, Object value, String profile) {
+        get(profile).put(property, new HelmValueHolder(value, config));
     }
 
-    public void put(String property, Object value) {
-        prodValues.put(property, value);
+    public void putIfAbsent(String property, ConfigReference config, Object value, String profile) {
+        get(profile).putIfAbsent(property, new HelmValueHolder(value, config));
     }
 
-    public Map<String, Object> get(String profile) {
-        Map<String, Object> values = prodValues;
+    public Map<String, HelmValueHolder> get(String profile) {
+        Map<String, HelmValueHolder> values = prodValues;
         if (Strings.isNotNullOrEmpty(profile)) {
             values = valuesByProfile.get(profile);
             if (values == null) {
@@ -46,5 +46,15 @@ public class ValuesHolder {
         }
 
         return values;
+    }
+
+    public static class HelmValueHolder {
+        public final Object value;
+        public final ConfigReference configReference;
+
+        public HelmValueHolder(Object value, ConfigReference configReference) {
+            this.value = value;
+            this.configReference = configReference;
+        }
     }
 }

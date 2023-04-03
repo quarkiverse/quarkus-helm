@@ -529,10 +529,8 @@ public class QuarkusHelmWriterSessionListener {
                             .orElse(VALUES_START_TAG + valueReferenceProperty + VALUES_END_TAG);
 
                     Object found = seen.get(valueReferenceProperty);
-                    if (!seen.containsKey(valueReferenceProperty)) {
-                        // calling several times to the readAndSet method makes to get the already overwritten value
-                        // (value starting with :START:), so this method should only be called once.
-                        found = readAndSet(parser, path, expression);
+                    if (found == null) {
+                        found = read(parser, path);
                     }
 
                     Object value = null;
@@ -544,8 +542,11 @@ public class QuarkusHelmWriterSessionListener {
                         value = Optional.ofNullable(found).orElse(valueReference.getValue());
                     }
 
-                    seen.put(valueReferenceProperty, value);
-                    getValues(prodValues, valuesByProfile, valueReference).put(valueReferenceProperty, value);
+                    if (value != null) {
+                        seen.put(valueReferenceProperty, value);
+                        getValues(prodValues, valuesByProfile, valueReference).put(valueReferenceProperty, value);
+                        set(parser, path, expression);
+                    }
                 }
             }
 
@@ -630,6 +631,18 @@ public class QuarkusHelmWriterSessionListener {
 
     private Path getChartOutputDir(HelmChartConfig helmConfig, Path outputDir) {
         return outputDir.resolve(helmConfig.getName());
+    }
+
+    private static Object read(YamlExpressionParser parser, String path) {
+        Set<Object> found = parser.read(path);
+        return found.stream().findFirst().orElse(null);
+    }
+
+    private static void set(YamlExpressionParser parser, String path, String expression) {
+        parser.write(path, START_EXPRESSION_TOKEN +
+                expression.replaceAll(Pattern.quote(System.lineSeparator()), SEPARATOR_TOKEN)
+                        .replaceAll(Pattern.quote("\""), SEPARATOR_QUOTES)
+                + END_EXPRESSION_TOKEN);
     }
 
     private static Object readAndSet(YamlExpressionParser parser, String path, String expression) {

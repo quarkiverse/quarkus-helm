@@ -522,29 +522,30 @@ public class QuarkusHelmWriterSessionListener {
             for (ConfigReference valueReference : valuesReferences) {
                 String valueReferenceProperty = deductProperty(helmConfig, valueReference.getProperty());
 
-                if (seen.containsKey(valueReferenceProperty)) {
-                    if (Strings.isNotNullOrEmpty(valueReference.getProfile())) {
-                        Object value = Optional.ofNullable(valueReference.getValue())
-                                .orElse(seen.get(valueReferenceProperty));
-                        getValues(prodValues, valuesByProfile, valueReference).put(valueReferenceProperty, value);
-                    }
-
-                    continue;
-                }
-
                 // Check whether path exists
                 for (String path : valueReference.getPaths()) {
                     String expression = Optional.ofNullable(valueReference.getExpression())
                             .filter(Strings::isNotNullOrEmpty)
                             .orElse(VALUES_START_TAG + valueReferenceProperty + VALUES_END_TAG);
 
-                    Object found = readAndSet(parser, path, expression);
-
-                    Object value = Optional.ofNullable(valueReference.getValue()).orElse(found);
-                    if (value != null) {
-                        seen.put(valueReferenceProperty, value);
-                        getValues(prodValues, valuesByProfile, valueReference).put(valueReferenceProperty, value);
+                    Object found = seen.get(valueReferenceProperty);
+                    if (!seen.containsKey(valueReferenceProperty)) {
+                        // calling several times to the readAndSet method makes to get the already overwritten value
+                        // (value starting with :START:), so this method should only be called once.
+                        found = readAndSet(parser, path, expression);
                     }
+
+                    Object value = null;
+                    if (valueReference instanceof UserConfigReference) {
+                        // if the value is coming from the user, we use the provided value
+                        value = Optional.ofNullable(valueReference.getValue()).orElse(found);
+                    } else {
+                        // if the value is coming from one decorator, we use the found value
+                        value = Optional.ofNullable(found).orElse(valueReference.getValue());
+                    }
+
+                    seen.put(valueReferenceProperty, value);
+                    getValues(prodValues, valuesByProfile, valueReference).put(valueReferenceProperty, value);
                 }
             }
 

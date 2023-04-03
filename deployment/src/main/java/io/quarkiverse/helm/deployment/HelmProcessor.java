@@ -347,7 +347,7 @@ public class HelmProcessor {
 
     private List<ConfigReference> toValueReferences(HelmChartConfig config) {
         return config.values.entrySet().stream()
-                .map(e -> new ConfigReference(defaultString(e.getValue().property, e.getKey()),
+                .map(e -> new UserConfigReference(defaultString(e.getValue().property, e.getKey()),
                         defaultArray(e.getValue().paths),
                         toValue(e.getValue()),
                         defaultString(e.getValue().expression),

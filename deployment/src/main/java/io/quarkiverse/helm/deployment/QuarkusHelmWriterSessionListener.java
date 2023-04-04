@@ -24,6 +24,7 @@ import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.END
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.SEPARATOR_QUOTES;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.SEPARATOR_TOKEN;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.START_EXPRESSION_TOKEN;
+import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.read;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.readAndSet;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.set;
 
@@ -52,7 +53,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import io.dekorate.ConfigReference;
 import io.dekorate.Logger;
 import io.dekorate.LoggerFactory;
-import io.dekorate.Session;
 import io.dekorate.helm.config.AddIfStatement;
 import io.dekorate.helm.config.Annotation;
 import io.dekorate.helm.config.HelmChartConfig;
@@ -106,22 +106,23 @@ public class QuarkusHelmWriterSessionListener {
      *
      * @return the list of the Helm generated files.
      */
-    public Map<String, String> writeHelmFiles(Session session, Project project,
+    public Map<String, String> writeHelmFiles(Project project,
             io.dekorate.helm.config.HelmChartConfig helmConfig,
-            List<ConfigReference> configReferences,
+            List<ConfigReference> valueReferencesFromUser,
+            List<ConfigReference> valueReferencesFromDecorators,
             Path inputDir,
             Path outputDir,
             Collection<File> generatedFiles) {
         Map<String, String> artifacts = new HashMap<>();
         if (helmConfig.isEnabled()) {
             validateHelmConfig(helmConfig);
-            List<ConfigReference> valuesReferences = mergeValuesReferencesFromDecorators(helmConfig, configReferences, session);
 
             try {
                 LOGGER.info(String.format("Creating Helm Chart \"%s\"", helmConfig.getName()));
-                ValuesHolder values = populateValues(helmConfig, valuesReferences);
-                artifacts.putAll(processTemplates(helmConfig, helmConfig.getAddIfStatements(), inputDir, outputDir,
-                        generatedFiles, valuesReferences, values));
+                ValuesHolder values = populateValuesFromConfig(helmConfig);
+                List<Map<Object, Object>> resources = populateValuesFromConfigReferences(helmConfig, generatedFiles, values,
+                        valueReferencesFromUser, valueReferencesFromDecorators);
+                artifacts.putAll(processTemplates(helmConfig, helmConfig.getAddIfStatements(), inputDir, outputDir, resources));
                 artifacts.putAll(createChartYaml(helmConfig, project, inputDir, outputDir));
                 artifacts.putAll(createValuesYaml(helmConfig, inputDir, outputDir, values));
 
@@ -243,39 +244,6 @@ public class QuarkusHelmWriterSessionListener {
         return Collections.singletonMap(emptyChartsDir.toString(), EMPTY);
     }
 
-    private List<ConfigReference> mergeValuesReferencesFromDecorators(HelmChartConfig helmConfig,
-            List<ConfigReference> configReferencesFromConfig,
-            Session session) {
-        List<ConfigReference> configReferences = new LinkedList<>();
-        // From user
-        configReferences.addAll(configReferencesFromConfig);
-
-        // From if statements: these are boolean values
-        for (AddIfStatement addIfStatement : helmConfig.getAddIfStatements()) {
-            configReferences
-                    .add(new ConfigReference.Builder(deductProperty(helmConfig, addIfStatement.getProperty()), new String[0])
-                            .withDescription(addIfStatement.getDescription())
-                            .withValue(addIfStatement.getWithDefaultValue())
-                            .build());
-        }
-
-        // From decorators: We need to reverse the order as the latest decorator was the latest applied and hence the one
-        // we should use.
-        List<ConfigReference> configReferencesFromDecorators = session.getResourceRegistry().getConfigReferences()
-                .stream()
-                .flatMap(decorator -> decorator.getConfigReferences().stream())
-                .collect(Collectors.toList());
-
-        Collections.reverse(configReferencesFromDecorators);
-        configReferences.addAll(configReferencesFromDecorators);
-
-        return configReferences;
-    }
-
-    private boolean valueHasPath(ConfigReference valueReference) {
-        return valueReference.getPaths() != null && valueReference.getPaths().length > 0;
-    }
-
     private Map<String, String> createValuesYaml(io.dekorate.helm.config.HelmChartConfig helmConfig,
             Path inputDir, Path outputDir, ValuesHolder valuesHolder)
             throws IOException {
@@ -395,13 +363,12 @@ public class QuarkusHelmWriterSessionListener {
             AddIfStatement[] addIfStatements,
             Path inputDir,
             Path outputDir,
-            Collection<File> generatedFiles, List<ConfigReference> valuesReferences,
-            ValuesHolder values) throws IOException {
+            List<Map<Object, Object>> resources) throws IOException {
 
         Map<String, String> templates = new HashMap<>();
         Path templatesDir = getChartOutputDir(helmConfig, outputDir).resolve(TEMPLATES);
         Files.createDirectories(templatesDir);
-        List<Map<Object, Object>> resources = replaceValuesInYamls(helmConfig, generatedFiles, valuesReferences, values);
+
         Map<String, String> functionsByResource = processUserDefinedTemplates(inputDir, templates, templatesDir);
         // Split yamls in separated files by kind
         for (Map<Object, Object> resource : resources) {
@@ -506,21 +473,8 @@ public class QuarkusHelmWriterSessionListener {
         return functionsByResource;
     }
 
-    private ValuesHolder populateValues(io.dekorate.helm.config.HelmChartConfig helmConfig,
-            List<ConfigReference> valuesReferences) {
+    private ValuesHolder populateValuesFromConfig(io.dekorate.helm.config.HelmChartConfig helmConfig) {
         ValuesHolder values = new ValuesHolder();
-
-        // Populate user prod values without expression from properties
-        for (ConfigReference value : valuesReferences) {
-            if (!valueHasPath(value)) {
-                if (value.getValue() == null) {
-                    throw new RuntimeException("The value mapping for " + value.getProperty() + " does not have "
-                            + "either a path or a default value. ");
-                }
-
-                values.put(deductProperty(helmConfig, value.getProperty()), value);
-            }
-        }
 
         // Populate expressions from conditions
         for (io.dekorate.helm.config.HelmDependency dependency : helmConfig.getDependencies()) {
@@ -532,13 +486,24 @@ public class QuarkusHelmWriterSessionListener {
             }
         }
 
+        // Populate if statements expressions
+        for (AddIfStatement addIfStatement : helmConfig.getAddIfStatements()) {
+            ConfigReference configReference = new ConfigReference.Builder(
+                    deductProperty(helmConfig, addIfStatement.getProperty()), new String[0])
+                    .withDescription(addIfStatement.getDescription())
+                    .withValue(addIfStatement.getWithDefaultValue())
+                    .build();
+            values.put(deductProperty(helmConfig, addIfStatement.getProperty()), configReference);
+        }
+
         return values;
     }
 
-    private List<Map<Object, Object>> replaceValuesInYamls(io.dekorate.helm.config.HelmChartConfig helmConfig,
+    private List<Map<Object, Object>> populateValuesFromConfigReferences(io.dekorate.helm.config.HelmChartConfig helmConfig,
             Collection<File> generatedFiles,
-            List<ConfigReference> valuesReferences,
-            ValuesHolder values) throws IOException {
+            ValuesHolder values,
+            List<ConfigReference> valuesReferencesFromUser,
+            List<ConfigReference> valuesReferencesFromDecorators) throws IOException {
         List<Map<Object, Object>> allResources = new LinkedList<>();
         for (File generatedFile : generatedFiles) {
             if (!generatedFile.getName().toLowerCase().matches(YAML_REG_EXP)) {
@@ -551,13 +516,18 @@ public class QuarkusHelmWriterSessionListener {
             // Seen lookup by default values.yaml file.
             Map<String, Object> seen = new HashMap<>();
 
+            // Merge all values references in order: first the users' and then the decorators'.
+            List<ConfigReference> valuesReferences = new ArrayList<>();
+            valuesReferences.addAll(valuesReferencesFromUser);
+            valuesReferences.addAll(valuesReferencesFromDecorators);
+
             // First, process the non-environmental properties
             for (ConfigReference valueReference : valuesReferences) {
                 if (!valueIsEnvironmentProperty(valueReference)) {
                     String valueReferenceProperty = deductProperty(helmConfig, valueReference.getProperty());
 
                     processValueReference(valueReferenceProperty, valueReference.getValue(), valueReference, values, parser,
-                            seen);
+                            seen, valuesReferencesFromUser.contains(valueReference));
                 }
             }
 
@@ -579,7 +549,8 @@ public class QuarkusHelmWriterSessionListener {
                         }
                     }
 
-                    processValueReference(valueReferenceProperty, valueReferenceValue, valueReference, values, parser, seen);
+                    processValueReference(valueReferenceProperty, valueReferenceValue, valueReference, values, parser, seen,
+                            valuesReferencesFromUser.contains(valueReference));
                 }
             }
 
@@ -604,33 +575,41 @@ public class QuarkusHelmWriterSessionListener {
     }
 
     private void processValueReference(String property, Object value, ConfigReference valueReference, ValuesHolder values,
-            YamlExpressionParser parser, Map<String, Object> seen) {
+            YamlExpressionParser parser, Map<String, Object> seen, boolean isUserReference) {
 
         String profile = valueReference.getProfile();
         String expression = Optional.ofNullable(valueReference.getExpression())
                 .filter(Strings::isNotNullOrEmpty)
                 .orElse(VALUES_START_TAG + property + VALUES_END_TAG);
 
-        if (seen.containsKey(property)) {
-            if (Strings.isNotNullOrEmpty(profile)) {
-                values.putIfAbsent(property, valueReference, Optional.ofNullable(value).orElse(seen.get(property)), profile);
-            }
-
+        if (valueReference.getPaths() != null && valueReference.getPaths().length > 0) {
             for (String path : valueReference.getPaths()) {
-                set(parser, path, expression);
+                Object found = seen.get(property);
+                if (found == null) {
+                    found = read(parser, path);
+                }
+
+                Object actualValue = null;
+                if (isUserReference) {
+                    // if the value is coming from the user, we use the provided value
+                    actualValue = Optional.ofNullable(value).orElse(found);
+                } else {
+                    // if the value is coming from one decorator, we use the found value
+                    actualValue = Optional.ofNullable(found).orElse(value);
+                }
+
+                if (actualValue != null) {
+                    set(parser, path, expression);
+                    values.putIfAbsent(property, valueReference, actualValue, profile);
+                    if (Strings.isNullOrEmpty(profile)) {
+                        seen.putIfAbsent(property, actualValue);
+                    }
+                }
             }
-
-            return;
-        }
-
-        // Check whether path exists
-        for (String path : valueReference.getPaths()) {
-            Object found = readAndSet(parser, path, expression);
-
-            Object actualValue = Optional.ofNullable(value).orElse(found);
-            if (actualValue != null) {
-                seen.put(property, actualValue);
-                values.putIfAbsent(property, valueReference, actualValue, profile);
+        } else {
+            values.putIfAbsent(property, valueReference, value, profile);
+            if (Strings.isNullOrEmpty(profile)) {
+                seen.putIfAbsent(property, value);
             }
         }
     }

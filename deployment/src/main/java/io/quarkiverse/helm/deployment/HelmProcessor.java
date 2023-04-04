@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -162,7 +163,7 @@ public class HelmProcessor {
 
         // Config
         io.dekorate.helm.config.HelmChartConfig dekorateHelmChartConfig = toDekorateHelmChartConfig(app, config);
-        List<ConfigReference> valueReferencesFromConfig = toValueReferences(config);
+        List<ConfigReference> valueReferencesFromUser = toValueReferences(config);
 
         // Deduct deployment target to push
         String deploymentTargetToPush = deductDeploymentTarget(config, deploymentTargets);
@@ -172,9 +173,11 @@ public class HelmProcessor {
             String deploymentTarget = filesInDeploymentTarget.getKey();
             Path chartOutputFolder = outputFolder.resolve(deploymentTarget);
             deleteOutputHelmFolderIfExists(chartOutputFolder);
-            Map<String, String> generated = helmWriter.writeHelmFiles((Session) dekorateOutput.getSession(), project,
+
+            Map<String, String> generated = helmWriter.writeHelmFiles(project,
                     dekorateHelmChartConfig,
-                    valueReferencesFromConfig,
+                    valueReferencesFromUser,
+                    getConfigReferencesFromSession(dekorateOutput),
                     inputFolder,
                     chartOutputFolder,
                     filesInDeploymentTarget.getValue());
@@ -523,5 +526,17 @@ public class HelmProcessor {
         return buildProperties.stream().anyMatch(build -> name.matches(build) // It's a regular expression
                 || (build.endsWith(".") && name.startsWith(build)) // contains with
                 || name.equals(build)); // or it's equal to
+    }
+
+    private List<ConfigReference> getConfigReferencesFromSession(DekorateOutputBuildItem dekorateOutput) {
+        List<ConfigReference> configReferencesFromDecorators = ((Session) dekorateOutput.getSession())
+                .getResourceRegistry()
+                .getConfigReferences()
+                .stream()
+                .flatMap(decorator -> decorator.getConfigReferences().stream())
+                .collect(Collectors.toList());
+
+        Collections.reverse(configReferencesFromDecorators);
+        return configReferencesFromDecorators;
     }
 }

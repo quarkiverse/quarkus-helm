@@ -177,7 +177,7 @@ public class HelmProcessor {
             Map<String, String> generated = helmWriter.writeHelmFiles(project,
                     dekorateHelmChartConfig,
                     valueReferencesFromUser,
-                    getConfigReferencesFromSession(dekorateOutput),
+                    getConfigReferencesFromSession(deploymentTarget, dekorateOutput),
                     inputFolder,
                     chartOutputFolder,
                     filesInDeploymentTarget.getValue());
@@ -528,10 +528,11 @@ public class HelmProcessor {
                 || name.equals(build)); // or it's equal to
     }
 
-    private List<ConfigReference> getConfigReferencesFromSession(DekorateOutputBuildItem dekorateOutput) {
+    private List<ConfigReference> getConfigReferencesFromSession(String deploymentTarget,
+            DekorateOutputBuildItem dekorateOutput) {
         List<ConfigReference> configReferencesFromDecorators = ((Session) dekorateOutput.getSession())
                 .getResourceRegistry()
-                .getConfigReferences()
+                .getConfigReferences(deploymentTarget)
                 .stream()
                 .flatMap(decorator -> decorator.getConfigReferences().stream())
                 .collect(Collectors.toList());

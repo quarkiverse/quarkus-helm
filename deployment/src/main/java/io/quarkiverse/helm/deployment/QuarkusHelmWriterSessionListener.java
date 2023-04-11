@@ -17,6 +17,7 @@
 package io.quarkiverse.helm.deployment;
 
 import static io.dekorate.helm.util.HelmTarArchiver.createTarBall;
+import static io.dekorate.utils.Strings.isNullOrEmpty;
 import static io.quarkiverse.helm.deployment.utils.HelmConfigUtils.deductProperty;
 import static io.quarkiverse.helm.deployment.utils.MapUtils.toMultiValueUnsortedMap;
 import static io.quarkiverse.helm.deployment.utils.ValuesSchemaUtils.createSchema;
@@ -197,7 +198,7 @@ public class QuarkusHelmWriterSessionListener {
     }
 
     private void validateHelmConfig(io.dekorate.helm.config.HelmChartConfig helmConfig) {
-        if (Strings.isNullOrEmpty(helmConfig.getName())) {
+        if (isNullOrEmpty(helmConfig.getName())) {
             throw new RuntimeException("Helm Chart name is required!");
         }
     }
@@ -211,7 +212,7 @@ public class QuarkusHelmWriterSessionListener {
         if (notesInInputDir.exists()) {
             notesInputStream = new FileInputStream(notesInInputDir);
         } else {
-            if (Strings.isNullOrEmpty(helmConfig.getNotes())) {
+            if (isNullOrEmpty(helmConfig.getNotes())) {
                 return Collections.emptyMap();
             }
 
@@ -327,7 +328,7 @@ public class QuarkusHelmWriterSessionListener {
         File tarballFile = outputDir.resolve(String.format("%s-%s%s.%s",
                 helmConfig.getName(),
                 getVersion(helmConfig, project),
-                Strings.isNullOrEmpty(helmConfig.getTarFileClassifier()) ? EMPTY : "-" + helmConfig.getTarFileClassifier(),
+                isNullOrEmpty(helmConfig.getTarFileClassifier()) ? EMPTY : "-" + helmConfig.getTarFileClassifier(),
                 helmConfig.getExtension()))
                 .toFile();
 
@@ -352,7 +353,7 @@ public class QuarkusHelmWriterSessionListener {
     }
 
     private String getVersion(io.dekorate.helm.config.HelmChartConfig helmConfig, Project project) {
-        if (Strings.isNullOrEmpty(helmConfig.getVersion())) {
+        if (isNullOrEmpty(helmConfig.getVersion())) {
             return project.getBuildInfo().getVersion();
         }
 
@@ -394,9 +395,8 @@ public class QuarkusHelmWriterSessionListener {
 
             // Add if statements at resource level
             for (AddIfStatement addIfStatement : addIfStatements) {
-                if ((addIfStatement.getOnResourceKind().isEmpty()
-                        || addIfStatement.getOnResourceKind().equals(kind))
-                        && (addIfStatement.getOnResourceName().isEmpty()
+                if ((isNullOrEmpty(addIfStatement.getOnResourceKind()) || addIfStatement.getOnResourceKind().equals(kind))
+                        && (isNullOrEmpty(addIfStatement.getOnResourceName())
                                 || addIfStatement.getOnResourceName().equals(getNameFromResource(resource)))) {
 
                     String property = deductProperty(helmConfig, addIfStatement.getProperty());
@@ -601,14 +601,14 @@ public class QuarkusHelmWriterSessionListener {
                 if (actualValue != null) {
                     set(parser, path, expression);
                     values.putIfAbsent(property, valueReference, actualValue, profile);
-                    if (Strings.isNullOrEmpty(profile)) {
+                    if (isNullOrEmpty(profile)) {
                         seen.putIfAbsent(property, actualValue);
                     }
                 }
             }
         } else {
             values.putIfAbsent(property, valueReference, value, profile);
-            if (Strings.isNullOrEmpty(profile)) {
+            if (isNullOrEmpty(profile)) {
                 seen.putIfAbsent(property, value);
             }
         }

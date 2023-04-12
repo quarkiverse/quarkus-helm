@@ -14,45 +14,45 @@ public class HelmChartConfig {
      * Enabled the generation of Helm files.
      */
     @ConfigItem(defaultValue = "true")
-    boolean enabled;
+    public boolean enabled;
 
     /**
      * Name of the Helm chart.
      * If not set, it will use the application name.
      */
     @ConfigItem
-    Optional<String> name;
+    public Optional<String> name;
 
     /**
      * Project's home page of the Helm chart. It must be a URL.
      */
     @ConfigItem
-    Optional<String> home;
+    public Optional<String> home;
 
     /**
      * The Helm chart list of URLs to source code for this project.
      */
     @ConfigItem
-    Optional<List<String>> sources;
+    public Optional<List<String>> sources;
 
     /**
      * Version of the Helm chart.
      * If not set, it will use the application version.
      */
     @ConfigItem
-    Optional<String> version;
+    public Optional<String> version;
 
     /**
      * The Helm chart single-sentence description.
      */
     @ConfigItem
-    Optional<String> description;
+    public Optional<String> description;
 
     /**
      * List of keywords to add to the chart.
      */
     @ConfigItem
-    Optional<List<String>> keywords;
+    public Optional<List<String>> keywords;
 
     /**
      * The Helm chart list of maintainers.
@@ -64,122 +64,122 @@ public class HelmChartConfig {
      * Icon of the Helm chart. It must be a URL to an SVG or PNG image.
      */
     @ConfigItem
-    Optional<String> icon;
+    public Optional<String> icon;
 
     /**
      * The Chart API version. The default value is `v2`.
      */
     @ConfigItem(defaultValue = "v2")
-    String apiVersion;
+    public String apiVersion;
 
     /**
      * The condition to enable this chart.
      */
     @ConfigItem
-    Optional<String> condition;
+    public Optional<String> condition;
 
     /**
      * Tags of this chart.
      */
     @ConfigItem
-    Optional<String> tags;
+    public Optional<String> tags;
 
     /**
      * The version of the application enclosed of this chart.
      */
     @ConfigItem
-    Optional<String> appVersion;
+    public Optional<String> appVersion;
 
     /**
      * Whether this chart is deprecated.
      */
     @ConfigItem
-    Optional<Boolean> deprecated;
+    public Optional<Boolean> deprecated;
 
     /**
      * Annotations are additional mappings uninterpreted by Helm, made available for inspection by other applications.
      */
     @ConfigItem
-    Map<String, String> annotations;
+    public Map<String, String> annotations;
 
     /**
      * KubeVersion is a SemVer constraint specifying the version of Kubernetes required.
      */
     @ConfigItem
-    Optional<String> kubeVersion;
+    public Optional<String> kubeVersion;
 
     /**
      * The Helm chart list of dependencies.
      */
     @ConfigItem
-    Map<String, HelmDependencyConfig> dependencies;
+    public Map<String, HelmDependencyConfig> dependencies;
 
     /**
      * Specifies the chart type: application or library.
      */
     @ConfigItem
-    Optional<String> type;
+    public Optional<String> type;
 
     /**
      * Alias of the root element in the generated values file.
      */
     @ConfigItem(defaultValue = "app")
-    String valuesRootAlias;
+    public String valuesRootAlias;
 
     /**
      * Notes template to be generated.
      */
     @ConfigItem(defaultValue = "/NOTES.template.txt")
-    String notes;
+    public String notes;
 
     /**
      * Extension of the Helm tarball file. Default is `tar.gz`.
      */
     @ConfigItem(defaultValue = "tar.gz")
-    String extension;
+    public String extension;
 
     /**
      * Classifier to be appended into the generated Helm tarball file.
      */
     @ConfigItem
-    Optional<String> tarFileClassifier;
+    public Optional<String> tarFileClassifier;
 
     /**
      * If Helm tar file is generated.
      */
     @ConfigItem(defaultValue = "false")
-    boolean createTarFile;
+    public boolean createTarFile;
 
     /**
      * Whether to generate the `values.schema.json` file that is used to validate the Helm Chart input values.
      */
     @ConfigItem(defaultValue = "true")
-    boolean createValuesSchemaFile;
+    public boolean createValuesSchemaFile;
 
     /**
      * Whether to generate the `README.md` file that includes the Chart description and table with the configurable parameters
      * and their default values.
      */
     @ConfigItem(defaultValue = "true")
-    boolean createReadmeFile;
+    public boolean createReadmeFile;
 
     /**
      * The configuration references to be mapped into the Helm values file.
      */
     @ConfigItem
-    Map<String, ValueReferenceConfig> values;
+    public Map<String, ValueReferenceConfig> values;
 
     /**
      * Helm expressions to be replaced into the generated resources.
      */
     @ConfigItem
-    Map<String, ExpressionConfig> expressions;
+    public Map<String, ExpressionConfig> expressions;
 
     /**
      * The if statements to include in the generated resources.
      */
     @ConfigItem
-    Map<String, AddIfStatementConfig> addIfStatement;
+    public Map<String, AddIfStatementConfig> addIfStatement;
 
     /**
      * The input folder in which to place the user-defined Helm files. These files will be used as inputs to populate the

@@ -185,6 +185,54 @@ jobs:
       - name: Delete namespace "helmtemplates" using Helm
         run: kubectl delete namespace helmtemplates
 
+      - name: Verify Integration Test With Dependency
+        run: |
+          K8S_NAMESPACE=helmdeps1
+          KIND_REGISTRY_GROUP=local
+          VERSION=latest
+          NAME=quarkus-helm-integration-tests-kubernetes-with-dependency
+          kubectl create namespace $K8S_NAMESPACE
+
+          # create image plus push to a Helm repository
+          cd integration-tests/helm-kubernetes-with-dependency
+          mvn clean package -DskipTests -Dquarkus.container-image.build=true \
+          -Dquarkus.container-image.push=true \
+          -Dquarkus.container-image.registry=$KIND_REGISTRY \
+          -Dquarkus.container-image.group=$KIND_REGISTRY_GROUP \
+          -Dquarkus.container-image.tag=$VERSION \
+          -Dquarkus.container-image.insecure=true
+
+          # And install application
+          helm install quarkus-with-dependency target/helm/kubernetes/quarkus-helm-integration-tests-kubernetes-with-dependency --dependency-update -n $K8S_NAMESPACE --set app.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/$NAME:$VERSION
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=$NAME -n $K8S_NAMESPACE
+
+      - name: Delete namespace "helmdeps1"
+        run: kubectl delete namespace helmdeps1
+
+      - name: Verify Integration Test With Dependency Disabled
+        run: |
+          K8S_NAMESPACE=helmdeps2
+          KIND_REGISTRY_GROUP=local
+          VERSION=latest
+          NAME=quarkus-helm-integration-tests-kubernetes-with-dependency
+          kubectl create namespace $K8S_NAMESPACE
+
+          # create image plus push to a Helm repository
+          cd integration-tests/helm-kubernetes-with-dependency
+          mvn clean package -DskipTests -Dquarkus.container-image.build=true \
+          -Dquarkus.container-image.push=true \
+          -Dquarkus.container-image.registry=$KIND_REGISTRY \
+          -Dquarkus.container-image.group=$KIND_REGISTRY_GROUP \
+          -Dquarkus.container-image.tag=$VERSION \
+          -Dquarkus.container-image.insecure=true
+
+          # And install application
+          helm install quarkus-with-dependency target/helm/kubernetes/quarkus-helm-integration-tests-kubernetes-with-dependency --dependency-update -n $K8S_NAMESPACE --set app.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/$NAME:$VERSION --set postgresql.enabled=false
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=$NAME -n $K8S_NAMESPACE
+
+      - name: Delete namespace "helmdeps2"
+        run: kubectl delete namespace helmdeps2
+
       - name: Verify Super Hero microservice from Super Hero workshop using Helm Repository
         # Super Heroes workflow does not support Quarkus 3.x yet.
         if: ${{ false }}

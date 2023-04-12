@@ -55,11 +55,12 @@ public final class MapUtils {
     private static Map<String, Object> toPlainMap(List<String> path, Map<String, Object> map) {
         Map<String, Object> result = new HashMap<>();
         for (Map.Entry<String, Object> entry : map.entrySet()) {
-            path.add(entry.getKey());
+            List<String> newPath = new ArrayList<>(path);
+            newPath.add(entry.getKey());
             if (entry.getValue() instanceof Map) {
-                result.putAll(toPlainMap(path, (Map<String, Object>) entry.getValue()));
+                result.putAll(toPlainMap(newPath, (Map<String, Object>) entry.getValue()));
             } else {
-                result.put(String.join(".", path), entry.getValue());
+                result.put(String.join(".", newPath), entry.getValue());
             }
         }
 

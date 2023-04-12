@@ -20,6 +20,7 @@ import static io.dekorate.helm.util.HelmTarArchiver.createTarBall;
 import static io.dekorate.utils.Strings.isNullOrEmpty;
 import static io.quarkiverse.helm.deployment.utils.HelmConfigUtils.deductProperty;
 import static io.quarkiverse.helm.deployment.utils.MapUtils.toMultiValueUnsortedMap;
+import static io.quarkiverse.helm.deployment.utils.MapUtils.toPlainMap;
 import static io.quarkiverse.helm.deployment.utils.ValuesSchemaUtils.createSchema;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.END_EXPRESSION_TOKEN;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.SEPARATOR_QUOTES;
@@ -120,7 +121,7 @@ public class QuarkusHelmWriterSessionListener {
 
             try {
                 LOGGER.info(String.format("Creating Helm Chart \"%s\"", helmConfig.getName()));
-                ValuesHolder values = populateValuesFromConfig(helmConfig);
+                ValuesHolder values = populateValuesFromConfig(helmConfig, inputDir);
                 List<Map<Object, Object>> resources = populateValuesFromConfigReferences(helmConfig, generatedFiles, values,
                         valueReferencesFromUser, valueReferencesFromDecorators);
                 artifacts.putAll(processTemplates(helmConfig, helmConfig.getAddIfStatements(), inputDir, outputDir, resources));
@@ -473,27 +474,43 @@ public class QuarkusHelmWriterSessionListener {
         return functionsByResource;
     }
 
-    private ValuesHolder populateValuesFromConfig(io.dekorate.helm.config.HelmChartConfig helmConfig) {
+    private ValuesHolder populateValuesFromConfig(io.dekorate.helm.config.HelmChartConfig helmConfig, Path inputDir) {
         ValuesHolder values = new ValuesHolder();
 
         // Populate expressions from conditions
         for (io.dekorate.helm.config.HelmDependency dependency : helmConfig.getDependencies()) {
             if (Strings.isNotNullOrEmpty(dependency.getCondition())) {
-                ConfigReference configReference = new ConfigReference.Builder(dependency.getCondition(), new String[0])
+                String propertyName = HelmConfigUtils.deductProperty(helmConfig, dependency.getCondition());
+                ConfigReference configReference = new ConfigReference.Builder(propertyName, new String[0])
                         .withDescription("Flag to enable/disable the dependency '" + dependency.getName() + "'")
                         .build();
-                values.put(HelmConfigUtils.deductProperty(helmConfig, dependency.getCondition()), configReference, true);
+                values.put(propertyName, configReference, true);
             }
         }
 
         // Populate if statements expressions
         for (AddIfStatement addIfStatement : helmConfig.getAddIfStatements()) {
-            ConfigReference configReference = new ConfigReference.Builder(
-                    deductProperty(helmConfig, addIfStatement.getProperty()), new String[0])
+            String propertyName = deductProperty(helmConfig, addIfStatement.getProperty());
+            ConfigReference configReference = new ConfigReference.Builder(propertyName, new String[0])
                     .withDescription(addIfStatement.getDescription())
                     .withValue(addIfStatement.getWithDefaultValue())
                     .build();
-            values.put(deductProperty(helmConfig, addIfStatement.getProperty()), configReference);
+            values.put(propertyName, configReference);
+        }
+
+        // Populate from custom `values.yaml` file if exists
+        File templateValuesFile = inputDir.resolve(VALUES + YAML).toFile();
+        if (templateValuesFile.exists()) {
+            Map<String, Object> yaml = toPlainMap(Serialization.unmarshal(templateValuesFile,
+                    new TypeReference<Map<String, Object>>() {
+                    }));
+
+            for (Map.Entry<String, Object> entry : yaml.entrySet()) {
+                ConfigReference configReference = new ConfigReference.Builder(entry.getKey(), new String[0])
+                        .withValue(entry.getValue())
+                        .build();
+                values.put(entry.getKey(), configReference);
+            }
         }
 
         return values;
@@ -548,13 +565,13 @@ public class QuarkusHelmWriterSessionListener {
                         if (currentValue.getKey().endsWith(environmentProperty)) {
                             // found, we use this value instead of generating an additional envs.xxx=yyy property
                             valueReferenceProperty = currentValue.getKey();
-                            valueReferenceValue = currentValue.getValue();
+                            valueReferenceValue = currentValue.getValue().value;
                             break;
                         }
                     }
 
                     String conversion = EMPTY;
-                    if (!(valueReferenceValue instanceof String)) {
+                    if (valueReferenceValue != null && !(valueReferenceValue instanceof String)) {
                         conversion = " | quote";
                     }
 

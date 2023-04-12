@@ -76,6 +76,10 @@ public class KubernetesFullIT {
         // Should add properties set as conditions in dependencies
         assertEquals(true, app.get("dependencyBeEnabled"));
 
+        Map<String, Object> dependencyA = (Map<String, Object>) values.get("depA");
+        // Should have properties from custom values.yaml file
+        assertEquals("hi!", dependencyA.get("prop"));
+
         // Envs:
         Map<String, Object> envs = (Map<String, Object>) app.get("envs");
         // Should contain system property OVERRIDE_PATH
@@ -99,6 +103,8 @@ public class KubernetesFullIT {
         assertNull(envs.get("notAllowedProperty"));
         // Should not create properties that are already part of the application properties
         assertNull(envs.get("simple_property"));
+        // Should not create a system properties for an existing values file
+        assertNull(envs.get("depA"));
     }
 
     @Test

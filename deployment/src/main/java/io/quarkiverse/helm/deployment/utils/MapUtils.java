@@ -1,6 +1,8 @@
 package io.quarkiverse.helm.deployment.utils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Supplier;
@@ -9,6 +11,10 @@ import java.util.regex.Pattern;
 public final class MapUtils {
     private MapUtils() {
 
+    }
+
+    public static Map<String, Object> toPlainMap(Map<String, Object> map) {
+        return toPlainMap(new ArrayList<>(), map);
     }
 
     public static Map<String, Object> toMultiValueUnsortedMap(Map<String, Object> map) {
@@ -46,4 +52,17 @@ public final class MapUtils {
         return multiValueMap;
     }
 
+    private static Map<String, Object> toPlainMap(List<String> path, Map<String, Object> map) {
+        Map<String, Object> result = new HashMap<>();
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            path.add(entry.getKey());
+            if (entry.getValue() instanceof Map) {
+                result.putAll(toPlainMap(path, (Map<String, Object>) entry.getValue()));
+            } else {
+                result.put(String.join(".", path), entry.getValue());
+            }
+        }
+
+        return result;
+    }
 }

@@ -526,8 +526,12 @@ public class QuarkusHelmWriterSessionListener {
                 if (!valueIsEnvironmentProperty(valueReference)) {
                     String valueReferenceProperty = deductProperty(helmConfig, valueReference.getProperty());
 
-                    processValueReference(valueReferenceProperty, valueReference.getValue(), valueReference, values, parser,
-                            seen, valuesReferencesFromUser.contains(valueReference));
+                    String expression = Optional.ofNullable(valueReference.getExpression())
+                            .filter(Strings::isNotNullOrEmpty)
+                            .orElse(VALUES_START_TAG + valueReferenceProperty + VALUES_END_TAG);
+
+                    processValueReference(valueReferenceProperty, valueReference.getValue(), expression,
+                            valueReference, values, parser, seen, valuesReferencesFromUser.contains(valueReference));
                 }
             }
 
@@ -549,8 +553,15 @@ public class QuarkusHelmWriterSessionListener {
                         }
                     }
 
-                    processValueReference(valueReferenceProperty, valueReferenceValue, valueReference, values, parser, seen,
-                            valuesReferencesFromUser.contains(valueReference));
+                    String conversion = EMPTY;
+                    if (!(valueReferenceValue instanceof String)) {
+                        conversion = " | quote";
+                    }
+
+                    String expression = VALUES_START_TAG + valueReferenceProperty + conversion + VALUES_END_TAG;
+
+                    processValueReference(valueReferenceProperty, valueReferenceValue, expression, valueReference, values,
+                            parser, seen, valuesReferencesFromUser.contains(valueReference));
                 }
             }
 
@@ -574,14 +585,11 @@ public class QuarkusHelmWriterSessionListener {
         return property;
     }
 
-    private void processValueReference(String property, Object value, ConfigReference valueReference, ValuesHolder values,
+    private void processValueReference(String property, Object value, String expression,
+            ConfigReference valueReference, ValuesHolder values,
             YamlExpressionParser parser, Map<String, Object> seen, boolean isUserReference) {
 
         String profile = valueReference.getProfile();
-        String expression = Optional.ofNullable(valueReference.getExpression())
-                .filter(Strings::isNotNullOrEmpty)
-                .orElse(VALUES_START_TAG + property + VALUES_END_TAG);
-
         if (valueReference.getPaths() != null && valueReference.getPaths().length > 0) {
             for (String path : valueReference.getPaths()) {
                 Object found = seen.get(property);

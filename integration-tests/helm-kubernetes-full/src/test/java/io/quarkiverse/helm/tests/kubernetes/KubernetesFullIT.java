@@ -94,6 +94,11 @@ public class KubernetesFullIT {
         assertNull(envs.get("BUILD_TIME_PROPERTY"));
         // Should not create a nested app property
         assertNull(envs.get(ROOT_CONFIG_NAME));
+        // Should not create not-allowed properties
+        assertNull(envs.get("not-allowed-property"));
+        assertNull(envs.get("notAllowedProperty"));
+        // Should not create properties that are already part of the application properties
+        assertNull(envs.get("simple_property"));
     }
 
     @Test

@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -53,6 +54,7 @@ import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 public class HelmProcessor {
     private static final Logger LOGGER = Logger.getLogger(HelmProcessor.class);
     private static final String NAME_FORMAT_REG_EXP = "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
+    private static final List<String> HELM_INVALID_CHARACTERS = Arrays.asList("-");
     private static final String BUILD_TIME_PROPERTIES = "/build-time-list";
 
     private static final String QUARKUS_KUBERNETES_NAME = "quarkus.kubernetes.name";
@@ -72,11 +74,17 @@ public class HelmProcessor {
         if (helmConfig.mapSystemProperties) {
             String deploymentName = getDeploymentName(capabilities, info);
             Config config = ConfigProvider.getConfig();
+            Map<String, String> propertiesFromConfigSource = new HashMap<>();
             for (String propName : config.getPropertyNames()) {
                 ConfigValue propValue = config.getConfigValue(propName);
-                String rawValue = propValue.getRawValue();
-                if (isPropertiesConfigSource(propValue.getSourceName()) && !isBuildTimeProperty(propValue.getName())) {
-                    mapProperty(deploymentName, decorators, rawValue);
+                if (isPropertiesConfigSource(propValue.getSourceName())) {
+                    propertiesFromConfigSource.put(propName, propValue.getRawValue());
+                }
+            }
+
+            for (Map.Entry<String, String> entry : propertiesFromConfigSource.entrySet()) {
+                if (!isBuildTimeProperty(entry.getKey())) {
+                    mapProperty(deploymentName, decorators, entry.getValue(), propertiesFromConfigSource);
                 }
             }
         }
@@ -385,7 +393,8 @@ public class HelmProcessor {
         return optional.map(l -> l.toArray(new String[0])).orElse(new String[0]);
     }
 
-    private String mapProperty(String deploymentName, BuildProducer<DecoratorBuildItem> decorators, String property) {
+    private String mapProperty(String deploymentName, BuildProducer<DecoratorBuildItem> decorators, String property,
+            Map<String, String> propertiesFromConfigSource) {
         if (!hasSystemProperties(property)) {
             return property;
         }
@@ -399,17 +408,22 @@ public class HelmProcessor {
                 systemProperty = systemProperty.substring(0, splitPosition);
 
                 if (hasSystemProperties(defaultValue)) {
-                    defaultValue = mapProperty(deploymentName, decorators, defaultValue);
+                    defaultValue = mapProperty(deploymentName, decorators, defaultValue, propertiesFromConfigSource);
                 }
             }
 
-            // Check whether the system property is provided:
-            defaultValue = getPropertyFromSystem(systemProperty, defaultValue);
+            // Incorporate if and only if the system property name is valid in Helm and it's not already defined in the
+            // application properties.
+            if (!propertiesFromConfigSource.containsKey(systemProperty)
+                    && HELM_INVALID_CHARACTERS.stream().noneMatch(systemProperty::contains)) {
+                // Check whether the system property is provided:
+                defaultValue = getPropertyFromSystem(systemProperty, defaultValue);
 
-            decorators.produce(new DecoratorBuildItem(
-                    new LowPriorityAddEnvVarDecorator(deploymentName, systemProperty, defaultValue)));
+                decorators.produce(new DecoratorBuildItem(
+                        new LowPriorityAddEnvVarDecorator(deploymentName, systemProperty, defaultValue)));
 
-            lastPropertyValue = defaultValue;
+                lastPropertyValue = defaultValue;
+            }
         }
 
         return lastPropertyValue;

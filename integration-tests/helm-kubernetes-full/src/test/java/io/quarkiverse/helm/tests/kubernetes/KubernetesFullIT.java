@@ -84,6 +84,11 @@ public class KubernetesFullIT {
         assertEquals("nestedValue", envs.get("NESTED_PROPERTY"));
         // Build time properties should not be mapped
         assertNull(envs.get("BUILD_TIME_PROPERTY"));
+        // Should not create not-allowed properties
+        assertNull(envs.get("not-allowed-property"));
+        assertNull(envs.get("notAllowedProperty"));
+        // Should not create properties that are already part of the application properties
+        assertNull(envs.get("simple_property"));
     }
 
     @Test

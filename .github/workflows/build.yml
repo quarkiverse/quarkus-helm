@@ -234,8 +234,6 @@ jobs:
         run: kubectl delete namespace helmdeps2
 
       - name: Verify Super Hero microservice from Super Hero workshop using Helm Repository
-        # Super Heroes workflow does not support Quarkus 3.x yet.
-        if: ${{ false }}
         run: |
           K8S_NAMESPACE=super-heroes
           KIND_REGISTRY_GROUP=local
@@ -313,16 +311,12 @@ jobs:
           fi
 
       - name: Delete namespace "super-heroes" using Helm
-        # Super Heroes workflow does not support Quarkus 3.x yet.
-        if: ${{ false }}
         run: kubectl delete namespace super-heroes
 
   verify-in-openshift:
     name: Verify Extension in OpenShift
     # the action "manusa/actions-setup-openshift@v1.1.4" only works in ubuntu-20.04
     runs-on: ubuntu-20.04
-    # Super Heroes workflow does not support Quarkus 3.x yet.
-    if: ${{ false }}
     needs: verify-in-kubernetes
     steps:
       - uses: actions/checkout@v3

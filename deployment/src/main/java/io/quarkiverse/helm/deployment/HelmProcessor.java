@@ -233,27 +233,34 @@ public class HelmProcessor {
                         addIfStatement.getKey(), addIfStatement.getKey()));
             }
 
-            if (HELM_INVALID_CHARACTERS.stream().anyMatch(name::contains)) {
+            if (!config.disableNamingValidation && HELM_INVALID_CHARACTERS.stream().anyMatch(name::contains)) {
                 throw new RuntimeException(
-                        String.format("The property of the `add-if-statement` '%s' is invalid. Can't use '-' characters.",
-                                name));
+                        String.format("The property of the `add-if-statement` '%s' is invalid. Can't use '-' characters."
+                                + "You can disable the naming validation using "
+                                + "`quarkus.helm.disable-naming-validation=true`", name));
             }
         }
 
-        for (Map.Entry<String, HelmDependencyConfig> dependency : config.dependencies.entrySet()) {
-            String name = dependency.getValue().name.orElse(dependency.getKey());
-            if (dependency.getValue().condition.isPresent()
-                    && HELM_INVALID_CHARACTERS.stream().anyMatch(dependency.getValue().condition.get()::contains)) {
-                throw new RuntimeException(
-                        String.format("Condition of the dependency '%s' is invalid. Can't use '-' characters.", name));
+        if (!config.disableNamingValidation) {
+            for (Map.Entry<String, HelmDependencyConfig> dependency : config.dependencies.entrySet()) {
+                String name = dependency.getValue().name.orElse(dependency.getKey());
+                if (dependency.getValue().condition.isPresent()
+                        && HELM_INVALID_CHARACTERS.stream().anyMatch(dependency.getValue().condition.get()::contains)) {
+                    throw new RuntimeException(
+                            String.format("Condition of the dependency '%s' is invalid. Can't use '-' characters."
+                                    + "You can disable the naming validation using "
+                                    + "`quarkus.helm.disable-naming-validation=true`", name));
+                }
             }
-        }
 
-        for (Map.Entry<String, ValueReferenceConfig> value : config.values.entrySet()) {
-            String name = value.getValue().property.orElse(value.getKey());
-            if (HELM_INVALID_CHARACTERS.stream().anyMatch(name::contains)) {
-                throw new RuntimeException(
-                        String.format("Property of the value '%s' is invalid. Can't use '-' characters.", name));
+            for (Map.Entry<String, ValueReferenceConfig> value : config.values.entrySet()) {
+                String name = value.getValue().property.orElse(value.getKey());
+                if (HELM_INVALID_CHARACTERS.stream().anyMatch(name::contains)) {
+                    throw new RuntimeException(
+                            String.format("Property of the value '%s' is invalid. Can't use '-' characters."
+                                    + "You can disable the naming validation using "
+                                    + "`quarkus.helm.disable-naming-validation=true`", name));
+                }
             }
         }
     }

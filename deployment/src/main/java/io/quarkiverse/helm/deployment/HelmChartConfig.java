@@ -222,6 +222,13 @@ public class HelmChartConfig {
     public boolean mapSystemProperties;
 
     /**
+     * If true, the naming validation will be disabled.
+     * The naming validation rejects property names that contain "-" characters.
+     */
+    @ConfigItem(defaultValue = "false")
+    public boolean disableNamingValidation;
+
+    /**
      * Configuration for the `values.schema.json` file.
      */
     public ValuesSchemaConfig valuesSchema;

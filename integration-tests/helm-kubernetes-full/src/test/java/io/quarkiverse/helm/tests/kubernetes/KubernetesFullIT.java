@@ -75,6 +75,8 @@ public class KubernetesFullIT {
         assertEquals("bar", app.get("foo"));
         // Should add properties set as conditions in dependencies
         assertEquals(true, app.get("dependencyBeEnabled"));
+        // Should contain "my-prop" because validation is disabled
+        assertEquals("test", app.get("my-prop"));
 
         Map<String, Object> dependencyA = (Map<String, Object>) values.get("depA");
         // Should have properties from custom values.yaml file

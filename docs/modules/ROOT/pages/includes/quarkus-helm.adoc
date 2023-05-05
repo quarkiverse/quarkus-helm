@@ -507,6 +507,22 @@ endif::add-copy-button-to-env-var[]
 |`true`
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.disable-naming-validation]]`link:#quarkus-helm_quarkus.helm.disable-naming-validation[quarkus.helm.disable-naming-validation]`
+
+[.description]
+--
+If true, the naming validation will be disabled. The naming validation rejects property names that contain "-" characters.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_DISABLE_NAMING_VALIDATION+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_DISABLE_NAMING_VALIDATION+++`
+endif::add-copy-button-to-env-var[]
+--|boolean 
+|`false`
+
+
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.title]]`link:#quarkus-helm_quarkus.helm.values-schema.title[quarkus.helm.values-schema.title]`
 
 [.description]

@@ -29,7 +29,7 @@ public class KubernetesFullIT {
         assertNotNull(getResourceAsStream("README.md"));
         assertNotNull(getResourceAsStream("requirements.yml"));
         assertNotNull(getResourceAsStream("values.schema.json"));
-        assertNotNull(getResourceAsStream("values.dev.yaml"));
+        assertNotNull(getResourceAsStream("values-dev.yaml"));
         assertNotNull(getResourceAsStream("templates/deployment.yaml"));
         assertNotNull(getResourceAsStream("templates/NOTES.txt"));
         assertNotNull(getResourceAsStream("crds/crontabs.stable.example.com.yaml"));
@@ -112,7 +112,7 @@ public class KubernetesFullIT {
     @Test
     public void valuesShouldContainExpectedDataInDevProfile() throws IOException {
         Map<String, Object> values = Serialization.yamlMapper()
-                .readValue(getResourceAsStream("values.dev.yaml"),
+                .readValue(getResourceAsStream("values-dev.yaml"),
                         Map.class);
         assertNotNull(values, "Values is null!");
 

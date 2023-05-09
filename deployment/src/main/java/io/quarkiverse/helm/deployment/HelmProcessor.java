@@ -203,7 +203,8 @@ public class HelmProcessor {
                     getConfigReferencesFromSession(deploymentTarget, dekorateOutput),
                     inputFolder,
                     chartOutputFolder,
-                    filesInDeploymentTarget.getValue());
+                    filesInDeploymentTarget.getValue(),
+                    config.valuesProfileSeparator);
 
             // Push to Helm repository if enabled
             if (config.repository.push && deploymentTargetToPush.equals(deploymentTarget)) {

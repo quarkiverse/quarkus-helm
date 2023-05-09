@@ -114,7 +114,8 @@ public class QuarkusHelmWriterSessionListener {
             List<ConfigReference> valueReferencesFromDecorators,
             Path inputDir,
             Path outputDir,
-            Collection<File> generatedFiles) {
+            Collection<File> generatedFiles,
+            String valuesProfileSeparator) {
         Map<String, String> artifacts = new HashMap<>();
         if (helmConfig.isEnabled()) {
             validateHelmConfig(helmConfig);
@@ -126,7 +127,7 @@ public class QuarkusHelmWriterSessionListener {
                         valueReferencesFromUser, valueReferencesFromDecorators);
                 artifacts.putAll(processTemplates(helmConfig, helmConfig.getAddIfStatements(), inputDir, outputDir, resources));
                 artifacts.putAll(createChartYaml(helmConfig, project, inputDir, outputDir));
-                artifacts.putAll(createValuesYaml(helmConfig, inputDir, outputDir, values));
+                artifacts.putAll(createValuesYaml(helmConfig, inputDir, outputDir, values, valuesProfileSeparator));
 
                 // To follow Helm file structure standards:
                 artifacts.putAll(createEmptyChartFolder(helmConfig, outputDir));
@@ -247,7 +248,7 @@ public class QuarkusHelmWriterSessionListener {
     }
 
     private Map<String, String> createValuesYaml(io.dekorate.helm.config.HelmChartConfig helmConfig,
-            Path inputDir, Path outputDir, ValuesHolder valuesHolder)
+            Path inputDir, Path outputDir, ValuesHolder valuesHolder, String valuesProfileSeparator)
             throws IOException {
         Map<String, ValuesHolder.HelmValueHolder> prodValues = valuesHolder.getProdValues();
         Map<String, Map<String, ValuesHolder.HelmValueHolder>> valuesByProfile = valuesHolder.getValuesByProfile();
@@ -267,7 +268,8 @@ public class QuarkusHelmWriterSessionListener {
 
             // Create the values.<profile>.yaml file
             artifacts.putAll(writeFileAsYaml(mergeWithFileIfExists(inputDir, VALUES + YAML, toValuesMap(values)),
-                    getChartOutputDir(helmConfig, outputDir).resolve(VALUES + "." + profile + YAML)));
+                    getChartOutputDir(helmConfig, outputDir)
+                            .resolve(VALUES + valuesProfileSeparator + profile + YAML)));
         }
 
         // Next, we process the prod profile

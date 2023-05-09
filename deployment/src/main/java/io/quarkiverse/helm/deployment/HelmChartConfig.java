@@ -229,6 +229,13 @@ public class HelmChartConfig {
     public boolean disableNamingValidation;
 
     /**
+     * Configuration for the separator string in the filename of profile specific values files i.e. values.profile.yaml,
+     * defaults to "."
+     */
+    @ConfigItem(defaultValue = ".")
+    public String valuesProfileSeparator;
+
+    /**
      * Configuration for the `values.schema.json` file.
      */
     public ValuesSchemaConfig valuesSchema;

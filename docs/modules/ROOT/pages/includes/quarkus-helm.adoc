@@ -523,6 +523,22 @@ endif::add-copy-button-to-env-var[]
 |`false`
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-profile-separator]]`link:#quarkus-helm_quarkus.helm.values-profile-separator[quarkus.helm.values-profile-separator]`
+
+[.description]
+--
+Configuration for the separator string in the filename of profile specific values files i.e. values.profile.yaml, defaults to "."
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES_PROFILE_SEPARATOR+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES_PROFILE_SEPARATOR+++`
+endif::add-copy-button-to-env-var[]
+--|string 
+|`.`
+
+
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.title]]`link:#quarkus-helm_quarkus.helm.values-schema.title[quarkus.helm.values-schema.title]`
 
 [.description]
@@ -815,7 +831,7 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-value
 
 [.description]
 --
-The profile where this value reference will be mapped to. For example, if the profile is `dev`, then a `values-dev.yml` file will be created with the value.
+The profile where this value reference will be mapped to. For example, if the profile is `dev`, then a `values.dev.yml` file will be created with the value.
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES__VALUES__PROFILE+++[]

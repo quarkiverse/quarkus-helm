@@ -25,7 +25,7 @@ public class ValueReferenceConfig {
 
     /**
      * The profile where this value reference will be mapped to.
-     * For example, if the profile is `dev`, then a `values-dev.yml` file will be created with the value.
+     * For example, if the profile is `dev`, then a `values.dev.yml` file will be created with the value.
      */
     @ConfigItem
     Optional<String> profile;

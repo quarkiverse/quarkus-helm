@@ -874,6 +874,88 @@ app:
 So, when installing the chart, the Ingress resource won't be installed by default.
 Now, to install it, you need to explicitly set the `app.ingress.enabled=true` property as `helm install quarkus local/chart --set app.ingress.enabled=false` and then the Ingress resource would be installed.
 
+== Command line interface
+
+Using the `helm` binary requires the user to specify things like `name` and `path` for each chart, which is a repetitive process.
+Moreover, on multi-module projects it requires the command to be run for each of the modules providing a chart.
+
+This extension provides a CLI utility that can be used a Quarkus CLI plugin.
+The plugin is enabled automatically when the Quarkus CLI is running from within a module that is using the helm extension.
+
+**Note**: If the plugin is not added automatically, it is possible that the extension catalog has not yet been updated with a `quarkus-helm` version that contains the CLI plugin. Until, then please use the manual installation steps.
+
+=== Manual installation
+
+To manually enable the CLI plugin for `quarkus-helm`
+
+[source,bash]
+----
+quarkus plug add io.quarkiverse.helm:quarkus-helm-cli:{quarkus-helm-version} -d "Helm CLI"
+----
+
+
+=== Using the CLI
+
+==== Listing charts
+
+To list the avaialbe charts of the current projects or its sub-modules:
+
+[source,bash]
+----
+quarkus helm list
+----
+
+To select a specific platform (e.g. kubernetes or openshift):
+
+[source,bash]
+----
+quarkus helm list --platform kubernetes
+----
+
+==== Installing charts
+
+To install all the available charts of the current project or its sub-modules;
+
+[source,bash]
+----
+quarkus helm install
+----
+
+The command supports the `--platform` option too.
+The command also supports the `--set` option from the original helm cli:
+
+[source,bash]
+----
+quarkus helm install --set app.replicas=3
+----
+
+In case you want to select a single chart among multiple modules for installation (e.g. `user-service`):
+
+[source,bash]
+----
+quarkus helm install user-service
+----
+
+==== Upgrading charts
+
+To upgrade:
+
+[source,bash]
+----
+quarkus helm upgrade
+----
+
+The upgrade command supports the same options as the `install` subcommand.
+
+==== Uninstalling charts
+
+To uninstall a chart:
+
+[source,bash]
+----
+quarkus helm uninstall
+----
+
 [[configuration-reference]]
 == Configuration Reference
 

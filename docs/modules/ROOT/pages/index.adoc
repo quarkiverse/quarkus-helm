@@ -824,7 +824,7 @@ quarkus.kubernetes.ingress.host=my-host
 
 # Helm Chart
 quarkus.helm.name=my-chart
-## Overwrite the value of `dekorate.kubernetes.host` to `values-<profile-name>.yaml`:
+## Overwrite the value of `quarkus.kubernetes.host` to `values.<profile-name>.yaml`:
 quarkus.helm.values.host.paths=(kind == Ingress).spec.rules.host
 quarkus.helm.values.host.value=my-test-host
 quarkus.helm.values.host.profile=test
@@ -838,13 +838,18 @@ app:
   host: my-host
 ----
 
-But as you are now using a profile named `test` (see `quarkus.helm.values.host.profile`) in one of your mapped properties, it will also generate a `values-test.yaml` file with the content:
+But as you are now using a profile named `test` (see `quarkus.helm.values.host.profile`) in one of your mapped properties, it will also generate a `values.test.yaml` file with the content:
 
 [source,yaml]
 ----
 app:
   host: my-test-host
 ----
+
+[TIP]
+====
+By default, Quarkus Helm uses the "." character in the filename of profile specific values files i.e. `values.test.yaml`. You can configure this separator using the property `quarkus.helm.values-profile-separator`. For example, using `quarkus.helm.values-profile-separator=-` would generate `values-test.yaml` instead.
+====
 
 [[conditionally-enable-disable-resources]]
 == Conditionally enable/disable resources

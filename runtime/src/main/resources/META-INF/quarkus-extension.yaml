@@ -9,3 +9,5 @@ metadata:
   categories:
   - "cloud"
   status: "preview"
+  cli-plugins:
+   - "${project.groupId}:quarkus-helm-cli:${project.version}"

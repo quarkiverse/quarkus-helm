@@ -17,7 +17,7 @@ public class Uninstall extends ChartCommand {
     }
 
     @Override
-    public List<String> getAdditionaArguments(Path path) {
+    public List<String> getAdditionalArguments(Path path) {
         List<String> arguments = new ArrayList<>();
         arguments.add(chartOf(path));
         return arguments;

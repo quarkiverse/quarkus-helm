@@ -4,7 +4,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.Objects;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -29,11 +29,10 @@ public class ChartList implements Callable<Integer> {
     public Integer call() {
         Path currentDir = Paths.get(System.getProperty("user.dir"));
         try {
-            java.util.List<Platform> platforms = platform != null ? java.util.List.of(platform)
-                    : java.util.List.of(Platform.values());
-            java.util.List<Path> chartDirectories = HelmUtil.listGeneratedCharts(currentDir, platforms);
+            List<Platform> platforms = platform != null ? List.of(platform) : List.of(Platform.values());
+            List<Path> chartDirectories = HelmUtil.listGeneratedCharts(currentDir, platforms);
             if (chartDirectories.isEmpty()) {
-                System.out.println("No generated helm charts where found under: " + currentDir.toAbsolutePath().toString()
+                System.out.println("No generated helm charts where found under: " + currentDir.toAbsolutePath()
                         + " for platforms: "
                         + platforms.stream().map(Platform::name).collect(Collectors.joining(",", "[", "]")));
                 return CommandLine.ExitCode.OK;
@@ -48,16 +47,15 @@ public class ChartList implements Callable<Integer> {
             }
             return CommandLine.ExitCode.OK;
         } catch (Exception e) {
-            System.err.println("Failed to list charts under: " + currentDir.toAbsolutePath().toString());
+            System.err.println("Failed to list charts under: " + currentDir.toAbsolutePath());
             return CommandLine.ExitCode.SOFTWARE;
         }
     }
 
     private static String getFormat(Collection<Path> items) {
         int maxNameLength = items.stream()
-                .map(p -> p.getFileName())
+                .map(Path::getFileName)
                 .map(Path::toString)
-                .filter(Objects::nonNull)
                 .map(String::length)
                 .max(Comparator.naturalOrder())
                 .orElse(0);
@@ -65,7 +63,6 @@ public class ChartList implements Callable<Integer> {
         int maxPlatformLength = items.stream()
                 .map(HelmUtil::platformOf)
                 .map(Platform::name)
-                .filter(Objects::nonNull)
                 .map(String::length)
                 .max(Comparator.naturalOrder())
                 .orElse(0);

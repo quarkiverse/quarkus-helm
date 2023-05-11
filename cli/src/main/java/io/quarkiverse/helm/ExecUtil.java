@@ -13,7 +13,7 @@ public final class ExecUtil {
     private static final int PROCESS_CHECK_INTERVAL = 500;
 
     private ExecUtil() {
-        //Utlity Class
+        // Utility Class
     }
 
     public static boolean execWithTimeout(File directory, Function<InputStream, Runnable> outputFilterFunction,
@@ -45,7 +45,7 @@ public final class ExecUtil {
             String[] cmd = new String[args.size() + 1];
             cmd[0] = command;
             if (args.size() > 0) {
-                System.arraycopy(args.toArray(new String[args.size()]), 0, cmd, 1, args.size());
+                System.arraycopy(args.toArray(new String[0]), 0, cmd, 1, args.size());
             }
             return new ProcessBuilder()
                     .directory(directory)

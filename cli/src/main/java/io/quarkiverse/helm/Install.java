@@ -21,7 +21,7 @@ public class Install extends ChartCommand {
     }
 
     @Override
-    public java.util.List<String> getAdditionaArguments(Path path) {
+    public java.util.List<String> getAdditionalArguments(Path path) {
         java.util.List<String> arguments = new java.util.ArrayList<>();
         arguments.add(chartOf(path));
         arguments.add(chartPathOf(path));

@@ -29,7 +29,7 @@ public abstract class ChartCommand implements Callable<Integer> {
     @Option(order = 3, names = { "--dry-run" }, description = "Show actions that would be taken.")
     boolean dryRun = false;
 
-    @Parameters(arity = "0..1", paramLabel = "CHART_NAME", description = " The chart name to")
+    @Parameters(arity = "0..1", paramLabel = "CHART_NAME", description = "The chart name to")
     String chartName;
 
     /**
@@ -45,7 +45,7 @@ public abstract class ChartCommand implements Callable<Integer> {
      * @param path the path of the cart.
      * @retun a list containing additonal arugments
      */
-    public abstract List<String> getAdditionaArguments(Path path);
+    public abstract List<String> getAdditionalArguments(Path path);
 
     @Override
     public Integer call() {
@@ -69,7 +69,7 @@ public abstract class ChartCommand implements Callable<Integer> {
 
                 List<String> arguments = new ArrayList<>();
                 arguments.add(getAction());
-                arguments.addAll(getAdditionaArguments(chartDirectory));
+                arguments.addAll(getAdditionalArguments(chartDirectory));
 
                 if (dryRun) {
                     System.out.print("  helm " + String.join(" ", arguments));
@@ -89,7 +89,7 @@ public abstract class ChartCommand implements Callable<Integer> {
 
             return CommandLine.ExitCode.OK;
         } catch (Exception e) {
-            System.err.println("Failed to " + getAction() + " charts under: " + currentDir.toAbsolutePath().toString()
+            System.err.println("Failed to " + getAction() + " charts under: " + currentDir.toAbsolutePath()
                     + ", due to: " + e.getMessage());
             return CommandLine.ExitCode.SOFTWARE;
         }

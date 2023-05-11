@@ -5,13 +5,13 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 
 public abstract class ChartCommand implements Callable<Integer> {
@@ -20,7 +20,7 @@ public abstract class ChartCommand implements Callable<Integer> {
     protected CommandSpec spec;
 
     @Option(order = 1, names = {
-            "--platform" }, description = "Select target platform (kubernetes or openshift, default to kubernetes).")
+            "--platform" }, description = "Select target platform (kubernetes, knative or openshift, default to kubernetes).")
     public Platform platform;
 
     @Option(order = 2, names = { "-h", "--help" }, usageHelp = true, description = "Display this help message.")
@@ -29,15 +29,16 @@ public abstract class ChartCommand implements Callable<Integer> {
     @Option(order = 3, names = { "--dry-run" }, description = "Show actions that would be taken.")
     boolean dryRun = false;
 
-    @Parameters(arity = "0..1", paramLabel = "CHART_NAME", description = "The chart name to")
-    String chartName;
-
     /**
      * The helm subcommand (e.g. install, uninstall, upgrade)
      *
      * @retun the subcommand
      */
     public abstract String getAction();
+
+    public String getName() {
+        return null;
+    }
 
     /**
      * Additional arguments to pass to helm.
@@ -53,9 +54,9 @@ public abstract class ChartCommand implements Callable<Integer> {
 
         try {
             List<Platform> platforms = platform != null ? List.of(platform) : List.of(Platform.kubernetes);
-            List<Path> chartDirectories = HelmUtil.listGeneratedCharts(currentDir, platforms).stream()
-                    .filter(c -> chartName == null || chartName.equals(c.getFileName().toString()))
-                    .collect(Collectors.toList());
+            Set<Path> chartDirectories = HelmUtil.listGeneratedCharts(currentDir, platforms).stream()
+                    .filter(c -> getName() == null || getName().equals(c.getFileName().toString()))
+                    .collect(Collectors.toSet());
 
             if (chartDirectories.size() == 0) {
                 System.out.println("No generated helm charts where found under: " + currentDir.toAbsolutePath().toString()
@@ -64,7 +65,9 @@ public abstract class ChartCommand implements Callable<Integer> {
                 return CommandLine.ExitCode.USAGE;
             }
 
-            System.out.println("Dry run:");
+            if (dryRun) {
+                System.out.println("Dry run:");
+            }
             for (Path chartDirectory : chartDirectories) {
 
                 List<String> arguments = new ArrayList<>();

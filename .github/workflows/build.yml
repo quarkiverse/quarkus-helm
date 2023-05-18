@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java-version: [11]
+        java-version: [ 17 ]
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 11
@@ -55,16 +55,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java-version: [11]
+        java-version: [ 17 ]
         jbang-version: [0.106.1]
     needs: build
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 11
+      - name: Set up JDK ${{matrix.java-version}}
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: 11
+          java-version: ${{matrix.java-version}}
           check-latest: true
           cache: 'maven'
       - name: Setup sdkman
@@ -343,13 +343,16 @@ jobs:
     # the action "manusa/actions-setup-openshift@v1.1.4" only works in ubuntu-20.04
     runs-on: ubuntu-20.04
     needs: verify-in-kubernetes
+    strategy:
+      matrix:
+        java-version: [ 17 ]
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 11
+      - name: Set up JDK ${{matrix.java-version}}
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: 11
+          java-version: ${{matrix.java-version}}
           check-latest: true
           cache: 'maven'
       - name: Build with Maven

@@ -18,6 +18,11 @@
     <module>integration-tests</module>
     <module>docs</module>
   </modules>
+  <scm>
+    <connection>scm:git:git@github.com:quarkiverse/quarkus-helm.git</connection>
+    <developerConnection>scm:git:git@github.com:quarkiverse/quarkus-helm.git</developerConnection>
+    <url>https://github.com/quarkiverse/quarkus-helm</url>
+  </scm>
   <properties>
     <compiler-plugin.version>3.8.1</compiler-plugin.version>
     <maven.compiler.parameters>true</maven.compiler.parameters>

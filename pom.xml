@@ -19,7 +19,7 @@
     <module>docs</module>
   </modules>
   <scm>
-    <connection>:git:git@github.com:quarkiverse/quarkus-helm.git</connection>
+    <connection>scm:git:git@github.com:quarkiverse/quarkus-helm.git</connection>
     <developerConnection>scm:git:git@github.com:quarkiverse/quarkus-helm.git</developerConnection>
     <url>https://github.com/quarkiverse/quarkus-helm</url>
   </scm>

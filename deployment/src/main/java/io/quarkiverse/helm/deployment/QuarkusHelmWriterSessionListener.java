@@ -43,10 +43,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -534,6 +536,7 @@ public class QuarkusHelmWriterSessionListener {
 
             // Seen lookup by default values.yaml file.
             Map<String, Object> seen = new HashMap<>();
+            Set<String> paths = new HashSet<>();
 
             // Merge all values references in order: first the users' and then the decorators'.
             List<ConfigReference> valuesReferences = new ArrayList<>();
@@ -550,7 +553,7 @@ public class QuarkusHelmWriterSessionListener {
                             .orElse(VALUES_START_TAG + valueReferenceProperty + VALUES_END_TAG);
 
                     processValueReference(valueReferenceProperty, valueReference.getValue(), expression,
-                            valueReference, values, parser, seen);
+                            valueReference, values, parser, seen, paths);
                 }
             }
 
@@ -580,7 +583,7 @@ public class QuarkusHelmWriterSessionListener {
                     String expression = VALUES_START_TAG + valueReferenceProperty + conversion + VALUES_END_TAG;
 
                     processValueReference(valueReferenceProperty, valueReferenceValue, expression, valueReference, values,
-                            parser, seen);
+                            parser, seen, paths);
                 }
             }
 
@@ -606,14 +609,21 @@ public class QuarkusHelmWriterSessionListener {
 
     private void processValueReference(String property, Object value, String expression,
             ConfigReference valueReference, ValuesHolder values,
-            YamlExpressionParser parser, Map<String, Object> seen) {
+            YamlExpressionParser parser, Map<String, Object> seen, Set<String> paths) {
 
         String profile = valueReference.getProfile();
         if (valueReference.getPaths() != null && valueReference.getPaths().length > 0) {
             for (String path : valueReference.getPaths()) {
                 Object found = seen.get(property);
+
+                if (paths.contains(path) && found != null) {
+                    // path was already processed. Skipping.
+                    continue;
+                }
+
                 if (found == null) {
                     found = read(parser, path);
+                    paths.add(path);
                 }
 
                 Object actualValue = Optional.ofNullable(value).orElse(found);

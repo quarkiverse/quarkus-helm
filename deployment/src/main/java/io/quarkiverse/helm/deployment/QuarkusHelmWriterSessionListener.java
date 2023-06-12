@@ -550,7 +550,7 @@ public class QuarkusHelmWriterSessionListener {
                             .orElse(VALUES_START_TAG + valueReferenceProperty + VALUES_END_TAG);
 
                     processValueReference(valueReferenceProperty, valueReference.getValue(), expression,
-                            valueReference, values, parser, seen, valuesReferencesFromUser.contains(valueReference));
+                            valueReference, values, parser, seen);
                 }
             }
 
@@ -580,7 +580,7 @@ public class QuarkusHelmWriterSessionListener {
                     String expression = VALUES_START_TAG + valueReferenceProperty + conversion + VALUES_END_TAG;
 
                     processValueReference(valueReferenceProperty, valueReferenceValue, expression, valueReference, values,
-                            parser, seen, valuesReferencesFromUser.contains(valueReference));
+                            parser, seen);
                 }
             }
 
@@ -606,7 +606,7 @@ public class QuarkusHelmWriterSessionListener {
 
     private void processValueReference(String property, Object value, String expression,
             ConfigReference valueReference, ValuesHolder values,
-            YamlExpressionParser parser, Map<String, Object> seen, boolean isUserReference) {
+            YamlExpressionParser parser, Map<String, Object> seen) {
 
         String profile = valueReference.getProfile();
         if (valueReference.getPaths() != null && valueReference.getPaths().length > 0) {
@@ -616,14 +616,7 @@ public class QuarkusHelmWriterSessionListener {
                     found = read(parser, path);
                 }
 
-                Object actualValue = null;
-                if (isUserReference) {
-                    // if the value is coming from the user, we use the provided value
-                    actualValue = Optional.ofNullable(value).orElse(found);
-                } else {
-                    // if the value is coming from one decorator, we use the found value
-                    actualValue = Optional.ofNullable(found).orElse(value);
-                }
+                Object actualValue = Optional.ofNullable(value).orElse(found);
 
                 if (actualValue != null) {
                     set(parser, path, expression);

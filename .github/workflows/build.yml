@@ -335,6 +335,21 @@ jobs:
             exit 1
           fi
 
+      - name: (Only if it failed) Log REST Heroes traces at failures
+        if: failure()
+        run: |
+          echo "Deployment resource:"
+          kubectl get deployment rest-heroes -o yaml
+          echo "Logs of the deployment:"
+          kubectl logs deploy/rest-heroes --all-containers=true -n $KUBERNETES_NAMESPACE
+          POD_NAME=$(kubectl get pod -l app.kubernetes.io/name=rest-heroes -o name)
+          echo "Describe pod:"
+          kubectl describe $POD_NAME
+          echo "Logs of running pod:"
+          kubectl logs $POD_NAME
+          echo "Logs of terminated pod:"
+          kubectl logs -p $POD_NAME
+
       - name: Delete namespace "super-heroes" using Helm
         run: kubectl delete namespace super-heroes
 

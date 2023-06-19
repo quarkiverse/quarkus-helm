@@ -1,6 +1,8 @@
 [[example-crud]]
 = Example: How to generate the Helm Chart of a REST CRUD Quarkus application
 
+include::./includes/attributes.adoc[]
+
 In this example, we're going to create a very simple REST CRUD application in Quarkus. Then, we'll configure it to build the application image, and push it to a container registry, so Kubernetes can pull this image from. Next, we'll configure the Quarkus Kubernetes and Helm extensions to generate the Helm chart and push it into a Helm repository. Finally, we'll see how to install the generated Helm chart into Kubernetes from the Helm repository.
 
 == Prerequisites
@@ -49,7 +51,7 @@ public class GreetingResource {
 }
 ----
 
-So, if we start our application, for example running the Maven command `mvn quarkus:dev` (Quarkus DEV mode) , we could call it using `http://localhost:8080/hello`.
+So, if we start our application, for example running the Maven command `mvn quarkus:dev` (Quarkus DEV mode), we could call it using `http://localhost:8080/hello`.
 
 To continue with, let's add our first Fruit entity:
 

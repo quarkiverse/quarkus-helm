@@ -22,13 +22,17 @@ import static io.quarkiverse.helm.deployment.utils.HelmConfigUtils.deductPropert
 import static io.quarkiverse.helm.deployment.utils.MapUtils.toMultiValueUnsortedMap;
 import static io.quarkiverse.helm.deployment.utils.MapUtils.toPlainMap;
 import static io.quarkiverse.helm.deployment.utils.ValuesSchemaUtils.createSchema;
+import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.EMPTY;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.END_EXPRESSION_TOKEN;
+import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.END_TAG;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.SEPARATOR_QUOTES;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.SEPARATOR_TOKEN;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.START_EXPRESSION_TOKEN;
+import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.START_TAG;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.read;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.readAndSet;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.set;
+import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.toExpression;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -92,11 +96,6 @@ public class QuarkusHelmWriterSessionListener {
     private static final String KIND = "kind";
     private static final String METADATA = "metadata";
     private static final String NAME = "name";
-    private static final String START_TAG = "{{";
-    private static final String END_TAG = "}}";
-    private static final String VALUES_START_TAG = START_TAG + " .Values.";
-    private static final String VALUES_END_TAG = " " + END_TAG;
-    private static final String EMPTY = "";
     private static final String ENVIRONMENT_PROPERTY_GROUP = "envs.";
     private static final String IF_STATEMENT_START_TAG = "{{- if .Values.%s }}";
     private static final String TEMPLATE_FUNCTION_START_TAG = "{{- define";
@@ -548,12 +547,8 @@ public class QuarkusHelmWriterSessionListener {
                 if (!valueIsEnvironmentProperty(valueReference)) {
                     String valueReferenceProperty = deductProperty(helmConfig, valueReference.getProperty());
 
-                    String expression = Optional.ofNullable(valueReference.getExpression())
-                            .filter(Strings::isNotNullOrEmpty)
-                            .orElse(VALUES_START_TAG + valueReferenceProperty + VALUES_END_TAG);
-
-                    processValueReference(valueReferenceProperty, valueReference.getValue(), expression,
-                            valueReference, values, parser, seen, paths);
+                    processValueReference(valueReferenceProperty, valueReference.getValue(), valueReference, values, parser,
+                            seen, paths);
                 }
             }
 
@@ -575,15 +570,8 @@ public class QuarkusHelmWriterSessionListener {
                         }
                     }
 
-                    String conversion = EMPTY;
-                    if (valueReferenceValue != null && !(valueReferenceValue instanceof String)) {
-                        conversion = " | quote";
-                    }
-
-                    String expression = VALUES_START_TAG + valueReferenceProperty + conversion + VALUES_END_TAG;
-
-                    processValueReference(valueReferenceProperty, valueReferenceValue, expression, valueReference, values,
-                            parser, seen, paths);
+                    processValueReference(valueReferenceProperty, valueReferenceValue, valueReference, values, parser, seen,
+                            paths);
                 }
             }
 
@@ -607,8 +595,7 @@ public class QuarkusHelmWriterSessionListener {
         return property;
     }
 
-    private void processValueReference(String property, Object value, String expression,
-            ConfigReference valueReference, ValuesHolder values,
+    private void processValueReference(String property, Object value, ConfigReference valueReference, ValuesHolder values,
             YamlExpressionParser parser, Map<String, Object> seen, Set<String> paths) {
 
         String profile = valueReference.getProfile();
@@ -629,7 +616,7 @@ public class QuarkusHelmWriterSessionListener {
                 Object actualValue = Optional.ofNullable(value).orElse(found);
 
                 if (actualValue != null) {
-                    set(parser, path, expression);
+                    set(parser, path, toExpression(property, value, found, valueReference));
                     values.putIfAbsent(property, valueReference, actualValue, profile);
                     if (isNullOrEmpty(profile)) {
                         seen.putIfAbsent(property, actualValue);

@@ -1,7 +1,5 @@
 package io.quarkiverse.helm.tests.kubernetes;
 
-import java.util.Optional;
-
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -14,14 +12,16 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 public class Endpoint {
 
     @ConfigProperty(name = "hello.message")
-    Optional<String> message;
+    String message;
+
+    @ConfigProperty(name = "hello.number")
+    int number;
+
+    @ConfigProperty(name = "hello.flag")
+    boolean flag;
 
     @GET
     public Response get(@QueryParam("name") @DefaultValue("World") String name) {
-        if (message.isPresent()) {
-            return Response.ok().entity(String.format(message.get(), name)).build();
-        }
-
-        return Response.serverError().entity("ConfigMap not present").build();
+        return Response.ok().entity(String.format(message, name) + ", number=" + number + ", flag=" + flag).build();
     }
 }

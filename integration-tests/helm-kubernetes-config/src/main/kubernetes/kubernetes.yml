@@ -3,5 +3,6 @@ kind: ConfigMap
 metadata:
   name: app-config
 data:
-  application.properties: |
-    hello.message=Hello %s from configmap
+  hello.message: Hello %s from configmap
+  hello.number: 1
+  hello.flag: true

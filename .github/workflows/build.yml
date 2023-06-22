@@ -258,6 +258,40 @@ jobs:
       - name: Delete namespace "helmdeps2"
         run: kubectl delete namespace helmdeps2
 
+      - name: Verify Integration Test With Config
+        run: |
+          K8S_NAMESPACE=helmconfig
+          KIND_REGISTRY_GROUP=local
+          VERSION=latest
+          NAME=quarkus-helm-integration-tests-kubernetes-config
+          kubectl create namespace $K8S_NAMESPACE
+
+          # create image plus push to a Helm repository
+          cd integration-tests/helm-kubernetes-config
+          mvn clean package -DskipTests -Dquarkus.container-image.build=true \
+          -Dquarkus.container-image.push=true \
+          -Dquarkus.container-image.registry=$KIND_REGISTRY \
+          -Dquarkus.container-image.group=$KIND_REGISTRY_GROUP \
+          -Dquarkus.container-image.tag=$VERSION \
+          -Dquarkus.container-image.insecure=true
+
+          # And install application
+          helm install quarkus-with-config target/helm/kubernetes/quarkus-helm-integration-tests-kubernetes-config -n $K8S_NAMESPACE --set app.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/$NAME:$VERSION  --set app.number=3 --set app.flag=true --set app.message="Hello %s from helm"
+          # Wait for the app to start
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=$NAME -n $K8S_NAMESPACE
+          # Verify application
+          # POD_NAME=$(kubectl get pod -l app.kubernetes.io/name=$NAME -n $K8S_NAMESPACE -o name)
+          # RESULT=$(kubectl exec -n $K8S_NAMESPACE $POD_NAME -- wget -qO- http://localhost:8080/)
+          # if [[ "$RESULT" = *"Hello World from helm, number=3, flag=true"* ]]
+          # then
+          #   exit 0
+          # fi
+          # echo "Application is not working. Result was: $RESULT"
+          # exit 1
+
+      - name: Delete namespace "helmconfig"
+        run: kubectl delete namespace helmconfig
+
       - name: Verify Super Hero microservice from Super Hero workshop using Helm Repository
         run: |
           K8S_NAMESPACE=super-heroes

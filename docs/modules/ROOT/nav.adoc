@@ -14,4 +14,5 @@
 ** xref:index.adoc#conditionally-enable-disable-resources[Conditionally enable/disable resources]
 * xref:example-crud.adoc[Example: How to generate the Helm Chart of a REST CRUD Quarkus application]
 * xref:example-argocd.adoc[Example: How to configure a Continuous Delivery (CD) workflow using Quarkus Helm and ArgoCD]
+* xref:example-config.adoc[Example: How to use the Quarkus Kubernetes Config extension to map properties using Quarkus Helm]
 * xref:includes/quarkus-helm.adoc[Configuration Reference]

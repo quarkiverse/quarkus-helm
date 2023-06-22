@@ -47,6 +47,7 @@ Apart from all the features supported by the Quarkus Helm extension, in this doc
 - xref:index.adoc#cli[Using CLI]
 - xref:example-crud.adoc[Example: How to generate the Helm Chart of a REST CRUD Quarkus application]
 - xref:example-argocd.adoc[Example: How to configure a Continuous Delivery (CD) workflow using Quarkus Helm and ArgoCD]
+- xref:example-config.adoc[Example: How to use the Quarkus Kubernetes Config extension to map properties using Quarkus Helm]
 
 [[usage-helm-kubernetes]]
 == Using the Helm Extension in Kubernetes
@@ -448,6 +449,11 @@ helm install helm-example ./target/helm/kubernetes/<chart name> --set app.greeti
 
 [[mapping-system-properties]]
 === Mapping System Properties
+
+[IMPORTANT]
+====
+Mapping system properties only works with string/text properties. For mapping other types, you would need to use the Kubernetes Config extension. See example xref:example-config.adoc[here].
+====
 
 It's a very common use case to expose some properties to be configurable when installing the Helm chart. For example, the data source JDBC url:
 

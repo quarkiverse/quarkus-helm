@@ -549,7 +549,7 @@ public class HelmProcessor {
         if (buildProperties == null) {
             buildProperties = new HashSet<>();
             try {
-                Scanner scanner = new Scanner(new File(HelmProcessor.class.getResource(BUILD_TIME_PROPERTIES).getFile()));
+                Scanner scanner = new Scanner(HelmProcessor.class.getResourceAsStream(BUILD_TIME_PROPERTIES));
                 while (scanner.hasNextLine()) {
                     buildProperties.add(scanner.nextLine());
                 }

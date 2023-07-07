@@ -1,5 +1,5 @@
 name: quarkus-helm
-title: Quarkus Helm
+title: Helm
 version: dev
 nav:
   - modules/ROOT/nav.adoc

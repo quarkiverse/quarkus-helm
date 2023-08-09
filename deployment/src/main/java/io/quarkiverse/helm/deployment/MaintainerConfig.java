@@ -2,26 +2,19 @@ package io.quarkiverse.helm.deployment;
 
 import java.util.Optional;
 
-import io.quarkus.runtime.annotations.ConfigGroup;
-import io.quarkus.runtime.annotations.ConfigItem;
-
-@ConfigGroup
-public class MaintainerConfig {
+public interface MaintainerConfig {
     /**
      * Name of the maintainer.
      */
-    @ConfigItem
-    Optional<String> name;
+    Optional<String> name();
 
     /**
      * Email of the maintainer.
      */
-    @ConfigItem
-    Optional<String> email;
+    Optional<String> email();
 
     /**
      * URL profile of the maintainer.
      */
-    @ConfigItem
-    Optional<String> url;
+    Optional<String> url();
 }

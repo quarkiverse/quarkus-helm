@@ -3,47 +3,46 @@ package io.quarkiverse.helm.deployment;
 import java.util.Optional;
 
 import io.dekorate.utils.Strings;
-import io.quarkus.runtime.annotations.ConfigGroup;
-import io.quarkus.runtime.annotations.ConfigItem;
+import io.smallrye.config.WithDefault;
 
-@ConfigGroup
-public class HelmRepository {
+public interface HelmRepository {
     /**
      * If true, it will perform the upload to a Helm repository.
      */
-    @ConfigItem(defaultValue = "false")
-    public boolean push;
+    @WithDefault("false")
+    boolean push();
+
     /**
      * The deployment target to push. Options are: `kubernetes`, `openshift`, `knative`...
      */
-    @ConfigItem(defaultValue = "${quarkus.kubernetes.deployment-target}")
-    public Optional<String> deploymentTarget;
+    @WithDefault("${quarkus.kubernetes.deployment-target}")
+    Optional<String> deploymentTarget();
+
     /**
      * The Helm repository type. Options are: `CHARTMUSEUM`, `ARTIFACTORY`, and `NEXUS`.
      */
-    @ConfigItem
-    public Optional<HelmRepositoryType> type;
+    Optional<HelmRepositoryType> type();
+
     /**
      * The Helm repository URL.
      */
-    @ConfigItem
-    public Optional<String> url;
+    Optional<String> url();
+
     /**
      * The Helm repository username.
      */
-    @ConfigItem
-    public Optional<String> username;
+    Optional<String> username();
+
     /**
      * The Helm repository password.
      */
-    @ConfigItem
-    public Optional<String> password;
+    Optional<String> password();
 
-    public String getUsername() {
-        return username.filter(Strings::isNotNullOrEmpty).orElse(null);
+    default String getUsername() {
+        return username().filter(Strings::isNotNullOrEmpty).orElse(null);
     }
 
-    public String getPassword() {
-        return password.filter(Strings::isNotNullOrEmpty).orElse(null);
+    default String getPassword() {
+        return password().filter(Strings::isNotNullOrEmpty).orElse(null);
     }
 }

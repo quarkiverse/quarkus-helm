@@ -26,8 +26,8 @@ public final class HelmConfigUtils {
     }
 
     public static String deductProperty(io.quarkiverse.helm.deployment.HelmChartConfig helmConfig, String property) {
-        return deductProperty(helmConfig.valuesRootAlias, helmConfig.dependencies.entrySet().stream()
-                .map(entry -> entry.getValue().alias.orElseGet(() -> entry.getValue().name.orElse(entry.getKey())))
+        return deductProperty(helmConfig.valuesRootAlias(), helmConfig.dependencies().entrySet().stream()
+                .map(entry -> entry.getValue().alias().orElseGet(() -> entry.getValue().name().orElse(entry.getKey())))
                 .collect(Collectors.toList()),
                 property);
     }

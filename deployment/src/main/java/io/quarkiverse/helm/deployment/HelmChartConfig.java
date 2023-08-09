@@ -4,182 +4,164 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.quarkus.runtime.annotations.ConfigItem;
 import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
 
-@ConfigRoot(phase = ConfigPhase.BUILD_TIME, name = "helm")
-public class HelmChartConfig {
+@ConfigMapping(prefix = "quarkus.helm")
+@ConfigRoot(phase = ConfigPhase.BUILD_TIME)
+public interface HelmChartConfig {
     /**
      * Enabled the generation of Helm files.
      */
-    @ConfigItem(defaultValue = "true")
-    public boolean enabled;
+    @WithDefault("true")
+    boolean enabled();
 
     /**
      * Name of the Helm chart.
      * If not set, it will use the application name.
      */
-    @ConfigItem
-    public Optional<String> name;
+    Optional<String> name();
 
     /**
      * Project's home page of the Helm chart. It must be a URL.
      */
-    @ConfigItem
-    public Optional<String> home;
+    Optional<String> home();
 
     /**
      * The Helm chart list of URLs to source code for this project.
      */
-    @ConfigItem
-    public Optional<List<String>> sources;
+    Optional<List<String>> sources();
 
     /**
      * Version of the Helm chart.
      * If not set, it will use the application version.
      */
-    @ConfigItem
-    public Optional<String> version;
+    Optional<String> version();
 
     /**
      * The Helm chart single-sentence description.
      */
-    @ConfigItem
-    public Optional<String> description;
+    Optional<String> description();
 
     /**
      * List of keywords to add to the chart.
      */
-    @ConfigItem
-    public Optional<List<String>> keywords;
+    Optional<List<String>> keywords();
 
     /**
      * The Helm chart list of maintainers.
      */
-    @ConfigItem
-    Map<String, MaintainerConfig> maintainers;
+    Map<String, MaintainerConfig> maintainers();
 
     /**
      * Icon of the Helm chart. It must be a URL to an SVG or PNG image.
      */
-    @ConfigItem
-    public Optional<String> icon;
+    Optional<String> icon();
 
     /**
      * The Chart API version. The default value is `v2`.
      */
-    @ConfigItem(defaultValue = "v2")
-    public String apiVersion;
+    @WithDefault("v2")
+    String apiVersion();
 
     /**
      * The condition to enable this chart.
      */
-    @ConfigItem
-    public Optional<String> condition;
+    Optional<String> condition();
 
     /**
      * Tags of this chart.
      */
-    @ConfigItem
-    public Optional<String> tags;
+    Optional<String> tags();
 
     /**
      * The version of the application enclosed of this chart.
      */
-    @ConfigItem
-    public Optional<String> appVersion;
+    Optional<String> appVersion();
 
     /**
      * Whether this chart is deprecated.
      */
-    @ConfigItem
-    public Optional<Boolean> deprecated;
+    Optional<Boolean> deprecated();
 
     /**
      * Annotations are additional mappings uninterpreted by Helm, made available for inspection by other applications.
      */
-    @ConfigItem
-    public Map<String, String> annotations;
+    Map<String, String> annotations();
 
     /**
      * KubeVersion is a SemVer constraint specifying the version of Kubernetes required.
      */
-    @ConfigItem
-    public Optional<String> kubeVersion;
+    Optional<String> kubeVersion();
 
     /**
      * The Helm chart list of dependencies.
      */
-    @ConfigItem
-    public Map<String, HelmDependencyConfig> dependencies;
+    Map<String, HelmDependencyConfig> dependencies();
 
     /**
      * Specifies the chart type: application or library.
      */
-    @ConfigItem
-    public Optional<String> type;
+    Optional<String> type();
 
     /**
      * Alias of the root element in the generated values file.
      */
-    @ConfigItem(defaultValue = "app")
-    public String valuesRootAlias;
+    @WithDefault("app")
+    String valuesRootAlias();
 
     /**
      * Notes template to be generated.
      */
-    @ConfigItem(defaultValue = "/NOTES.template.txt")
-    public String notes;
+    @WithDefault("/NOTES.template.txt")
+    String notes();
 
     /**
      * Extension of the Helm tarball file. Default is `tar.gz`.
      */
-    @ConfigItem(defaultValue = "tar.gz")
-    public String extension;
+    @WithDefault("tar.gz")
+    String extension();
 
     /**
      * Classifier to be appended into the generated Helm tarball file.
      */
-    @ConfigItem
-    public Optional<String> tarFileClassifier;
+    Optional<String> tarFileClassifier();
 
     /**
      * If Helm tar file is generated.
      */
-    @ConfigItem(defaultValue = "false")
-    public boolean createTarFile;
+    @WithDefault("false")
+    boolean createTarFile();
 
     /**
      * Whether to generate the `values.schema.json` file that is used to validate the Helm Chart input values.
      */
-    @ConfigItem(defaultValue = "true")
-    public boolean createValuesSchemaFile;
+    @WithDefault("true")
+    boolean createValuesSchemaFile();
 
     /**
      * Whether to generate the `README.md` file that includes the Chart description and table with the configurable parameters
      * and their default values.
      */
-    @ConfigItem(defaultValue = "true")
-    public boolean createReadmeFile;
+    @WithDefault("true")
+    boolean createReadmeFile();
 
     /**
      * The configuration references to be mapped into the Helm values file.
      */
-    @ConfigItem
-    public Map<String, ValueReferenceConfig> values;
+    Map<String, ValueReferenceConfig> values();
 
     /**
      * Helm expressions to be replaced into the generated resources.
      */
-    @ConfigItem
-    public Map<String, ExpressionConfig> expressions;
+    Map<String, ExpressionConfig> expressions();
 
     /**
      * The if statements to include in the generated resources.
      */
-    @ConfigItem
-    public Map<String, AddIfStatementConfig> addIfStatement;
+    Map<String, AddIfStatementConfig> addIfStatement();
 
     /**
      * The input folder in which to place the user-defined Helm files. These files will be used as inputs to populate the
@@ -194,8 +176,8 @@ public class HelmChartConfig {
      *
      * By default, it will use the folder "src/main/helm".
      */
-    @ConfigItem(defaultValue = "src/main/helm")
-    public String inputDirectory;
+    @WithDefault("src/main/helm")
+    String inputDirectory();
 
     /**
      * The output folder in which to place the Helm generated folder. The folder is relative to the target output directory
@@ -205,38 +187,37 @@ public class HelmChartConfig {
      *
      * By default, it will be generated in the folder named "helm".
      */
-    @ConfigItem(defaultValue = "helm")
-    public String outputDirectory;
+    @WithDefault("helm")
+    String outputDirectory();
 
     /**
      * The configuration to perform Helm charts uploads to Helm repositories..
      */
-    @ConfigItem
-    public HelmRepository repository;
+    HelmRepository repository();
 
     /**
      * If enabled, the extension will check whether there are properties using system properties in the form of `${XXX}` and
      * if so, it will expose these properties as env-var values within the generated container resource.
      */
-    @ConfigItem(defaultValue = "true")
-    public boolean mapSystemProperties;
+    @WithDefault("true")
+    boolean mapSystemProperties();
 
     /**
      * If true, the naming validation will be disabled.
      * The naming validation rejects property names that contain "-" characters.
      */
-    @ConfigItem(defaultValue = "false")
-    public boolean disableNamingValidation;
+    @WithDefault("false")
+    boolean disableNamingValidation();
 
     /**
      * Configuration for the separator string in the filename of profile specific values files i.e. values.profile.yaml,
      * defaults to "."
      */
-    @ConfigItem(defaultValue = ".")
-    public String valuesProfileSeparator;
+    @WithDefault(".")
+    String valuesProfileSeparator();
 
     /**
      * Configuration for the `values.schema.json` file.
      */
-    public ValuesSchemaConfig valuesSchema;
+    ValuesSchemaConfig valuesSchema();
 }

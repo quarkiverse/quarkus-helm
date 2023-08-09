@@ -35,7 +35,8 @@ public final class HelmChartUploader {
     static void pushToHelmRepository(File tarball, HelmRepository helmRepository) {
         validate(helmRepository);
         try {
-            LOGGER.info("Pushing the Helm Chart at '" + tarball.getName() + "' to the repository: " + helmRepository.url.get());
+            LOGGER.info(
+                    "Pushing the Helm Chart at '" + tarball.getName() + "' to the repository: " + helmRepository.url().get());
             HttpURLConnection connection = deductConnectionByRepositoryType(tarball, helmRepository);
 
             writeFileOnConnection(tarball, connection);
@@ -60,12 +61,12 @@ public final class HelmChartUploader {
     }
 
     private static void validate(HelmRepository repository) {
-        if (repository.url.isEmpty() || Strings.isNullOrEmpty(repository.url.get())) {
+        if (repository.url().isEmpty() || Strings.isNullOrEmpty(repository.url().get())) {
             throw new RuntimeException("The push to a Helm repository is enabled (the property `quarkus.helm.repository.push` "
                     + "is true), but the repository URL was not provided (the property `quarkus.helm.repository.url`).");
         }
 
-        if (repository.type.isEmpty()) {
+        if (repository.type().isEmpty()) {
             throw new RuntimeException("The push to a Helm repository is enabled (the property `quarkus.helm.repository.push` "
                     + "is true), but the repository type was not provided (the property `quarkus.helm.repository.type`).");
         }
@@ -86,7 +87,7 @@ public final class HelmChartUploader {
 
     private static HttpURLConnection deductConnectionByRepositoryType(File tarball, HelmRepository repository)
             throws IOException {
-        if (repository.type.get() == HelmRepositoryType.NEXUS) {
+        if (repository.type().get() == HelmRepositoryType.NEXUS) {
             String url = formatRepositoryURL(tarball, repository);
             if (url.endsWith(".tar.gz")) {
                 url = url.replaceAll("tar.gz$", "tgz");
@@ -94,18 +95,18 @@ public final class HelmChartUploader {
             final HttpURLConnection connection = createConnection(repository, url);
             connection.setRequestMethod(PUT);
             return connection;
-        } else if (repository.type.get() == HelmRepositoryType.ARTIFACTORY) {
+        } else if (repository.type().get() == HelmRepositoryType.ARTIFACTORY) {
             final HttpURLConnection connection = createConnection(repository, formatRepositoryURL(tarball, repository));
             connection.setRequestMethod(PUT);
             return connection;
         }
 
         // chartmuseum
-        return createConnection(repository, repository.url.get());
+        return createConnection(repository, repository.url().get());
     }
 
     private static String formatRepositoryURL(File file, HelmRepository repository) {
-        return String.format("%s%s", StringUtils.appendIfMissing(repository.url.get(), "/"), file.getName());
+        return String.format("%s%s", StringUtils.appendIfMissing(repository.url().get(), "/"), file.getName());
     }
 
     private static HttpURLConnection createConnection(HelmRepository repository, String url) throws IOException {

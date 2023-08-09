@@ -2,19 +2,17 @@ package io.quarkiverse.helm.deployment;
 
 import java.util.Map;
 
-import io.quarkus.runtime.annotations.ConfigGroup;
-import io.quarkus.runtime.annotations.ConfigItem;
+import io.smallrye.config.WithDefault;
 
-@ConfigGroup
-public class ValuesSchemaConfig {
+public interface ValuesSchemaConfig {
     /**
      * Title of the values schema json file.
      */
-    @ConfigItem(defaultValue = "Values")
-    public String title;
+    @WithDefault("Values")
+    String title();
 
     /**
      * List of properties to add/modify from the values configuration.
      */
-    public Map<String, ValuesSchemaPropertyConfig> properties;
+    Map<String, ValuesSchemaPropertyConfig> properties();
 }

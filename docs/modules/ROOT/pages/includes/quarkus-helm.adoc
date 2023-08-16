@@ -12,6 +12,7 @@ h|Default
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.enabled]]`link:#quarkus-helm_quarkus.helm.enabled[quarkus.helm.enabled]`
 
+
 [.description]
 --
 Enabled the generation of Helm files.
@@ -27,6 +28,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.name]]`link:#quarkus-helm_quarkus.helm.name[quarkus.helm.name]`
+
 
 [.description]
 --
@@ -44,6 +46,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.home]]`link:#quarkus-helm_quarkus.helm.home[quarkus.helm.home]`
 
+
 [.description]
 --
 Project's home page of the Helm chart. It must be a URL.
@@ -59,6 +62,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.sources]]`link:#quarkus-helm_quarkus.helm.sources[quarkus.helm.sources]`
+
 
 [.description]
 --
@@ -76,6 +80,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.version]]`link:#quarkus-helm_quarkus.helm.version[quarkus.helm.version]`
 
+
 [.description]
 --
 Version of the Helm chart. If not set, it will use the application version.
@@ -91,6 +96,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.description]]`link:#quarkus-helm_quarkus.helm.description[quarkus.helm.description]`
+
 
 [.description]
 --
@@ -108,6 +114,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.keywords]]`link:#quarkus-helm_quarkus.helm.keywords[quarkus.helm.keywords]`
 
+
 [.description]
 --
 List of keywords to add to the chart.
@@ -123,6 +130,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.icon]]`link:#quarkus-helm_quarkus.helm.icon[quarkus.helm.icon]`
+
 
 [.description]
 --
@@ -140,6 +148,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.api-version]]`link:#quarkus-helm_quarkus.helm.api-version[quarkus.helm.api-version]`
 
+
 [.description]
 --
 The Chart API version. The default value is `v2`.
@@ -155,6 +164,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.condition]]`link:#quarkus-helm_quarkus.helm.condition[quarkus.helm.condition]`
+
 
 [.description]
 --
@@ -172,6 +182,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.tags]]`link:#quarkus-helm_quarkus.helm.tags[quarkus.helm.tags]`
 
+
 [.description]
 --
 Tags of this chart.
@@ -187,6 +198,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.app-version]]`link:#quarkus-helm_quarkus.helm.app-version[quarkus.helm.app-version]`
+
 
 [.description]
 --
@@ -204,6 +216,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.deprecated]]`link:#quarkus-helm_quarkus.helm.deprecated[quarkus.helm.deprecated]`
 
+
 [.description]
 --
 Whether this chart is deprecated.
@@ -219,6 +232,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.kube-version]]`link:#quarkus-helm_quarkus.helm.kube-version[quarkus.helm.kube-version]`
+
 
 [.description]
 --
@@ -236,6 +250,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.type]]`link:#quarkus-helm_quarkus.helm.type[quarkus.helm.type]`
 
+
 [.description]
 --
 Specifies the chart type: application or library.
@@ -251,6 +266,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-root-alias]]`link:#quarkus-helm_quarkus.helm.values-root-alias[quarkus.helm.values-root-alias]`
+
 
 [.description]
 --
@@ -268,6 +284,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.notes]]`link:#quarkus-helm_quarkus.helm.notes[quarkus.helm.notes]`
 
+
 [.description]
 --
 Notes template to be generated.
@@ -283,6 +300,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.extension]]`link:#quarkus-helm_quarkus.helm.extension[quarkus.helm.extension]`
+
 
 [.description]
 --
@@ -300,6 +318,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.tar-file-classifier]]`link:#quarkus-helm_quarkus.helm.tar-file-classifier[quarkus.helm.tar-file-classifier]`
 
+
 [.description]
 --
 Classifier to be appended into the generated Helm tarball file.
@@ -315,6 +334,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.create-tar-file]]`link:#quarkus-helm_quarkus.helm.create-tar-file[quarkus.helm.create-tar-file]`
+
 
 [.description]
 --
@@ -332,6 +352,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.create-values-schema-file]]`link:#quarkus-helm_quarkus.helm.create-values-schema-file[quarkus.helm.create-values-schema-file]`
 
+
 [.description]
 --
 Whether to generate the `values.schema.json` file that is used to validate the Helm Chart input values.
@@ -347,6 +368,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.create-readme-file]]`link:#quarkus-helm_quarkus.helm.create-readme-file[quarkus.helm.create-readme-file]`
+
 
 [.description]
 --
@@ -364,6 +386,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.input-directory]]`link:#quarkus-helm_quarkus.helm.input-directory[quarkus.helm.input-directory]`
 
+
 [.description]
 --
 The input folder in which to place the user-defined Helm files. These files will be used as inputs to populate the generated Helm files. At the moment, the supported Helm files are: README.md, LICENSE, values.schema.json, app-readme.md or app-README.md, questions.yml or questions.yaml, the "crds" directory, and requirements.yml or requirements.yaml. Moreover, you can provide a custom `values.yaml` or `Chart.yaml` and the content will be merged with the auto-generated configuration. It also supports absolute paths. By default, it will use the folder "src/main/helm".
@@ -379,6 +402,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.output-directory]]`link:#quarkus-helm_quarkus.helm.output-directory[quarkus.helm.output-directory]`
+
 
 [.description]
 --
@@ -396,6 +420,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.push]]`link:#quarkus-helm_quarkus.helm.repository.push[quarkus.helm.repository.push]`
 
+
 [.description]
 --
 If true, it will perform the upload to a Helm repository.
@@ -412,6 +437,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.deployment-target]]`link:#quarkus-helm_quarkus.helm.repository.deployment-target[quarkus.helm.repository.deployment-target]`
 
+
 [.description]
 --
 The deployment target to push. Options are: `kubernetes`, `openshift`, `knative`...
@@ -427,6 +453,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.type]]`link:#quarkus-helm_quarkus.helm.repository.type[quarkus.helm.repository.type]`
+
 
 [.description]
 --
@@ -445,6 +472,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.url]]`link:#quarkus-helm_quarkus.helm.repository.url[quarkus.helm.repository.url]`
 
+
 [.description]
 --
 The Helm repository URL.
@@ -460,6 +488,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.username]]`link:#quarkus-helm_quarkus.helm.repository.username[quarkus.helm.repository.username]`
+
 
 [.description]
 --
@@ -477,6 +506,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.repository.password]]`link:#quarkus-helm_quarkus.helm.repository.password[quarkus.helm.repository.password]`
 
+
 [.description]
 --
 The Helm repository password.
@@ -492,6 +522,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.map-system-properties]]`link:#quarkus-helm_quarkus.helm.map-system-properties[quarkus.helm.map-system-properties]`
+
 
 [.description]
 --
@@ -509,6 +540,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.disable-naming-validation]]`link:#quarkus-helm_quarkus.helm.disable-naming-validation[quarkus.helm.disable-naming-validation]`
 
+
 [.description]
 --
 If true, the naming validation will be disabled. The naming validation rejects property names that contain "-" characters.
@@ -524,6 +556,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-profile-separator]]`link:#quarkus-helm_quarkus.helm.values-profile-separator[quarkus.helm.values-profile-separator]`
+
 
 [.description]
 --
@@ -541,6 +574,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.title]]`link:#quarkus-helm_quarkus.helm.values-schema.title[quarkus.helm.values-schema.title]`
 
+
 [.description]
 --
 Title of the values schema json file.
@@ -556,6 +590,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.maintainers.-maintainers-.name]]`link:#quarkus-helm_quarkus.helm.maintainers.-maintainers-.name[quarkus.helm.maintainers."maintainers".name]`
+
 
 [.description]
 --
@@ -573,6 +608,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.maintainers.-maintainers-.email]]`link:#quarkus-helm_quarkus.helm.maintainers.-maintainers-.email[quarkus.helm.maintainers."maintainers".email]`
 
+
 [.description]
 --
 Email of the maintainer.
@@ -588,6 +624,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.maintainers.-maintainers-.url]]`link:#quarkus-helm_quarkus.helm.maintainers.-maintainers-.url[quarkus.helm.maintainers."maintainers".url]`
+
 
 [.description]
 --
@@ -605,6 +642,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.annotations-annotations]]`link:#quarkus-helm_quarkus.helm.annotations-annotations[quarkus.helm.annotations]`
 
+
 [.description]
 --
 Annotations are additional mappings uninterpreted by Helm, made available for inspection by other applications.
@@ -620,6 +658,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.name]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.name[quarkus.helm.dependencies."dependencies".name]`
+
 
 [.description]
 --
@@ -637,6 +676,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.version]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.version[quarkus.helm.dependencies."dependencies".version]`
 
+
 [.description]
 --
 Version of the dependency.
@@ -652,6 +692,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.repository]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.repository[quarkus.helm.dependencies."dependencies".repository]`
+
 
 [.description]
 --
@@ -669,6 +710,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.condition]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.condition[quarkus.helm.dependencies."dependencies".condition]`
 
+
 [.description]
 --
 Dependency condition. If the property starts with `@.`, then the property won't be added under the root element in the generated `values.yaml` file.
@@ -684,6 +726,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.tags]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.tags[quarkus.helm.dependencies."dependencies".tags]`
+
 
 [.description]
 --
@@ -701,6 +744,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.enabled]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.enabled[quarkus.helm.dependencies."dependencies".enabled]`
 
+
 [.description]
 --
 Whether this dependency should be loaded.
@@ -716,6 +760,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.alias]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.alias[quarkus.helm.dependencies."dependencies".alias]`
+
 
 [.description]
 --
@@ -733,6 +778,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.wait-for-service]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.wait-for-service[quarkus.helm.dependencies."dependencies".wait-for-service]`
 
+
 [.description]
 --
 Instruct the application to wait for the service that should be installed as part of this Helm dependency. You can set only a service name or a combination of a service name plus the service port (service:port).
@@ -748,6 +794,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.wait-for-service-image]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.wait-for-service-image[quarkus.helm.dependencies."dependencies".wait-for-service-image]`
+
 
 [.description]
 --
@@ -765,6 +812,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.wait-for-service-port-command-template]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.wait-for-service-port-command-template[quarkus.helm.dependencies."dependencies".wait-for-service-port-command-template]`
 
+
 [.description]
 --
 If wait for service is set, it will use this command to run the init-containers within the deployment resource.
@@ -780,6 +828,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.dependencies.-dependencies-.wait-for-service-only-command-template]]`link:#quarkus-helm_quarkus.helm.dependencies.-dependencies-.wait-for-service-only-command-template[quarkus.helm.dependencies."dependencies".wait-for-service-only-command-template]`
+
 
 [.description]
 --
@@ -797,6 +846,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.property]]`link:#quarkus-helm_quarkus.helm.values.-values-.property[quarkus.helm.values."values".property]`
 
+
 [.description]
 --
 The name of the property that will be present in the Helm values file. If the property starts with `@.`, then the property won't be added under the root element in the generated `values.yaml` file.
@@ -812,6 +862,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.paths]]`link:#quarkus-helm_quarkus.helm.values.-values-.paths[quarkus.helm.values."values".paths]`
+
 
 [.description]
 --
@@ -829,6 +880,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.profile]]`link:#quarkus-helm_quarkus.helm.values.-values-.profile[quarkus.helm.values."values".profile]`
 
+
 [.description]
 --
 The profile where this value reference will be mapped to. For example, if the profile is `dev`, then a `values.dev.yml` file will be created with the value.
@@ -844,6 +896,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.value]]`link:#quarkus-helm_quarkus.helm.values.-values-.value[quarkus.helm.values."values".value]`
+
 
 [.description]
 --
@@ -861,6 +914,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.value-as-int]]`link:#quarkus-helm_quarkus.helm.values.-values-.value-as-int[quarkus.helm.values."values".value-as-int]`
 
+
 [.description]
 --
 The integer value that the property will have in the Helm values file. If not set, the extension will resolve it from the generated artifacts.
@@ -876,6 +930,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.value-as-bool]]`link:#quarkus-helm_quarkus.helm.values.-values-.value-as-bool[quarkus.helm.values."values".value-as-bool]`
+
 
 [.description]
 --
@@ -893,6 +948,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.value-as-map-value-as-map]]`link:#quarkus-helm_quarkus.helm.values.-values-.value-as-map-value-as-map[quarkus.helm.values."values".value-as-map]`
 
+
 [.description]
 --
 The map value that the property will have in the Helm values file. If not set, the extension will resolve it from the generated artifacts.
@@ -908,6 +964,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.value-as-list]]`link:#quarkus-helm_quarkus.helm.values.-values-.value-as-list[quarkus.helm.values."values".value-as-list]`
+
 
 [.description]
 --
@@ -925,6 +982,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.expression]]`link:#quarkus-helm_quarkus.helm.values.-values-.expression[quarkus.helm.values."values".expression]`
 
+
 [.description]
 --
 If not provided, it will use `++{{++ .Values.. ++}}++`.
@@ -940,6 +998,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.description]]`link:#quarkus-helm_quarkus.helm.values.-values-.description[quarkus.helm.values."values".description]`
+
 
 [.description]
 --
@@ -957,6 +1016,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.minimum]]`link:#quarkus-helm_quarkus.helm.values.-values-.minimum[quarkus.helm.values."values".minimum]`
 
+
 [.description]
 --
 Minimum value allowed for this property.
@@ -972,6 +1032,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.maximum]]`link:#quarkus-helm_quarkus.helm.values.-values-.maximum[quarkus.helm.values."values".maximum]`
+
 
 [.description]
 --
@@ -989,6 +1050,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.pattern]]`link:#quarkus-helm_quarkus.helm.values.-values-.pattern[quarkus.helm.values."values".pattern]`
 
+
 [.description]
 --
 Pattern to validate the value of this property.
@@ -1004,6 +1066,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values.-values-.required]]`link:#quarkus-helm_quarkus.helm.values.-values-.required[quarkus.helm.values."values".required]`
+
 
 [.description]
 --
@@ -1021,6 +1084,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.expressions.-expressions-.path]]`link:#quarkus-helm_quarkus.helm.expressions.-expressions-.path[quarkus.helm.expressions."expressions".path]`
 
+
 [.description]
 --
 The YAMLPath path where to include the template within the resource.
@@ -1036,6 +1100,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.expressions.-expressions-.expression]]`link:#quarkus-helm_quarkus.helm.expressions.-expressions-.expression[quarkus.helm.expressions."expressions".expression]`
+
 
 [.description]
 --
@@ -1053,6 +1118,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.property]]`link:#quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.property[quarkus.helm.add-if-statement."add-if-statement".property]`
 
+
 [.description]
 --
 The property to use in the if statement. If the property starts with `@.`, then the property won't be added under the root element in the generated `values.yaml` file.
@@ -1068,6 +1134,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.on-resource-kind]]`link:#quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.on-resource-kind[quarkus.helm.add-if-statement."add-if-statement".on-resource-kind]`
+
 
 [.description]
 --
@@ -1085,6 +1152,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.on-resource-name]]`link:#quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.on-resource-name[quarkus.helm.add-if-statement."add-if-statement".on-resource-name]`
 
+
 [.description]
 --
 The resource kind where to include the if statement.
@@ -1100,6 +1168,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.with-default-value]]`link:#quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.with-default-value[quarkus.helm.add-if-statement."add-if-statement".with-default-value]`
+
 
 [.description]
 --
@@ -1117,6 +1186,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.description]]`link:#quarkus-helm_quarkus.helm.add-if-statement.-add-if-statement-.description[quarkus.helm.add-if-statement."add-if-statement".description]`
 
+
 [.description]
 --
 Provide custom description of the `add-if-statement` property.
@@ -1132,6 +1202,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.properties.-properties-.name]]`link:#quarkus-helm_quarkus.helm.values-schema.properties.-properties-.name[quarkus.helm.values-schema.properties."properties".name]`
+
 
 [.description]
 --
@@ -1149,6 +1220,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.properties.-properties-.description]]`link:#quarkus-helm_quarkus.helm.values-schema.properties.-properties-.description[quarkus.helm.values-schema.properties."properties".description]`
 
+
 [.description]
 --
 Description of the property.
@@ -1164,6 +1236,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.properties.-properties-.type]]`link:#quarkus-helm_quarkus.helm.values-schema.properties.-properties-.type[quarkus.helm.values-schema.properties."properties".type]`
+
 
 [.description]
 --
@@ -1181,6 +1254,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.properties.-properties-.minimum]]`link:#quarkus-helm_quarkus.helm.values-schema.properties.-properties-.minimum[quarkus.helm.values-schema.properties."properties".minimum]`
 
+
 [.description]
 --
 Minimum value allowed for this property.
@@ -1196,6 +1270,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.properties.-properties-.maximum]]`link:#quarkus-helm_quarkus.helm.values-schema.properties.-properties-.maximum[quarkus.helm.values-schema.properties."properties".maximum]`
+
 
 [.description]
 --
@@ -1213,6 +1288,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.properties.-properties-.pattern]]`link:#quarkus-helm_quarkus.helm.values-schema.properties.-properties-.pattern[quarkus.helm.values-schema.properties."properties".pattern]`
 
+
 [.description]
 --
 Pattern to validate the value of this property.
@@ -1228,6 +1304,7 @@ endif::add-copy-button-to-env-var[]
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus.helm.values-schema.properties.-properties-.required]]`link:#quarkus-helm_quarkus.helm.values-schema.properties.-properties-.required[quarkus.helm.values-schema.properties."properties".required]`
+
 
 [.description]
 --

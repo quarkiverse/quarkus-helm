@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
 
 import io.dekorate.utils.Strings;
+import io.quarkiverse.helm.common.utils.HelmRepositoryType;
 
 public final class HelmChartUploader {
 

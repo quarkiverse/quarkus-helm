@@ -11,6 +11,10 @@
   <dependencies>
     <dependency>
       <groupId>io.quarkiverse.helm</groupId>
+      <artifactId>quarkus-helm-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkiverse.helm</groupId>
       <artifactId>quarkus-helm</artifactId>
       <version>${project.version}</version>
     </dependency>

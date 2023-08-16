@@ -1,10 +1,12 @@
 package io.quarkiverse.helm.deployment;
 
 import static io.github.yamlpath.utils.StringUtils.EMPTY;
+import static io.quarkiverse.helm.common.utils.Constants.HELM_INVALID_CHARACTERS;
+import static io.quarkiverse.helm.common.utils.Constants.NAME_FORMAT_REG_EXP;
+import static io.quarkiverse.helm.common.utils.SystemPropertiesUtils.getPropertyFromSystem;
+import static io.quarkiverse.helm.common.utils.SystemPropertiesUtils.getSystemProperties;
+import static io.quarkiverse.helm.common.utils.SystemPropertiesUtils.hasSystemProperties;
 import static io.quarkiverse.helm.deployment.HelmChartUploader.pushToHelmRepository;
-import static io.quarkiverse.helm.deployment.utils.SystemPropertiesUtils.getPropertyFromSystem;
-import static io.quarkiverse.helm.deployment.utils.SystemPropertiesUtils.getSystemProperties;
-import static io.quarkiverse.helm.deployment.utils.SystemPropertiesUtils.hasSystemProperties;
 import static io.quarkus.deployment.Capability.OPENSHIFT;
 
 import java.io.File;
@@ -13,7 +15,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,8 +44,9 @@ import io.dekorate.kubernetes.config.ContainerBuilder;
 import io.dekorate.kubernetes.decorator.AddInitContainerDecorator;
 import io.dekorate.project.Project;
 import io.dekorate.utils.Strings;
+import io.quarkiverse.helm.common.QuarkusHelmWriterSessionListener;
+import io.quarkiverse.helm.common.utils.HelmConfigUtils;
 import io.quarkiverse.helm.deployment.decorators.LowPriorityAddEnvVarDecorator;
-import io.quarkiverse.helm.deployment.utils.HelmConfigUtils;
 import io.quarkus.deployment.Capabilities;
 import io.quarkus.deployment.IsNormal;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -60,9 +62,6 @@ import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
 public class HelmProcessor {
     private static final Logger LOGGER = Logger.getLogger(HelmProcessor.class);
-
-    private static final String NAME_FORMAT_REG_EXP = "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
-    private static final List<String> HELM_INVALID_CHARACTERS = Arrays.asList("-");
     private static final String BUILD_TIME_PROPERTIES = "/build-time-list";
     private static final String INIT_CONTAINER_CONDITION_FORMAT = "$(env | grep %s | grep -q false) && exit 0; %s";
 
@@ -117,7 +116,7 @@ public class HelmProcessor {
                         .withImage(dependency.waitForServiceImage())
                         .withCommand("sh");
 
-                String argument = null;
+                String argument;
 
                 String service = dependency.waitForService().get();
                 if (service.contains(SPLIT)) {
@@ -136,7 +135,8 @@ public class HelmProcessor {
 
                 // if the condition is set, we need to map it as env property as well
                 if (dependency.condition().isPresent()) {
-                    String property = HelmConfigUtils.deductProperty(config, dependency.condition().get());
+                    String property = HelmConfigUtils.deductProperty(config.valuesRootAlias(), config.getDependencyNames(),
+                            dependency.condition().get());
                     decorators.produce(new DecoratorBuildItem(
                             new LowPriorityAddEnvVarDecorator(deploymentName, containerName, property, "true")));
 
@@ -197,8 +197,7 @@ public class HelmProcessor {
             Path chartOutputFolder = outputFolder.resolve(deploymentTarget);
             deleteOutputHelmFolderIfExists(chartOutputFolder);
 
-            Map<String, String> generated = helmWriter.writeHelmFiles(project,
-                    dekorateHelmChartConfig,
+            Map<String, String> generated = helmWriter.writeHelmFiles(dekorateHelmChartConfig,
                     valueReferencesFromUser,
                     getConfigReferencesFromSession(deploymentTarget, dekorateOutput),
                     inputFolder,
@@ -207,7 +206,7 @@ public class HelmProcessor {
                     config.valuesProfileSeparator());
 
             // Push to Helm repository if enabled
-            if (config.repository().push() && deploymentTargetToPush.equals(deploymentTarget)) {
+            if (config.repository().push() && StringUtils.equals(deploymentTargetToPush, deploymentTarget)) {
                 String tarball = generated.keySet().stream()
                         .filter(file -> file.endsWith(config.extension()))
                         .findFirst()
@@ -272,13 +271,12 @@ public class HelmProcessor {
             if (config.repository().deploymentTarget().isPresent()) {
                 return config.repository().deploymentTarget().get();
             } else {
-                List<String> deploymentTargetNames = deploymentTargets.keySet().stream().collect(Collectors.toList());
+                List<String> deploymentTargetNames = new ArrayList<>(deploymentTargets.keySet());
                 if (deploymentTargetNames.size() == 1) {
                     return deploymentTargetNames.get(0);
                 } else {
                     throw new IllegalStateException("Multiple deployment target found: '"
-                            + deploymentTargetNames.stream().collect(
-                                    Collectors.joining(", "))
+                            + String.join(", ", deploymentTargetNames)
                             + "'. To push the Helm Chart to the repository, "
                             + "you need to select only one using the property `quarkus.helm.repository.deployment-target`");
                 }
@@ -379,29 +377,24 @@ public class HelmProcessor {
         config.tags().ifPresent(builder::withTags);
         config.appVersion().ifPresent(builder::withAppVersion);
         config.deprecated().ifPresent(builder::withDeprecated);
-        config.annotations().entrySet().forEach(e -> builder.addNewAnnotation(e.getKey(), e.getValue()));
+        config.annotations().forEach(builder::addNewAnnotation);
         config.kubeVersion().ifPresent(builder::withKubeVersion);
         config.type().ifPresent(builder::withType);
         config.home().ifPresent(builder::withHome);
         config.sources().ifPresent(builder::addAllToSources);
-        config.maintainers().entrySet()
-                .forEach(e -> builder.addNewMaintainer(
-                        defaultString(e.getValue().name(), e.getKey()),
-                        defaultString(e.getValue().email()),
-                        defaultString(e.getValue().url())));
-        config.dependencies().entrySet()
-                .forEach(e -> builder.addToDependencies(toDekorateHelmDependencyConfig(e.getKey(), e.getValue())));
+        config.maintainers().forEach((k, v) -> builder.addNewMaintainer(
+                defaultString(v.name(), k),
+                defaultString(v.email()),
+                defaultString(v.url())));
+        config.dependencies().forEach((k, v) -> builder.addToDependencies(toDekorateHelmDependencyConfig(k, v)));
         config.tarFileClassifier().ifPresent(builder::withTarFileClassifier);
         config.expressions().values().forEach(e -> builder.addNewExpression(e.path(), e.expression()));
-        config.addIfStatement().entrySet()
-                .forEach(e -> {
-                    builder.addNewAddIfStatement(
-                            defaultString(e.getValue().property(), e.getKey()),
-                            defaultString(e.getValue().onResourceKind()),
-                            defaultString(e.getValue().onResourceName()),
-                            e.getValue().withDefaultValue(),
-                            e.getValue().description());
-                });
+        config.addIfStatement().forEach((k, v) -> builder.addNewAddIfStatement(
+                defaultString(v.property(), k),
+                defaultString(v.onResourceKind()),
+                defaultString(v.onResourceName()),
+                v.withDefaultValue(),
+                v.description()));
 
         builder.withValuesSchema(toValuesSchema(config.valuesSchema()));
 

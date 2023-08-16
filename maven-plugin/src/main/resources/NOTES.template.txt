@@ -1,0 +1,69 @@
+# Quarkus Helm Notes
+
+To generate the Helm chart manifests you just need to have the following plugin:
+
+      <plugin>
+        <groupId>io.quarkiverse.helm</groupId>
+        <artifactId>quarkus-helm-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>compile</phase>
+            <goals>
+              <goal>generate-helm-chart</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+
+Build the project using:
+
+    mvn clean package
+
+You can find the generated Helm artifacts under: `target/helm/<chart name>/` that should look like:
+- Chart.yaml
+- values.yaml
+- templates/*.yml the generated resources by Quarkus Helm
+
+# Requirements
+
+- Have installed [the Helm command line](https://helm.sh/docs/intro/install/)
+- Have connected/logged to a kubernetes cluster
+- Configure your Quarkus application to use any of the Quarkus Kubernetes extensions like Quarkus Kubernetes, Quarkus OpenShift or Quarkus Knative.
+- Configure your Quarkus application to use any of [the Quarkus Container Image extensions](https://quarkus.io/guides/container-image) - This example uses `container-image-docker`.
+
+# How can it be used?
+
+You can install the generated Helm chart into the cluster by doing:
+
+```shell
+helm install helm-example ./target/helm/<chart name>
+```
+
+The above command will deploy a chart using the default values (as defined within the `values.yaml` file). We can override the default values to use your `values.dev.yaml` file by executing the following command:
+
+```shell
+helm install helm-example ./target/helm/<chart name> --values ./target/helm/<chart name>/kubernetes/values.dev.yaml
+```
+
+How can I update my deployment?
+
+- Via the `upgrade` option of Helm command line:
+
+After making changes to your project and regenerating the Helm resources and the application container image, then you need to upgrade your deployment:
+
+```shell
+helm upgrade helm-example ./target/helm/<chart name>
+```
+
+- Via the `set` option of Helm command line:
+
+```shell
+helm upgrade helm-example ./target/helm/<chart name> --set <app name>.replicas=1
+```
+
+How can we delete my deployment?
+
+```shell
+helm uninstall helm-example
+```

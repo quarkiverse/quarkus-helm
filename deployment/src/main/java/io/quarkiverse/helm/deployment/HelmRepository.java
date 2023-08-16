@@ -3,6 +3,7 @@ package io.quarkiverse.helm.deployment;
 import java.util.Optional;
 
 import io.dekorate.utils.Strings;
+import io.quarkiverse.helm.common.utils.HelmRepositoryType;
 import io.smallrye.config.WithDefault;
 
 public interface HelmRepository {

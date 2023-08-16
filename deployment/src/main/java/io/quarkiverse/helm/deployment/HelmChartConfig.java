@@ -1,8 +1,13 @@
 package io.quarkiverse.helm.deployment;
 
+import static io.quarkiverse.helm.common.utils.Constants.HELM_CHART_DEFAULT_API_VERSION;
+import static io.quarkiverse.helm.common.utils.Constants.HELM_CHART_DEFAULT_NOTES;
+import static io.quarkiverse.helm.common.utils.Constants.HELM_CHART_DEFAULT_VALUES_ROOT_ALIAS;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
@@ -63,7 +68,7 @@ public interface HelmChartConfig {
     /**
      * The Chart API version. The default value is `v2`.
      */
-    @WithDefault("v2")
+    @WithDefault(HELM_CHART_DEFAULT_API_VERSION)
     String apiVersion();
 
     /**
@@ -109,13 +114,13 @@ public interface HelmChartConfig {
     /**
      * Alias of the root element in the generated values file.
      */
-    @WithDefault("app")
+    @WithDefault(HELM_CHART_DEFAULT_VALUES_ROOT_ALIAS)
     String valuesRootAlias();
 
     /**
      * Notes template to be generated.
      */
-    @WithDefault("/NOTES.template.txt")
+    @WithDefault(HELM_CHART_DEFAULT_NOTES)
     String notes();
 
     /**
@@ -220,4 +225,10 @@ public interface HelmChartConfig {
      * Configuration for the `values.schema.json` file.
      */
     ValuesSchemaConfig valuesSchema();
+
+    default List<String> getDependencyNames() {
+        return dependencies().entrySet().stream()
+                .map(entry -> entry.getValue().alias().orElseGet(() -> entry.getValue().name().orElse(entry.getKey())))
+                .collect(Collectors.toList());
+    }
 }

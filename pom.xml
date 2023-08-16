@@ -12,9 +12,11 @@
   <packaging>pom</packaging>
   <name>Quarkus - Helm - Parent</name>
   <modules>
+    <module>common</module>
     <module>deployment</module>
     <module>runtime</module>
     <module>cli</module>
+    <module>maven-plugin</module>
     <module>integration-tests</module>
     <module>docs</module>
   </modules>
@@ -41,6 +43,11 @@
         <version>${quarkus.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.quarkiverse.helm</groupId>
+        <artifactId>quarkus-helm-common</artifactId>
+        <version>${project.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -69,6 +76,11 @@
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>${compiler-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>io.quarkiverse.helm</groupId>
+          <artifactId>quarkus-helm-maven-plugin</artifactId>
+          <version>${project.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>

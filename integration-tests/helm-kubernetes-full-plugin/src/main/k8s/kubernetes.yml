@@ -1,0 +1,138 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    foo: bar
+    my-annotation: "[{\"HTTP\": 80}, {\"HTTPS\":443}]"
+  labels:
+    app.kubernetes.io/name: quarkus-helm-integration-tests-kubernetes-full-plugin
+  name: quarkus-helm-integration-tests-kubernetes-full-plugin
+spec:
+  ports:
+    - name: custom
+      port: 8888
+      protocol: TCP
+      targetPort: 8888
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: quarkus-helm-integration-tests-kubernetes-full-plugin
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    foo: bar
+    my-annotation: "[{\"HTTP\": 80}, {\"HTTPS\":443}]"
+  labels:
+    app.kubernetes.io/name: quarkus-helm-integration-tests-kubernetes-full-plugin
+  name: quarkus-helm-integration-tests-kubernetes-full-plugin
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: quarkus-helm-integration-tests-kubernetes-full-plugin
+  template:
+    metadata:
+      annotations:
+        foo: bar
+        my-annotation: "[{\"HTTP\": 80}, {\"HTTPS\":443}]"
+      labels:
+        app.kubernetes.io/name: quarkus-helm-integration-tests-kubernetes-full-plugin
+    spec:
+      containers:
+        - env:
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OVERRIDE_PART1
+              value: ""
+            - name: FROM_SYSTEM_PROPERTY
+              value: ""
+            - name: depA.prop
+              value: ""
+            - name: FROM_SYSTEM_ENV
+              value: ""
+            - name: PARENT_PROPERTY
+              value: nestedValue
+            - name: OVERRIDE_PATH
+              value: ""
+            - name: NESTED_PROPERTY
+              value: nestedValue
+            - name: OVERRIDE_PART2
+              value: default
+            - name: prop
+              value: ""
+            - name: dependencyBeEnabled
+              value: ""
+            - name: app.dependencyBeEnabled
+              value: ""
+            - name: OVERRIDE_PORT
+              value: "8081"
+          image: registry.com/name:version
+          imagePullPolicy: Always
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /q/health/live
+              port: 8888
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          name: quarkus-helm-integration-tests-kubernetes-full-plugin
+          ports:
+            - containerPort: 8888
+              name: custom
+              protocol: TCP
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /q/health/ready
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          startupProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /q/health/started
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    foo: bar
+    my-annotation: "[{\"HTTP\": 80}, {\"HTTPS\":443}]"
+  labels:
+    app.kubernetes.io/name: quarkus-helm-integration-tests-kubernetes-full-plugin
+  name: quarkus-helm-integration-tests-kubernetes-full-plugin
+spec:
+  rules:
+    - host: host.port
+      http:
+        paths:
+          - backend:
+              service:
+                name: quarkus-helm-integration-tests-kubernetes-full-plugin
+                port:
+                  name: http
+            path: /
+            pathType: Prefix

@@ -19,5 +19,7 @@
     <module>helm-kubernetes-full</module>
     <module>helm-knative-minimal</module>
     <module>helm-openshift-minimal</module>
+    <module>helm-kubernetes-minimal-plugin</module>
+    <module>helm-kubernetes-full-plugin</module>
   </modules>
 </project>

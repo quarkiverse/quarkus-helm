@@ -1,19 +1,21 @@
 package io.quarkiverse.helm.deployment.utils;
 
-import static io.dekorate.helm.util.HelmConfigUtils.deductProperty;
+import static io.quarkiverse.helm.deployment.utils.HelmConfigUtils.deductProperty;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import io.dekorate.ConfigReference;
-import io.dekorate.helm.config.HelmChartConfig;
-import io.dekorate.helm.model.ValuesSchema;
-import io.dekorate.helm.model.ValuesSchemaProperty;
 import io.dekorate.utils.Serialization;
-import io.dekorate.utils.Strings;
+import io.quarkiverse.helm.deployment.HelmChartConfig;
+import io.quarkiverse.helm.deployment.ValuesSchemaPropertyConfig;
+import io.quarkiverse.helm.deployment.model.ValuesSchema;
+import io.quarkiverse.helm.deployment.model.ValuesSchemaProperty;
 
 public final class ValuesSchemaUtils {
     private ValuesSchemaUtils() {
@@ -23,7 +25,7 @@ public final class ValuesSchemaUtils {
     public static Map<String, Object> createSchema(HelmChartConfig helmConfig,
             Map<String, ValuesHolder.HelmValueHolder> prodValues) {
         ValuesSchema schema = new ValuesSchema();
-        schema.setTitle(helmConfig.getValuesSchema().getTitle());
+        schema.setTitle(helmConfig.valuesSchema().title());
 
         // from value references
         for (Map.Entry<String, ValuesHolder.HelmValueHolder> value : prodValues.entrySet()) {
@@ -78,8 +80,11 @@ public final class ValuesSchemaUtils {
         }
 
         // from properties
-        for (io.dekorate.helm.config.ValuesSchemaProperty propertyFromConfig : helmConfig.getValuesSchema().getProperties()) {
-            String[] tree = deductProperty(helmConfig, propertyFromConfig.getName()).split(Pattern.quote("."));
+        for (Map.Entry<String, ValuesSchemaPropertyConfig> propertyFromConfig : helmConfig.valuesSchema().properties()
+                .entrySet()) {
+            String name = propertyFromConfig.getValue().name().orElse(propertyFromConfig.getKey());
+
+            String[] tree = deductProperty(helmConfig, name).split(Pattern.quote("."));
             ValuesSchemaProperty parent = null;
             Map<String, ValuesSchemaProperty> location = schema.getProperties();
             for (int index = 0; index < tree.length - 1; index++) {
@@ -97,23 +102,12 @@ public final class ValuesSchemaUtils {
 
             String propertyName = tree[tree.length - 1];
             ValuesSchemaProperty property = location.getOrDefault(propertyName, new ValuesSchemaProperty());
-            if (Strings.isNotNullOrEmpty(propertyFromConfig.getDescription())) {
-                property.setDescription(propertyFromConfig.getDescription());
-            }
+            propertyFromConfig.getValue().description().ifPresent(property::setDescription);
+            propertyFromConfig.getValue().pattern().ifPresent(property::setPattern);
+            propertyFromConfig.getValue().maximum().ifPresent(property::setMaximum);
+            propertyFromConfig.getValue().minimum().ifPresent(property::setMinimum);
 
-            if (Strings.isNotNullOrEmpty(propertyFromConfig.getPattern())) {
-                property.setPattern(propertyFromConfig.getPattern());
-            }
-
-            if (propertyFromConfig.getMaximum() != Integer.MAX_VALUE) {
-                property.setMaximum(propertyFromConfig.getMaximum());
-            }
-
-            if (propertyFromConfig.getMinimum() != Integer.MIN_VALUE) {
-                property.setMinimum(propertyFromConfig.getMinimum());
-            }
-
-            if (propertyFromConfig.isRequired()) {
+            if (propertyFromConfig.getValue().required()) {
                 if (parent == null) {
                     schema.getRequired().add(propertyName);
                 } else {
@@ -121,8 +115,8 @@ public final class ValuesSchemaUtils {
                 }
             }
 
-            if (Strings.isNotNullOrEmpty(propertyFromConfig.getType())) {
-                property.setType(propertyFromConfig.getType());
+            if (StringUtils.isNotEmpty(propertyFromConfig.getValue().type())) {
+                property.setType(propertyFromConfig.getValue().type());
             }
 
             location.put(propertyName, property);

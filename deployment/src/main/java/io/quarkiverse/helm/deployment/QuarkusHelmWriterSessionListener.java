@@ -1,24 +1,7 @@
-/**
- * Copyright 2018 The original authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- **/
 package io.quarkiverse.helm.deployment;
 
-import static io.dekorate.helm.util.HelmTarArchiver.createTarBall;
-import static io.dekorate.utils.Strings.isNullOrEmpty;
 import static io.quarkiverse.helm.deployment.utils.HelmConfigUtils.deductProperty;
+import static io.quarkiverse.helm.deployment.utils.HelmTarArchiver.createTarBall;
 import static io.quarkiverse.helm.deployment.utils.MapUtils.toMultiValueUnsortedMap;
 import static io.quarkiverse.helm.deployment.utils.MapUtils.toPlainMap;
 import static io.quarkiverse.helm.deployment.utils.ValuesSchemaUtils.createSchema;
@@ -33,6 +16,7 @@ import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.rea
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.readAndSet;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.set;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.toExpression;
+import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -56,28 +40,24 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import io.dekorate.ConfigReference;
 import io.dekorate.Logger;
 import io.dekorate.LoggerFactory;
-import io.dekorate.helm.config.AddIfStatement;
-import io.dekorate.helm.config.Annotation;
-import io.dekorate.helm.config.HelmChartConfig;
-import io.dekorate.helm.config.HelmExpression;
-import io.dekorate.helm.listener.HelmWriterSessionListener;
-import io.dekorate.helm.model.Chart;
-import io.dekorate.helm.model.HelmDependency;
-import io.dekorate.helm.model.Maintainer;
-import io.dekorate.helm.util.HelmConfigUtils;
-import io.dekorate.helm.util.MapUtils;
 import io.dekorate.project.Project;
 import io.dekorate.utils.Exec;
 import io.dekorate.utils.Maps;
 import io.dekorate.utils.Serialization;
-import io.dekorate.utils.Strings;
 import io.github.yamlpath.YamlExpressionParser;
 import io.github.yamlpath.YamlPath;
+import io.quarkiverse.helm.deployment.model.Chart;
+import io.quarkiverse.helm.deployment.model.HelmDependency;
+import io.quarkiverse.helm.deployment.model.Maintainer;
+import io.quarkiverse.helm.deployment.utils.FileUtils;
+import io.quarkiverse.helm.deployment.utils.MapUtils;
 import io.quarkiverse.helm.deployment.utils.ReadmeBuilder;
 import io.quarkiverse.helm.deployment.utils.ValuesHolder;
 
@@ -109,36 +89,34 @@ public class QuarkusHelmWriterSessionListener {
      *
      * @return the list of the Helm generated files.
      */
-    public Map<String, String> writeHelmFiles(Project project,
-            io.dekorate.helm.config.HelmChartConfig helmConfig,
-            List<ConfigReference> valueReferencesFromUser,
+    public Map<String, String> writeHelmFiles(String name,
+            Project project,
+            HelmChartConfig helmConfig,
             List<ConfigReference> valueReferencesFromDecorators,
             Path inputDir,
             Path outputDir,
-            Collection<File> generatedFiles,
-            String valuesProfileSeparator) {
+            Collection<File> generatedFiles) {
         Map<String, String> artifacts = new HashMap<>();
-        if (helmConfig.isEnabled()) {
-            validateHelmConfig(helmConfig);
+        if (helmConfig.enabled()) {
 
             try {
-                LOGGER.info(String.format("Creating Helm Chart \"%s\"", helmConfig.getName()));
+                LOGGER.info(String.format("Creating Helm Chart \"%s\"", name));
                 ValuesHolder values = populateValuesFromConfig(helmConfig, inputDir);
                 List<Map<Object, Object>> resources = populateValuesFromConfigReferences(helmConfig, generatedFiles, values,
-                        valueReferencesFromUser, valueReferencesFromDecorators);
-                artifacts.putAll(processTemplates(helmConfig, helmConfig.getAddIfStatements(), inputDir, outputDir, resources));
-                artifacts.putAll(createChartYaml(helmConfig, project, inputDir, outputDir));
-                artifacts.putAll(createValuesYaml(helmConfig, inputDir, outputDir, values, valuesProfileSeparator));
+                        valueReferencesFromDecorators);
+                artifacts.putAll(processTemplates(name, helmConfig, inputDir, outputDir, resources));
+                artifacts.putAll(createChartYaml(name, helmConfig, project, inputDir, outputDir));
+                artifacts.putAll(createValuesYaml(name, helmConfig, inputDir, outputDir, values));
 
                 // To follow Helm file structure standards:
-                artifacts.putAll(createEmptyChartFolder(helmConfig, outputDir));
-                artifacts.putAll(addNotesIntoTemplatesFolder(helmConfig, inputDir, outputDir));
-                artifacts.putAll(addAdditionalResources(helmConfig, inputDir, outputDir));
+                artifacts.putAll(createEmptyChartFolder(name, outputDir));
+                artifacts.putAll(addNotesIntoTemplatesFolder(name, helmConfig, inputDir, outputDir));
+                artifacts.putAll(addAdditionalResources(name, inputDir, outputDir));
 
                 // Final step: packaging
-                if (helmConfig.isCreateTarFile()) {
-                    fetchDependencies(helmConfig, outputDir);
-                    artifacts.putAll(createTarball(helmConfig, project, outputDir, artifacts));
+                if (helmConfig.createTarFile() || helmConfig.repository().push()) {
+                    fetchDependencies(name, helmConfig, outputDir);
+                    artifacts.putAll(createTarball(name, helmConfig, project, outputDir, artifacts));
                 }
 
             } catch (IOException e) {
@@ -149,7 +127,7 @@ public class QuarkusHelmWriterSessionListener {
         return artifacts;
     }
 
-    private Map<String, String> addAdditionalResources(HelmChartConfig helmConfig, Path inputDir, Path outputDir)
+    private Map<String, String> addAdditionalResources(String name, Path inputDir, Path outputDir)
             throws IOException {
         if (inputDir == null || !inputDir.toFile().exists()) {
             return Collections.emptyMap();
@@ -158,20 +136,20 @@ public class QuarkusHelmWriterSessionListener {
         Map<String, String> artifacts = new HashMap<>();
         for (File source : inputDir.toFile().listFiles()) {
             if (ADDITIONAL_CHART_FILES.stream().anyMatch(source.getName()::equalsIgnoreCase)) {
-                artifacts.putAll(addAdditionalResource(helmConfig, outputDir, source));
+                artifacts.putAll(addAdditionalResource(name, outputDir, source));
             }
         }
 
         return artifacts;
     }
 
-    private Map<String, String> addAdditionalResource(HelmChartConfig helmConfig, Path outputDir, File source)
+    private Map<String, String> addAdditionalResource(String name, Path outputDir, File source)
             throws IOException {
         if (!source.exists()) {
             return Collections.emptyMap();
         }
 
-        Path destination = getChartOutputDir(helmConfig, outputDir).resolve(source.getName());
+        Path destination = getChartOutputDir(name, outputDir).resolve(source.getName());
         if (source.isDirectory()) {
             Files.createDirectory(destination);
             for (File file : source.listFiles()) {
@@ -184,9 +162,9 @@ public class QuarkusHelmWriterSessionListener {
         return Collections.singletonMap(destination.toString(), EMPTY);
     }
 
-    private void fetchDependencies(io.dekorate.helm.config.HelmChartConfig helmConfig, Path outputDir) {
-        if (helmConfig.getDependencies() != null && helmConfig.getDependencies().length > 0) {
-            Path chartFolder = getChartOutputDir(helmConfig, outputDir);
+    private void fetchDependencies(String name, HelmChartConfig helmConfig, Path outputDir) {
+        if (helmConfig.dependencies() != null && !helmConfig.dependencies().isEmpty()) {
+            Path chartFolder = getChartOutputDir(name, outputDir);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             boolean success = Exec.inPath(chartFolder)
                     .redirectingOutput(out)
@@ -200,13 +178,7 @@ public class QuarkusHelmWriterSessionListener {
         }
     }
 
-    private void validateHelmConfig(io.dekorate.helm.config.HelmChartConfig helmConfig) {
-        if (isNullOrEmpty(helmConfig.getName())) {
-            throw new RuntimeException("Helm Chart name is required!");
-        }
-    }
-
-    private Map<String, String> addNotesIntoTemplatesFolder(io.dekorate.helm.config.HelmChartConfig helmConfig, Path inputDir,
+    private Map<String, String> addNotesIntoTemplatesFolder(String name, HelmChartConfig helmConfig, Path inputDir,
             Path outputDir)
             throws IOException {
         InputStream notesInputStream;
@@ -215,41 +187,35 @@ public class QuarkusHelmWriterSessionListener {
         if (notesInInputDir.exists()) {
             notesInputStream = new FileInputStream(notesInInputDir);
         } else {
-            if (isNullOrEmpty(helmConfig.getNotes())) {
+            if (isEmpty(helmConfig.notes())) {
                 return Collections.emptyMap();
             }
 
-            notesInputStream = getResourceFromClasspath(helmConfig.getNotes());
+            notesInputStream = getResourceFromClasspath(helmConfig.notes());
         }
 
         if (notesInputStream == null) {
-            throw new RuntimeException("Could not find the notes template file in the classpath at " + helmConfig.getNotes());
+            throw new RuntimeException("Could not find the notes template file in the classpath at " + helmConfig.notes());
         }
-        Path chartOutputDir = getChartOutputDir(helmConfig, outputDir).resolve(TEMPLATES).resolve(NOTES);
+        Path chartOutputDir = getChartOutputDir(name, outputDir).resolve(TEMPLATES).resolve(NOTES);
         Files.copy(notesInputStream, chartOutputDir);
         return Collections.singletonMap(chartOutputDir.toString(), EMPTY);
     }
 
     private InputStream getResourceFromClasspath(String notes) {
         // Try to locate the file from the context class loader
-        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(notes);
-        if (is == null) {
-            // if not found, try to find it in the current classpath.
-            is = HelmWriterSessionListener.class.getResourceAsStream(notes);
-        }
-
-        return is;
+        return Thread.currentThread().getContextClassLoader().getResourceAsStream(notes);
     }
 
-    private Map<String, String> createEmptyChartFolder(io.dekorate.helm.config.HelmChartConfig helmConfig, Path outputDir)
+    private Map<String, String> createEmptyChartFolder(String name, Path outputDir)
             throws IOException {
-        Path emptyChartsDir = getChartOutputDir(helmConfig, outputDir).resolve(CHARTS);
+        Path emptyChartsDir = getChartOutputDir(name, outputDir).resolve(CHARTS);
         Files.createDirectories(emptyChartsDir);
         return Collections.singletonMap(emptyChartsDir.toString(), EMPTY);
     }
 
-    private Map<String, String> createValuesYaml(io.dekorate.helm.config.HelmChartConfig helmConfig,
-            Path inputDir, Path outputDir, ValuesHolder valuesHolder, String valuesProfileSeparator)
+    private Map<String, String> createValuesYaml(String name, HelmChartConfig helmConfig,
+            Path inputDir, Path outputDir, ValuesHolder valuesHolder)
             throws IOException {
         Map<String, ValuesHolder.HelmValueHolder> prodValues = valuesHolder.getProdValues();
         Map<String, Map<String, ValuesHolder.HelmValueHolder>> valuesByProfile = valuesHolder.getValuesByProfile();
@@ -269,30 +235,30 @@ public class QuarkusHelmWriterSessionListener {
 
             // Create the values.<profile>.yaml file
             artifacts.putAll(writeFileAsYaml(mergeWithFileIfExists(inputDir, VALUES + YAML, toValuesMap(values)),
-                    getChartOutputDir(helmConfig, outputDir)
-                            .resolve(VALUES + valuesProfileSeparator + profile + YAML)));
+                    getChartOutputDir(name, outputDir)
+                            .resolve(VALUES + helmConfig.valuesProfileSeparator() + profile + YAML)));
         }
 
         // Next, we process the prod profile
         artifacts.putAll(writeFileAsYaml(mergeWithFileIfExists(inputDir, VALUES + YAML, toValuesMap(prodValues)),
-                getChartOutputDir(helmConfig, outputDir).resolve(VALUES + YAML)));
+                getChartOutputDir(name, outputDir).resolve(VALUES + YAML)));
 
         // Next, the "values.schema.json" file
-        if (helmConfig.isCreateValuesSchemaFile()) {
+        if (helmConfig.createValuesSchemaFile()) {
             Map<String, Object> schemaAsMap = createSchema(helmConfig, prodValues);
             artifacts.putAll(
                     writeFileAsJson(mergeWithFileIfExists(inputDir, VALUES_SCHEMA, MapUtils.toMultiValueSortedMap(schemaAsMap)),
-                            getChartOutputDir(helmConfig, outputDir).resolve(VALUES_SCHEMA)));
+                            getChartOutputDir(name, outputDir).resolve(VALUES_SCHEMA)));
         } else {
-            artifacts.putAll(addAdditionalResource(helmConfig, outputDir, inputDir.resolve(VALUES_SCHEMA).toFile()));
+            artifacts.putAll(addAdditionalResource(name, outputDir, inputDir.resolve(VALUES_SCHEMA).toFile()));
         }
 
         // Next, the "README.md" file
-        if (helmConfig.isCreateReadmeFile()) {
-            String readmeContent = ReadmeBuilder.build(helmConfig, prodValues);
-            artifacts.putAll(writeFile(readmeContent, getChartOutputDir(helmConfig, outputDir).resolve(README)));
+        if (helmConfig.createReadmeFile()) {
+            String readmeContent = ReadmeBuilder.build(name, helmConfig, prodValues);
+            artifacts.putAll(writeFile(readmeContent, getChartOutputDir(name, outputDir).resolve(README)));
         } else {
-            artifacts.putAll(addAdditionalResource(helmConfig, outputDir, inputDir.resolve(README).toFile()));
+            artifacts.putAll(addAdditionalResource(name, outputDir, inputDir.resolve(README).toFile()));
         }
 
         return artifacts;
@@ -325,20 +291,20 @@ public class QuarkusHelmWriterSessionListener {
         return valuesAsMultiValueMap;
     }
 
-    private Map<String, String> createTarball(io.dekorate.helm.config.HelmChartConfig helmConfig, Project project,
+    private Map<String, String> createTarball(String name, HelmChartConfig helmConfig, Project project,
             Path outputDir,
             Map<String, String> artifacts) throws IOException {
 
         File tarballFile = outputDir.resolve(String.format("%s-%s%s.%s",
-                helmConfig.getName(),
+                name,
                 getVersion(helmConfig, project),
-                isNullOrEmpty(helmConfig.getTarFileClassifier()) ? EMPTY : "-" + helmConfig.getTarFileClassifier(),
-                helmConfig.getExtension()))
+                helmConfig.tarFileClassifier().map(c -> "-" + c).orElse(EMPTY),
+                helmConfig.extension()))
                 .toFile();
 
         LOGGER.debug(String.format("Creating Helm configuration Tarball: '%s'", tarballFile));
 
-        Path helmSources = getChartOutputDir(helmConfig, outputDir);
+        Path helmSources = getChartOutputDir(name, outputDir);
 
         List<File> files = new ArrayList<>();
         for (String filePath : artifacts.keySet()) {
@@ -350,39 +316,34 @@ public class QuarkusHelmWriterSessionListener {
             }
         }
 
-        createTarBall(tarballFile, helmSources.toFile(), files, helmConfig.getExtension(),
-                tae -> tae.setName(String.format("%s/%s", helmConfig.getName(), tae.getName())));
+        createTarBall(tarballFile, helmSources.toFile(), files, helmConfig.extension(),
+                tae -> tae.setName(String.format("%s/%s", name, tae.getName())));
 
         return Collections.singletonMap(tarballFile.toString(), null);
     }
 
-    private String getVersion(io.dekorate.helm.config.HelmChartConfig helmConfig, Project project) {
-        if (isNullOrEmpty(helmConfig.getVersion())) {
-            return project.getBuildInfo().getVersion();
-        }
-
-        return helmConfig.getVersion();
+    private String getVersion(HelmChartConfig helmConfig, Project project) {
+        return helmConfig.version().orElse(project.getBuildInfo().getVersion());
     }
 
-    private Map<String, String> processTemplates(io.dekorate.helm.config.HelmChartConfig helmConfig,
-            AddIfStatement[] addIfStatements,
+    private Map<String, String> processTemplates(String name, HelmChartConfig helmConfig,
             Path inputDir,
             Path outputDir,
             List<Map<Object, Object>> resources) throws IOException {
 
         Map<String, String> templates = new HashMap<>();
-        Path templatesDir = getChartOutputDir(helmConfig, outputDir).resolve(TEMPLATES);
+        Path templatesDir = getChartOutputDir(name, outputDir).resolve(TEMPLATES);
         Files.createDirectories(templatesDir);
 
         Map<String, String> functionsByResource = processUserDefinedTemplates(inputDir, templates, templatesDir);
         // Split yamls in separated files by kind
         for (Map<Object, Object> resource : resources) {
             // Add user defined expressions
-            if (helmConfig.getExpressions() != null) {
+            if (helmConfig.expressions() != null) {
                 YamlExpressionParser parser = new YamlExpressionParser(Arrays.asList(resource));
-                for (HelmExpression expressionConfig : helmConfig.getExpressions()) {
-                    if (expressionConfig.getPath() != null && expressionConfig.getExpression() != null) {
-                        readAndSet(parser, expressionConfig.getPath(), expressionConfig.getExpression());
+                for (ExpressionConfig expressionConfig : helmConfig.expressions().values()) {
+                    if (expressionConfig.path() != null && expressionConfig.expression() != null) {
+                        readAndSet(parser, expressionConfig.path(), expressionConfig.expression());
                     }
                 }
             }
@@ -398,12 +359,14 @@ public class QuarkusHelmWriterSessionListener {
             }
 
             // Add if statements at resource level
-            for (AddIfStatement addIfStatement : addIfStatements) {
-                if ((isNullOrEmpty(addIfStatement.getOnResourceKind()) || addIfStatement.getOnResourceKind().equals(kind))
-                        && (isNullOrEmpty(addIfStatement.getOnResourceName())
-                                || addIfStatement.getOnResourceName().equals(getNameFromResource(resource)))) {
-
-                    String property = deductProperty(helmConfig, addIfStatement.getProperty());
+            for (Map.Entry<String, AddIfStatementConfig> addIfStatement : helmConfig.addIfStatement().entrySet()) {
+                AddIfStatementConfig addIfStatementConfig = addIfStatement.getValue();
+                if ((addIfStatementConfig.onResourceKind().isEmpty()
+                        || addIfStatementConfig.onResourceKind().get().equals(kind))
+                        && (addIfStatementConfig.onResourceName().isEmpty()
+                                || addIfStatementConfig.onResourceName().get().equals(getNameFromResource(resource)))) {
+                    String propertyName = addIfStatementConfig.property().orElse(addIfStatement.getKey());
+                    String property = deductProperty(helmConfig, propertyName);
 
                     adaptedString = String.format(IF_STATEMENT_START_TAG, property)
                             + System.lineSeparator()
@@ -459,7 +422,7 @@ public class QuarkusHelmWriterSessionListener {
                 } else {
                     // it's a resource template, let's extract only the template functions and include
                     // it into the generated file later.
-                    String[] userResource = Strings.read(new FileInputStream(userTemplateFile)).split(System.lineSeparator());
+                    String[] userResource = FileUtils.lines(userTemplateFile);
 
                     StringBuilder sb = new StringBuilder();
                     boolean isFunction = false;
@@ -477,26 +440,28 @@ public class QuarkusHelmWriterSessionListener {
         return functionsByResource;
     }
 
-    private ValuesHolder populateValuesFromConfig(io.dekorate.helm.config.HelmChartConfig helmConfig, Path inputDir) {
+    private ValuesHolder populateValuesFromConfig(HelmChartConfig helmConfig, Path inputDir) {
         ValuesHolder values = new ValuesHolder();
 
         // Populate expressions from conditions
-        for (io.dekorate.helm.config.HelmDependency dependency : helmConfig.getDependencies()) {
-            if (Strings.isNotNullOrEmpty(dependency.getCondition())) {
-                String propertyName = HelmConfigUtils.deductProperty(helmConfig, dependency.getCondition());
+        for (Map.Entry<String, HelmDependencyConfig> dependency : helmConfig.dependencies().entrySet()) {
+            dependency.getValue().condition().ifPresent(condition -> {
+                String dependencyName = dependency.getValue().name().orElse(dependency.getKey());
+                String propertyName = deductProperty(helmConfig, condition);
                 ConfigReference configReference = new ConfigReference.Builder(propertyName, new String[0])
-                        .withDescription("Flag to enable/disable the dependency '" + dependency.getName() + "'")
+                        .withDescription("Flag to enable/disable the dependency '" + dependencyName + "'")
                         .build();
                 values.put(propertyName, configReference, true);
-            }
+            });
         }
 
         // Populate if statements expressions
-        for (AddIfStatement addIfStatement : helmConfig.getAddIfStatements()) {
-            String propertyName = deductProperty(helmConfig, addIfStatement.getProperty());
+        for (Map.Entry<String, AddIfStatementConfig> addIfStatement : helmConfig.addIfStatement().entrySet()) {
+            String property = addIfStatement.getValue().property().orElse(addIfStatement.getKey());
+            String propertyName = deductProperty(helmConfig, property);
             ConfigReference configReference = new ConfigReference.Builder(propertyName, new String[0])
-                    .withDescription(addIfStatement.getDescription())
-                    .withValue(addIfStatement.getWithDefaultValue())
+                    .withDescription(addIfStatement.getValue().description())
+                    .withValue(addIfStatement.getValue().withDefaultValue())
                     .build();
             values.put(propertyName, configReference);
         }
@@ -519,11 +484,24 @@ public class QuarkusHelmWriterSessionListener {
         return values;
     }
 
-    private List<Map<Object, Object>> populateValuesFromConfigReferences(io.dekorate.helm.config.HelmChartConfig helmConfig,
+    private List<Map<Object, Object>> populateValuesFromConfigReferences(HelmChartConfig helmConfig,
             Collection<File> generatedFiles,
             ValuesHolder values,
-            List<ConfigReference> valuesReferencesFromUser,
             List<ConfigReference> valuesReferencesFromDecorators) throws IOException {
+        List<ConfigReference> valuesReferencesFromUser = helmConfig.values().entrySet().stream()
+                .map(e -> new ConfigReference.Builder(e.getValue().property().orElse(e.getKey()),
+                        e.getValue().paths().map(l -> l.toArray(new String[0])).orElse(new String[0]))
+                        .withValue(toValue(e.getValue()))
+                        .withDescription(e.getValue().description().orElse(EMPTY))
+                        .withExpression(e.getValue().expression().orElse(null))
+                        .withProfile(e.getValue().profile().orElse(null))
+                        .withRequired(e.getValue().required())
+                        .withPattern(e.getValue().pattern().orElse(null))
+                        .withMaximum(e.getValue().maximum().orElse(Integer.MAX_VALUE))
+                        .withMinimum(e.getValue().minimum().orElse(Integer.MIN_VALUE))
+                        .build())
+                .collect(Collectors.toList());
+
         List<Map<Object, Object>> allResources = new LinkedList<>();
         for (File generatedFile : generatedFiles) {
             if (!generatedFile.getName().toLowerCase().matches(YAML_REG_EXP)) {
@@ -618,55 +596,54 @@ public class QuarkusHelmWriterSessionListener {
                 if (actualValue != null) {
                     set(parser, path, toExpression(property, value, found, valueReference));
                     values.putIfAbsent(property, valueReference, actualValue, profile);
-                    if (isNullOrEmpty(profile)) {
+                    if (StringUtils.isEmpty(profile)) {
                         seen.putIfAbsent(property, actualValue);
                     }
                 }
             }
         } else {
             values.putIfAbsent(property, valueReference, value, profile);
-            if (isNullOrEmpty(profile)) {
+            if (StringUtils.isEmpty(profile)) {
                 seen.putIfAbsent(property, value);
             }
         }
     }
 
-    private Map<String, String> createChartYaml(io.dekorate.helm.config.HelmChartConfig helmConfig, Project project,
+    private Map<String, String> createChartYaml(String name, HelmChartConfig helmConfig, Project project,
             Path inputDir, Path outputDir)
             throws IOException {
         final Chart chart = new Chart();
-        chart.setName(helmConfig.getName());
+        chart.setName(name);
         chart.setVersion(getVersion(helmConfig, project));
-        chart.setDescription(helmConfig.getDescription());
-        chart.setHome(helmConfig.getHome());
-        chart.setSources(Arrays.asList(helmConfig.getSources()));
-        chart.setMaintainers(Arrays.stream(helmConfig.getMaintainers())
-                .map(m -> new Maintainer(m.getName(), m.getEmail(), m.getUrl()))
+        helmConfig.description().ifPresent(chart::setDescription);
+        helmConfig.home().ifPresent(chart::setHome);
+        helmConfig.sources().ifPresent(chart::setSources);
+        chart.setMaintainers(helmConfig.maintainers().entrySet()
+                .stream()
+                .map(e -> new Maintainer(e.getValue().name().orElse(e.getKey()), e.getValue().email().orElse(EMPTY),
+                        e.getValue().url().orElse(EMPTY)))
                 .collect(Collectors.toList()));
-        chart.setIcon(helmConfig.getIcon());
-        chart.setApiVersion(helmConfig.getApiVersion());
-        chart.setCondition(helmConfig.getCondition());
-        chart.setTags(helmConfig.getTags());
-        chart.setAppVersion(helmConfig.getAppVersion());
-        if (helmConfig.isDeprecated()) {
-            chart.setDeprecated(helmConfig.isDeprecated());
-        }
-        chart.setAnnotations(Arrays.stream(helmConfig.getAnnotations())
-                .collect(Collectors.toMap(Annotation::getKey, Annotation::getValue)));
-        chart.setKubeVersion(helmConfig.getKubeVersion());
-        chart.setKeywords(Arrays.asList(helmConfig.getKeywords()));
-        chart.setDependencies(Arrays.stream(helmConfig.getDependencies())
-                .map(d -> new HelmDependency(d.getName(),
-                        Strings.defaultIfEmpty(d.getAlias(), d.getName()),
-                        d.getVersion(),
-                        d.getRepository(),
-                        d.getCondition(),
-                        d.getTags(),
-                        d.isEnabled()))
+        helmConfig.icon().ifPresent(chart::setIcon);
+        chart.setApiVersion(helmConfig.apiVersion());
+        helmConfig.condition().ifPresent(chart::setCondition);
+        helmConfig.tags().ifPresent(chart::setTags);
+        helmConfig.appVersion().ifPresent(chart::setAppVersion);
+        helmConfig.deprecated().ifPresent(chart::setDeprecated);
+        chart.setAnnotations(helmConfig.annotations());
+        helmConfig.kubeVersion().ifPresent(chart::setKubeVersion);
+        helmConfig.keywords().ifPresent(chart::setKeywords);
+        chart.setDependencies(helmConfig.dependencies().entrySet().stream()
+                .map(d -> new HelmDependency(d.getValue().name().orElse(d.getKey()),
+                        d.getValue().alias().orElse(d.getValue().name().orElse(d.getKey())),
+                        d.getValue().version(),
+                        d.getValue().repository(),
+                        d.getValue().condition().orElse(EMPTY),
+                        d.getValue().tags().map(l -> l.toArray(new String[0])).orElse(new String[0]),
+                        d.getValue().enabled().orElse(true)))
                 .collect(Collectors.toList()));
-        chart.setType(helmConfig.getType());
+        helmConfig.type().ifPresent(chart::setType);
 
-        Path yml = getChartOutputDir(helmConfig, outputDir).resolve(CHART_FILENAME).normalize();
+        Path yml = getChartOutputDir(name, outputDir).resolve(CHART_FILENAME).normalize();
         File userChartFile = inputDir.resolve(CHART_FILENAME).toFile();
         Object chartContent = chart;
         if (userChartFile.exists()) {
@@ -694,7 +671,21 @@ public class QuarkusHelmWriterSessionListener {
         }
     }
 
-    private Path getChartOutputDir(HelmChartConfig helmConfig, Path outputDir) {
-        return outputDir.resolve(helmConfig.getName());
+    private Path getChartOutputDir(String name, Path outputDir) {
+        return outputDir.resolve(name);
+    }
+
+    private Object toValue(ValueReferenceConfig v) {
+        if (v.valueAsInt().isPresent()) {
+            return v.valueAsInt().get();
+        } else if (v.valueAsBool().isPresent()) {
+            return v.valueAsBool().get();
+        } else if (!v.valueAsMap().isEmpty()) {
+            return v.valueAsMap();
+        } else if (v.valueAsList().isPresent()) {
+            return v.valueAsList().get();
+        }
+
+        return v.value().orElse(null);
     }
 }

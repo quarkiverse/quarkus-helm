@@ -27,19 +27,8 @@
       <artifactId>quarkus-kubernetes-deployment</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.dekorate</groupId>
-      <artifactId>helm-annotations</artifactId>
-      <classifier>noapt</classifier>
-      <exclusions>
-        <exclusion>
-          <groupId>io.sundr</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.sun</groupId>
-          <artifactId>tools</artifactId>
-        </exclusion>
-      </exclusions>
+      <groupId>io.github.yaml-path</groupId>
+      <artifactId>yaml-path</artifactId>
     </dependency>
   </dependencies>
   <build>

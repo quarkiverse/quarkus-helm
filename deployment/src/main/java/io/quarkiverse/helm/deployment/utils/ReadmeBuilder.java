@@ -4,8 +4,9 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import io.dekorate.helm.config.HelmChartConfig;
-import io.dekorate.utils.Strings;
+import org.apache.commons.lang3.StringUtils;
+
+import io.quarkiverse.helm.deployment.HelmChartConfig;
 
 public final class ReadmeBuilder {
 
@@ -46,7 +47,7 @@ public final class ReadmeBuilder {
         for (Object value : values) {
             String actualValue = SPACE;
             if (value != null) {
-                actualValue = Strings.defaultIfEmpty(value.toString(), SPACE);
+                actualValue = StringUtils.defaultIfEmpty(value.toString(), SPACE);
             }
 
             row.append(TABLE_SEPARATOR).append(SPACE).append(actualValue).append(SPACE);
@@ -56,7 +57,7 @@ public final class ReadmeBuilder {
     }
 
     private void writeLine(String line, Object... args) {
-        if (Strings.isNotNullOrEmpty(line)) {
+        if (StringUtils.isNotEmpty(line)) {
             sb.append(String.format(line, args));
         }
 
@@ -80,14 +81,12 @@ public final class ReadmeBuilder {
         writeLine(TIP + message);
     }
 
-    public static String build(HelmChartConfig helmConfig, Map<String, ValuesHolder.HelmValueHolder> values) {
+    public static String build(String name, HelmChartConfig helmConfig, Map<String, ValuesHolder.HelmValueHolder> values) {
         ReadmeBuilder builder = new ReadmeBuilder();
         // Title:
         // # {chart.name}
-        builder.writeHeader(H1, helmConfig.getName());
-        if (Strings.isNotNullOrEmpty(helmConfig.getDescription())) {
-            builder.writeLine(helmConfig.getDescription());
-        }
+        builder.writeHeader(H1, name);
+        helmConfig.description().ifPresent(builder::writeLine);
 
         // Configuration:
         builder.writeHeader(H2, "Configuration");

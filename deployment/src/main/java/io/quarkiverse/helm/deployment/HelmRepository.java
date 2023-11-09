@@ -2,7 +2,8 @@ package io.quarkiverse.helm.deployment;
 
 import java.util.Optional;
 
-import io.dekorate.utils.Strings;
+import org.apache.commons.lang3.StringUtils;
+
 import io.smallrye.config.WithDefault;
 
 public interface HelmRepository {
@@ -39,10 +40,10 @@ public interface HelmRepository {
     Optional<String> password();
 
     default String getUsername() {
-        return username().filter(Strings::isNotNullOrEmpty).orElse(null);
+        return username().filter(StringUtils::isNotEmpty).orElse(null);
     }
 
     default String getPassword() {
-        return password().filter(Strings::isNotNullOrEmpty).orElse(null);
+        return password().filter(StringUtils::isNotEmpty).orElse(null);
     }
 }

@@ -1,18 +1,17 @@
 package io.quarkiverse.helm.deployment;
 
-import static io.github.yamlpath.utils.StringUtils.EMPTY;
 import static io.quarkiverse.helm.deployment.HelmChartUploader.pushToHelmRepository;
 import static io.quarkiverse.helm.deployment.utils.SystemPropertiesUtils.getPropertyFromSystem;
 import static io.quarkiverse.helm.deployment.utils.SystemPropertiesUtils.getSystemProperties;
 import static io.quarkiverse.helm.deployment.utils.SystemPropertiesUtils.hasSystemProperties;
 import static io.quarkus.deployment.Capability.OPENSHIFT;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,16 +32,9 @@ import org.jboss.logging.Logger;
 
 import io.dekorate.ConfigReference;
 import io.dekorate.Session;
-import io.dekorate.helm.config.HelmChartConfigBuilder;
-import io.dekorate.helm.config.HelmDependencyBuilder;
-import io.dekorate.helm.config.ValuesSchema;
-import io.dekorate.helm.config.ValuesSchemaBuilder;
-import io.dekorate.helm.config.ValuesSchemaProperty;
-import io.dekorate.helm.config.ValuesSchemaPropertyBuilder;
 import io.dekorate.kubernetes.config.ContainerBuilder;
 import io.dekorate.kubernetes.decorator.AddInitContainerDecorator;
 import io.dekorate.project.Project;
-import io.dekorate.utils.Strings;
 import io.quarkiverse.helm.deployment.decorators.LowPriorityAddEnvVarDecorator;
 import io.quarkiverse.helm.deployment.utils.HelmConfigUtils;
 import io.quarkus.deployment.Capabilities;
@@ -184,10 +176,6 @@ public class HelmProcessor {
         final Map<String, Set<File>> deploymentTargets = toDeploymentTargets(dekorateOutput.getGeneratedFiles(),
                 generatedResources);
 
-        // Config
-        io.dekorate.helm.config.HelmChartConfig dekorateHelmChartConfig = toDekorateHelmChartConfig(app, config);
-        List<ConfigReference> valueReferencesFromUser = toValueReferences(config);
-
         // Deduct deployment target to push
         String deploymentTargetToPush = deductDeploymentTarget(config, deploymentTargets);
 
@@ -197,14 +185,14 @@ public class HelmProcessor {
             Path chartOutputFolder = outputFolder.resolve(deploymentTarget);
             deleteOutputHelmFolderIfExists(chartOutputFolder);
 
-            Map<String, String> generated = helmWriter.writeHelmFiles(project,
-                    dekorateHelmChartConfig,
-                    valueReferencesFromUser,
+            Map<String, String> generated = helmWriter.writeHelmFiles(
+                    config.name().orElse(app.getName()),
+                    project,
+                    config,
                     getConfigReferencesFromSession(deploymentTarget, dekorateOutput),
                     inputFolder,
                     chartOutputFolder,
-                    filesInDeploymentTarget.getValue(),
-                    config.valuesProfileSeparator());
+                    filesInDeploymentTarget.getValue());
 
             // Push to Helm repository if enabled
             if (config.repository().push() && deploymentTargetToPush.equals(deploymentTarget)) {
@@ -359,135 +347,12 @@ public class HelmProcessor {
         return filesByDeploymentTarget;
     }
 
-    private io.dekorate.helm.config.HelmChartConfig toDekorateHelmChartConfig(ApplicationInfoBuildItem app,
-            HelmChartConfig config) {
-        HelmChartConfigBuilder builder = new HelmChartConfigBuilder()
-                .withEnabled(config.enabled())
-                .withApiVersion(config.apiVersion())
-                .withName(config.name().orElse(app.getName()))
-                .withCreateTarFile(config.createTarFile() || config.repository().push())
-                .withCreateValuesSchemaFile(config.createValuesSchemaFile())
-                .withCreateReadmeFile(config.createReadmeFile())
-                .withVersion(config.version().orElse(app.getVersion()))
-                .withExtension(config.extension())
-                .withValuesRootAlias(config.valuesRootAlias())
-                .withNotes(config.notes());
-        config.description().ifPresent(builder::withDescription);
-        config.keywords().ifPresent(builder::addAllToKeywords);
-        config.icon().ifPresent(builder::withIcon);
-        config.condition().ifPresent(builder::withCondition);
-        config.tags().ifPresent(builder::withTags);
-        config.appVersion().ifPresent(builder::withAppVersion);
-        config.deprecated().ifPresent(builder::withDeprecated);
-        config.annotations().entrySet().forEach(e -> builder.addNewAnnotation(e.getKey(), e.getValue()));
-        config.kubeVersion().ifPresent(builder::withKubeVersion);
-        config.type().ifPresent(builder::withType);
-        config.home().ifPresent(builder::withHome);
-        config.sources().ifPresent(builder::addAllToSources);
-        config.maintainers().entrySet()
-                .forEach(e -> builder.addNewMaintainer(
-                        defaultString(e.getValue().name(), e.getKey()),
-                        defaultString(e.getValue().email()),
-                        defaultString(e.getValue().url())));
-        config.dependencies().entrySet()
-                .forEach(e -> builder.addToDependencies(toDekorateHelmDependencyConfig(e.getKey(), e.getValue())));
-        config.tarFileClassifier().ifPresent(builder::withTarFileClassifier);
-        config.expressions().values().forEach(e -> builder.addNewExpression(e.path(), e.expression()));
-        config.addIfStatement().entrySet()
-                .forEach(e -> {
-                    builder.addNewAddIfStatement(
-                            defaultString(e.getValue().property(), e.getKey()),
-                            defaultString(e.getValue().onResourceKind()),
-                            defaultString(e.getValue().onResourceName()),
-                            e.getValue().withDefaultValue(),
-                            e.getValue().description());
-                });
-
-        builder.withValuesSchema(toValuesSchema(config.valuesSchema()));
-
-        return builder.build();
-    }
-
-    private ValuesSchema toValuesSchema(ValuesSchemaConfig valuesSchema) {
-        List<ValuesSchemaProperty> properties = new ArrayList<>();
-        for (Map.Entry<String, ValuesSchemaPropertyConfig> property : valuesSchema.properties().entrySet()) {
-            String name = property.getValue().name().orElse(property.getKey());
-
-            properties.add(new ValuesSchemaPropertyBuilder()
-                    .withName(name)
-                    .withType(property.getValue().type())
-                    .withDescription(defaultString(property.getValue().description()))
-                    .withMaximum(property.getValue().maximum().orElse(Integer.MAX_VALUE))
-                    .withMinimum(property.getValue().minimum().orElse(Integer.MIN_VALUE))
-                    .withRequired(property.getValue().required())
-                    .withPattern(defaultString(property.getValue().pattern()))
-                    .build());
-        }
-
-        return new ValuesSchemaBuilder()
-                .withTitle(valuesSchema.title())
-                .withProperties(properties.toArray(new ValuesSchemaProperty[0]))
-                .build();
-    }
-
-    private io.dekorate.helm.config.HelmDependency toDekorateHelmDependencyConfig(String dependencyName,
-            HelmDependencyConfig dependency) {
-        HelmDependencyBuilder builder = new HelmDependencyBuilder()
-                .withName(defaultString(dependency.name(), dependencyName))
-                .withAlias(defaultString(dependency.alias(), defaultString(dependency.name(), dependencyName)))
-                .withVersion(dependency.version())
-                .withRepository(dependency.repository())
-                .withCondition(defaultString(dependency.condition()))
-                .withTags(defaultArray(dependency.tags()))
-                .withEnabled(dependency.enabled().orElse(true));
-
-        return builder.build();
-    }
-
-    private List<ConfigReference> toValueReferences(HelmChartConfig config) {
-        return config.values().entrySet().stream()
-                .map(e -> new ConfigReference.Builder(defaultString(e.getValue().property(), e.getKey()),
-                        defaultArray(e.getValue().paths()))
-                        .withValue(toValue(e.getValue()))
-                        .withDescription(defaultString(e.getValue().description(), EMPTY))
-                        .withExpression(defaultString(e.getValue().expression()))
-                        .withProfile(defaultString(e.getValue().profile()))
-                        .withRequired(e.getValue().required())
-                        .withPattern(defaultString(e.getValue().pattern()))
-                        .withMaximum(e.getValue().maximum().orElse(Integer.MAX_VALUE))
-                        .withMinimum(e.getValue().minimum().orElse(Integer.MIN_VALUE))
-                        .build())
-                .collect(Collectors.toList());
-    }
-
-    private Object toValue(ValueReferenceConfig v) {
-        if (v.valueAsInt().isPresent()) {
-            return v.valueAsInt().get();
-        } else if (v.valueAsBool().isPresent()) {
-            return v.valueAsBool().get();
-        } else if (!v.valueAsMap().isEmpty()) {
-            return v.valueAsMap();
-        } else if (v.valueAsList().isPresent()) {
-            return v.valueAsList().get();
-        }
-
-        return v.value().orElse(null);
-    }
-
-    private String defaultString(Optional<String> value) {
-        return defaultString(value, null);
-    }
-
     private String defaultString(Optional<String> value, String defaultStr) {
         if (value.isEmpty() || StringUtils.isEmpty(value.get())) {
             return defaultStr;
         }
 
         return value.get();
-    }
-
-    private static String[] defaultArray(Optional<List<String>> optional) {
-        return optional.map(l -> l.toArray(new String[0])).orElse(new String[0]);
     }
 
     private String mapProperty(String deploymentName, BuildProducer<DecoratorBuildItem> decorators, String property,
@@ -542,7 +407,7 @@ public class HelmProcessor {
     }
 
     private boolean isPropertiesConfigSource(String sourceName) {
-        return Strings.isNotNullOrEmpty(sourceName) && sourceName.startsWith(PROPERTIES_CONFIG_SOURCE);
+        return StringUtils.isNotEmpty(sourceName) && sourceName.startsWith(PROPERTIES_CONFIG_SOURCE);
     }
 
     private boolean isBuildTimeProperty(String name) {

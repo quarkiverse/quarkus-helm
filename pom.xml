@@ -32,6 +32,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.version>3.5.1</quarkus.version>
+    <yaml-path.version>0.0.10</yaml-path.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -41,6 +42,11 @@
         <version>${quarkus.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.github.yaml-path</groupId>
+        <artifactId>yaml-path</artifactId>
+        <version>${yaml-path.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

@@ -1,14 +1,13 @@
 package io.quarkiverse.helm.deployment.utils;
 
-import static io.github.yamlpath.utils.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import io.dekorate.helm.config.HelmChartConfig;
-import io.dekorate.utils.Strings;
+import io.quarkiverse.helm.deployment.HelmChartConfig;
 
 public final class HelmConfigUtils {
 
@@ -19,13 +18,6 @@ public final class HelmConfigUtils {
     }
 
     public static String deductProperty(HelmChartConfig helmConfig, String property) {
-        return deductProperty(helmConfig.getValuesRootAlias(), Stream.of(helmConfig.getDependencies())
-                .map(d -> Strings.defaultIfEmpty(d.getAlias(), d.getName()))
-                .collect(Collectors.toList()),
-                property);
-    }
-
-    public static String deductProperty(io.quarkiverse.helm.deployment.HelmChartConfig helmConfig, String property) {
         return deductProperty(helmConfig.valuesRootAlias(), helmConfig.dependencies().entrySet().stream()
                 .map(entry -> entry.getValue().alias().orElseGet(() -> entry.getValue().name().orElse(entry.getKey())))
                 .collect(Collectors.toList()),
@@ -48,7 +40,7 @@ public final class HelmConfigUtils {
     }
 
     private static boolean startWithDependencyPrefix(String property, List<String> dependencies) {
-        if (dependencies == null || dependencies.size() == 0) {
+        if (dependencies == null || dependencies.isEmpty()) {
             return false;
         }
 
@@ -58,6 +50,6 @@ public final class HelmConfigUtils {
         }
 
         String name = parts[0];
-        return dependencies.stream().anyMatch(d -> Strings.equals(d, name));
+        return dependencies.stream().anyMatch(d -> Objects.equals(d, name));
     }
 }

@@ -4,8 +4,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
+
 import io.dekorate.ConfigReference;
-import io.dekorate.utils.Strings;
 import io.github.yamlpath.YamlExpressionParser;
 
 public final class YamlExpressionParserUtils {
@@ -40,7 +41,7 @@ public final class YamlExpressionParserUtils {
 
     public static String toExpression(String property, Object provided, Object found, ConfigReference valueReference) {
         Optional<String> expressionProvided = Optional.ofNullable(valueReference.getExpression())
-                .filter(Strings::isNotNullOrEmpty);
+                .filter(StringUtils::isNotEmpty);
 
         if (expressionProvided.isPresent()) {
             return expressionProvided.get();

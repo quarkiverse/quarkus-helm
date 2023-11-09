@@ -2,13 +2,13 @@ package io.quarkiverse.helm.deployment.utils;
 
 import static io.dekorate.utils.Strings.defaultIfEmpty;
 import static io.github.yamlpath.utils.StringUtils.isNullOrEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import io.dekorate.utils.Strings;
 
 public final class SystemPropertiesUtils {
 
@@ -20,7 +20,7 @@ public final class SystemPropertiesUtils {
     }
 
     public static boolean hasSystemProperties(String rawValue) {
-        return Strings.isNotNullOrEmpty(rawValue) && rawValue.contains(SYSTEM_PROPERTY_START);
+        return isNotEmpty(rawValue) && rawValue.contains(SYSTEM_PROPERTY_START);
     }
 
     public static List<String> getSystemProperties(String str) {
@@ -35,13 +35,13 @@ public final class SystemPropertiesUtils {
     }
 
     private static List<String> substringsBetween(String str, String open, String close) {
-        if (Strings.isNullOrEmpty(str) || Strings.isNullOrEmpty(open) || Strings.isNullOrEmpty(close)) {
+        if (isEmpty(str) || isEmpty(open) || isEmpty(close)) {
             return Collections.emptyList();
         }
 
         int closeLen = close.length();
         int openLen = open.length();
-        List<String> list = new ArrayList();
+        List<String> list = new ArrayList<>();
         int end;
         for (int pos = 0; pos < str.length() - closeLen; pos = end + closeLen) {
             int start = str.indexOf(open, pos);

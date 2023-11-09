@@ -4,8 +4,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
+
 import io.dekorate.ConfigReference;
-import io.dekorate.utils.Strings;
 
 public class ValuesHolder {
     private final Map<String, HelmValueHolder> prodValues = new HashMap<>();
@@ -37,12 +38,8 @@ public class ValuesHolder {
 
     public Map<String, HelmValueHolder> get(String profile) {
         Map<String, HelmValueHolder> values = prodValues;
-        if (Strings.isNotNullOrEmpty(profile)) {
-            values = valuesByProfile.get(profile);
-            if (values == null) {
-                values = new HashMap<>();
-                valuesByProfile.put(profile, values);
-            }
+        if (StringUtils.isNotEmpty(profile)) {
+            values = valuesByProfile.computeIfAbsent(profile, p -> new HashMap<>());
         }
 
         return values;

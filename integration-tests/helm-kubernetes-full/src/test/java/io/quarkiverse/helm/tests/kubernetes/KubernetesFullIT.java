@@ -3,6 +3,7 @@ package io.quarkiverse.helm.tests.kubernetes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import io.dekorate.utils.Serialization;
+import io.dekorate.utils.Strings;
 
 public class KubernetesFullIT {
 
@@ -31,10 +33,12 @@ public class KubernetesFullIT {
         assertNotNull(getResourceAsStream("values.schema.json"));
         assertNotNull(getResourceAsStream("values-dev.yaml"));
         assertNotNull(getResourceAsStream("templates/deployment.yaml"));
-        // TODO: Uncomment it after https://github.com/quarkusio/quarkus/pull/33979 is merged and we use the correct Quarkus
-        //  version.
-        //assertTrue(Strings.read(getResourceAsStream("templates/deployment.yaml"))
-        //        .contains(Strings.read(KubernetesFullIT.class.getResourceAsStream("/expected-livenessProbe.yaml"))));*/
+        assertTrue(Strings.read(getResourceAsStream("templates/deployment.yaml"))
+                .contains(Strings.read(KubernetesFullIT.class.getResourceAsStream("/expected-livenessProbe.yaml"))));
+        assertTrue(Strings.read(getResourceAsStream("templates/deployment.yaml"))
+                .contains(Strings.read(KubernetesFullIT.class.getResourceAsStream("/expected-startupProbe.yaml"))));
+        assertTrue(Strings.read(getResourceAsStream("templates/deployment.yaml"))
+                .contains(Strings.read(KubernetesFullIT.class.getResourceAsStream("/expected-readinessProbe.yaml"))));
         assertNotNull(getResourceAsStream("templates/NOTES.txt"));
         assertNotNull(getResourceAsStream("crds/crontabs.stable.example.com.yaml"));
     }

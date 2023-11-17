@@ -36,6 +36,7 @@ import io.dekorate.kubernetes.config.ContainerBuilder;
 import io.dekorate.kubernetes.decorator.AddInitContainerDecorator;
 import io.dekorate.project.Project;
 import io.quarkiverse.helm.deployment.decorators.LowPriorityAddEnvVarDecorator;
+import io.quarkiverse.helm.deployment.rules.ConfigReferenceStrategyManager;
 import io.quarkiverse.helm.deployment.utils.HelmConfigUtils;
 import io.quarkus.deployment.Capabilities;
 import io.quarkus.deployment.IsNormal;
@@ -437,6 +438,8 @@ public class HelmProcessor {
                 .getConfigReferences(deploymentTarget)
                 .stream()
                 .flatMap(decorator -> decorator.getConfigReferences().stream())
+                // This should not be necessary, but sometimes config references from the session are not well-defined.
+                .map(ConfigReferenceStrategyManager::visit)
                 .collect(Collectors.toList());
 
         Collections.reverse(configReferencesFromDecorators);

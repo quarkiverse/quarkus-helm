@@ -28,7 +28,7 @@ public class OpenShiftMinimalIT {
         // Values.yaml manifest
         assertNotNull(getResourceAsStream("values.yaml"));
         // templates
-        assertNotNull(getResourceAsStream("templates/deploymentconfig.yaml"));
+        assertNotNull(getResourceAsStream("templates/deployment.yaml"));
         assertNotNull(getResourceAsStream("templates/imagestream.yaml"));
         // notes
         assertNotNull(getResourceAsStream("templates/NOTES.txt"));

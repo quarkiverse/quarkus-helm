@@ -255,7 +255,7 @@ Then the helm resources will include the following templates at `target/helm/ope
 * values.yaml
 * /charts
 * /templates
-* /templates/deploymentconfig.yaml
+* /templates/deployment.yaml
 * /templates/route.yaml
 * /templates/service.yaml
 * /templates/NOTES.txt

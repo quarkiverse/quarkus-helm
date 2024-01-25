@@ -38,7 +38,7 @@ jobs:
         java-version: [ 17 ]
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 11
+      - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
@@ -136,6 +136,22 @@ jobs:
           # And install application from the Helm repository
           helm install --devel quarkus-hello-world local/quarkus-helm-integration-tests-kubernetes-minimal -n $K8S_NAMESPACE --set app.image=$KIND_REGISTRY/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-minimal:$VERSION
           kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-minimal -n $K8S_NAMESPACE
+
+      - name: (Only if it failed) Log Integration Test Minimal using Helm Repository at failures
+        if: failure()
+        run: |
+          K8S_NAMESPACE=helmrepo
+          echo "Deployment resource:"
+          kubectl get deployment quarkus-helm-integration-tests-kubernetes-minimal -o yaml -n $K8S_NAMESPACE
+          echo "Logs of the deployment:"
+          kubectl logs deploy/quarkus-helm-integration-tests-kubernetes-minimal --all-containers=true -n $K8S_NAMESPACE
+          POD_NAME=$(kubectl get pod -l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-minimal -o name -n $K8S_NAMESPACE)
+          echo "Describe pod:"
+          kubectl describe $POD_NAME -n $K8S_NAMESPACE
+          echo "Logs of running pod:"
+          kubectl logs $POD_NAME -n $K8S_NAMESPACE
+          echo "Logs of terminated pod:"
+          kubectl logs -p $POD_NAME -n $K8S_NAMESPACE
 
       - name: Delete namespace "helmrepo" using Helm
         run: kubectl delete namespace helmrepo

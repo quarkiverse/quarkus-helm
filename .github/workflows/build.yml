@@ -343,6 +343,7 @@ jobs:
           quarkus.datasource.username=${DATASOURCE_USER}
           quarkus.datasource.password=${DATASOURCE_PASSWORD:superman}
           quarkus.kubernetes.deployment-target=kubernetes
+          quarkus.kubernetes.prometheus.generate-service-monitor=false
 
           quarkus.helm.dependencies.postgresql.alias=db
           quarkus.helm.dependencies.postgresql.version=11.9.1

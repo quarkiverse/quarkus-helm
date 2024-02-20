@@ -1,2 +1,3 @@
 depA:
   prop: hi!
+  java-opts: "-Xms1g -Xmx1g"

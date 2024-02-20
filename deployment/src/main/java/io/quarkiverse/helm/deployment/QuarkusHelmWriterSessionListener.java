@@ -234,13 +234,15 @@ public class QuarkusHelmWriterSessionListener {
             }
 
             // Create the values.<profile>.yaml file
-            artifacts.putAll(writeFileAsYaml(mergeWithFileIfExists(inputDir, VALUES + YAML, toValuesMap(values)),
+            artifacts.putAll(writeFileAsYaml(
+                    mergeWithFileIfExists(inputDir, VALUES + helmConfig.valuesProfileSeparator() + profile + YAML,
+                            toValuesMap(values)),
                     getChartOutputDir(name, outputDir)
                             .resolve(VALUES + helmConfig.valuesProfileSeparator() + profile + YAML)));
         }
 
         // Next, we process the prod profile
-        artifacts.putAll(writeFileAsYaml(mergeWithFileIfExists(inputDir, VALUES + YAML, toValuesMap(prodValues)),
+        artifacts.putAll(writeFileAsYaml(toValuesMap(prodValues),
                 getChartOutputDir(name, outputDir).resolve(VALUES + YAML)));
 
         // Next, the "values.schema.json" file
@@ -377,15 +379,7 @@ public class QuarkusHelmWriterSessionListener {
                 }
             }
 
-            adaptedString = adaptedString
-                    .replaceAll(Pattern.quote("\"" + START_TAG), START_TAG)
-                    .replaceAll(Pattern.quote(END_TAG + "\""), END_TAG)
-                    .replaceAll("\"" + START_EXPRESSION_TOKEN, EMPTY)
-                    .replaceAll(END_EXPRESSION_TOKEN + "\"", EMPTY)
-                    .replaceAll(SEPARATOR_QUOTES, "\"")
-                    .replaceAll(SEPARATOR_TOKEN, System.lineSeparator())
-                    // replace randomly escape characters that is entered by Jackson readTree method:
-                    .replaceAll("\\\\\\n(\\s)*\\\\", EMPTY);
+            adaptedString = applyKnownPatterns(adaptedString);
 
             writeFile(adaptedString, targetFile);
             templates.put(targetFile.toString(), adaptedString);
@@ -474,8 +468,14 @@ public class QuarkusHelmWriterSessionListener {
                     }));
 
             for (Map.Entry<String, Object> entry : yaml.entrySet()) {
+                Object value = entry.getValue();
+                // when there are spaces, we need to preserve the double quotes.
+                if (entry.getValue() instanceof String str && str.contains(" ")) {
+                    value = SEPARATOR_QUOTES + str + SEPARATOR_QUOTES;
+                }
+
                 ConfigReference configReference = new ConfigReference.Builder(entry.getKey(), new String[0])
-                        .withValue(entry.getValue())
+                        .withValue(value)
                         .build();
                 values.put(entry.getKey(), configReference);
             }
@@ -656,12 +656,12 @@ public class QuarkusHelmWriterSessionListener {
 
     private Map<String, String> writeFileAsYaml(Object data, Path file) throws IOException {
         String value = Serialization.asYaml(data);
-        return writeFile(value, file);
+        return writeFile(applyKnownPatterns(value), file);
     }
 
     private Map<String, String> writeFileAsJson(Object data, Path file) throws IOException {
         String value = Serialization.asJson(data);
-        return writeFile(value, file);
+        return writeFile(applyKnownPatterns(value), file);
     }
 
     private Map<String, String> writeFile(String value, Path file) throws IOException {
@@ -687,5 +687,18 @@ public class QuarkusHelmWriterSessionListener {
         }
 
         return v.value().orElse(null);
+    }
+
+    private static String applyKnownPatterns(String adaptedString) {
+        adaptedString = adaptedString
+                .replaceAll(Pattern.quote("\"" + START_TAG), START_TAG)
+                .replaceAll(Pattern.quote(END_TAG + "\""), END_TAG)
+                .replaceAll("\"" + START_EXPRESSION_TOKEN, EMPTY)
+                .replaceAll(END_EXPRESSION_TOKEN + "\"", EMPTY)
+                .replaceAll(SEPARATOR_QUOTES, "\"")
+                .replaceAll(SEPARATOR_TOKEN, System.lineSeparator())
+                // replace randomly escape characters that is entered by Jackson readTree method:
+                .replaceAll("\\\\\\n(\\s)*\\\\", EMPTY);
+        return adaptedString;
     }
 }

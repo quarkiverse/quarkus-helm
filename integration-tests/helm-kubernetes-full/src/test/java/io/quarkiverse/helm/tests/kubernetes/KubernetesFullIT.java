@@ -89,6 +89,8 @@ public class KubernetesFullIT {
         Map<String, Object> dependencyA = (Map<String, Object>) values.get("depA");
         // Should have properties from custom values.yaml file
         assertEquals("hi!", dependencyA.get("prop"));
+        // Properties with spaces
+        assertEquals("-Xms1g -Xmx1g", dependencyA.get("java-opts"));
 
         // Envs:
         Map<String, Object> envs = (Map<String, Object>) app.get("envs");

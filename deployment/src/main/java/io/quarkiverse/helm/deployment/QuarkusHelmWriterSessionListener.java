@@ -8,6 +8,7 @@ import static io.quarkiverse.helm.deployment.utils.ValuesSchemaUtils.createSchem
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.EMPTY;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.END_EXPRESSION_TOKEN;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.END_TAG;
+import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.QUOTE_CONVERSION;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.SEPARATOR_QUOTES;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.SEPARATOR_TOKEN;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.START_EXPRESSION_TOKEN;
@@ -526,7 +527,7 @@ public class QuarkusHelmWriterSessionListener {
                     String valueReferenceProperty = deductProperty(helmConfig, valueReference.getProperty());
 
                     processValueReference(valueReferenceProperty, valueReference.getValue(), valueReference, values, parser,
-                            seen, paths);
+                            seen, paths, EMPTY);
                 }
             }
 
@@ -549,7 +550,7 @@ public class QuarkusHelmWriterSessionListener {
                     }
 
                     processValueReference(valueReferenceProperty, valueReferenceValue, valueReference, values, parser, seen,
-                            paths);
+                            paths, QUOTE_CONVERSION);
                 }
             }
 
@@ -574,7 +575,7 @@ public class QuarkusHelmWriterSessionListener {
     }
 
     private void processValueReference(String property, Object value, ConfigReference valueReference, ValuesHolder values,
-            YamlExpressionParser parser, Map<String, Object> seen, Set<String> paths) {
+            YamlExpressionParser parser, Map<String, Object> seen, Set<String> paths, String defaultConversion) {
 
         String profile = valueReference.getProfile();
         if (valueReference.getPaths() != null && valueReference.getPaths().length > 0) {
@@ -594,7 +595,7 @@ public class QuarkusHelmWriterSessionListener {
                 Object actualValue = Optional.ofNullable(value).orElse(found);
 
                 if (actualValue != null) {
-                    set(parser, path, toExpression(property, value, found, valueReference));
+                    set(parser, path, toExpression(property, value, found, valueReference, defaultConversion));
                     values.putIfAbsent(property, valueReference, actualValue, profile);
                     if (StringUtils.isEmpty(profile)) {
                         seen.putIfAbsent(property, actualValue);

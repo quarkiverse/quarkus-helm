@@ -20,6 +20,7 @@ public final class YamlExpressionParserUtils {
     public static final String EMPTY = "";
     public static final String VALUES_START_TAG = START_TAG + " .Values.";
     public static final String VALUES_END_TAG = " " + END_TAG;
+    public static final String QUOTE_CONVERSION = " | quote";
 
     private YamlExpressionParserUtils() {
 
@@ -39,7 +40,8 @@ public final class YamlExpressionParserUtils {
         return found.stream().findFirst().orElse(null);
     }
 
-    public static String toExpression(String property, Object provided, Object found, ConfigReference valueReference) {
+    public static String toExpression(String property, Object provided, Object found, ConfigReference valueReference,
+            String defaultConversion) {
         Optional<String> expressionProvided = Optional.ofNullable(valueReference.getExpression())
                 .filter(StringUtils::isNotEmpty);
 
@@ -47,11 +49,11 @@ public final class YamlExpressionParserUtils {
             return expressionProvided.get();
         }
 
-        String conversion = EMPTY;
+        String conversion = defaultConversion;
         // we only need to quote when the found value in the generated resources is a string, but the provided type isn't.
         if (provided != null && !(provided instanceof String) && found instanceof String) {
             // we need conversion
-            conversion = " | quote";
+            conversion = QUOTE_CONVERSION;
         }
 
         return VALUES_START_TAG + property + conversion + VALUES_END_TAG;

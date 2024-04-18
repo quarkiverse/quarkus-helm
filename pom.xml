@@ -32,7 +32,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.version>3.9.4</quarkus.version>
-    <yaml-path.version>0.0.11</yaml-path.version>
+    <yaml-path.version>0.0.12</yaml-path.version>
   </properties>
   <dependencyManagement>
     <dependencies>

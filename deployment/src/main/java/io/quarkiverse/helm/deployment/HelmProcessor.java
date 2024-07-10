@@ -38,6 +38,7 @@ import io.dekorate.project.Project;
 import io.quarkiverse.helm.deployment.decorators.LowPriorityAddEnvVarDecorator;
 import io.quarkiverse.helm.deployment.rules.ConfigReferenceStrategyManager;
 import io.quarkiverse.helm.deployment.utils.HelmConfigUtils;
+import io.quarkiverse.helm.spi.CustomHelmOutputDirBuildItem;
 import io.quarkus.deployment.Capabilities;
 import io.quarkus.deployment.IsNormal;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -148,9 +149,11 @@ public class HelmProcessor {
             List<GeneratedKubernetesResourceBuildItem> generatedResources,
             // this is added to ensure that the build step will be run
             BuildProducer<ArtifactResultBuildItem> dummy,
+            Optional<CustomHelmOutputDirBuildItem> customHelmOutputDir,
             HelmChartConfig config) {
+
         if (dekorateOutput.isPresent()) {
-            doGenerateResources(app, outputTarget, dekorateOutput.get(), generatedResources, config);
+            doGenerateResources(app, outputTarget, dekorateOutput.get(), generatedResources, customHelmOutputDir, config);
         } else if (config.enabled()) {
             LOGGER.warn("Quarkus Helm extension is skipped since no Quarkus Kubernetes extension is configured. ");
         }
@@ -161,16 +164,18 @@ public class HelmProcessor {
         helmConfiguration.produce(new ConfiguratorBuildItem(new DisableDefaultHelmListener()));
     }
 
-    private void doGenerateResources(ApplicationInfoBuildItem app, OutputTargetBuildItem outputTarget,
+    private void doGenerateResources(ApplicationInfoBuildItem app,
+            OutputTargetBuildItem outputTarget,
             DekorateOutputBuildItem dekorateOutput,
             List<GeneratedKubernetesResourceBuildItem> generatedResources,
+            Optional<CustomHelmOutputDirBuildItem> customHelmOutputDir,
             HelmChartConfig config) {
         validate(config);
         Project project = (Project) dekorateOutput.getProject();
 
         // Deduct folders
         Path inputFolder = getInputDirectory(config, project);
-        Path outputFolder = getOutputDirectory(config, outputTarget);
+        Path outputFolder = getOutputDirectory(config, customHelmOutputDir, outputTarget);
 
         // Dekorate session writer
         final QuarkusHelmWriterSessionListener helmWriter = new QuarkusHelmWriterSessionListener();
@@ -294,13 +299,11 @@ public class HelmProcessor {
         return path;
     }
 
-    private Path getOutputDirectory(HelmChartConfig config, OutputTargetBuildItem outputTarget) {
-        Path path = Paths.get(config.outputDirectory());
-        if (!path.isAbsolute()) {
-            return outputTarget.getOutputDirectory().resolve(path);
-        }
-
-        return path;
+    private Path getOutputDirectory(HelmChartConfig config, Optional<CustomHelmOutputDirBuildItem> customHelmOutputDir,
+            OutputTargetBuildItem outputTarget) {
+        return customHelmOutputDir
+                .map(CustomHelmOutputDirBuildItem::getOutputDir)
+                .orElse(outputTarget.getOutputDirectory().resolve(config.outputDirectory()));
     }
 
     private Map<String, Set<File>> toDeploymentTargets(List<String> generatedFiles,

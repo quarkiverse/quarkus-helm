@@ -12,6 +12,7 @@
   <packaging>pom</packaging>
   <name>Quarkus - Helm - Parent</name>
   <modules>
+    <module>spi</module>
     <module>deployment</module>
     <module>runtime</module>
     <module>cli</module>

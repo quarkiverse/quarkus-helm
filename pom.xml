@@ -16,8 +16,6 @@
     <module>deployment</module>
     <module>runtime</module>
     <module>cli</module>
-    <module>integration-tests</module>
-    <module>docs</module>
   </modules>
   <scm>
     <connection>scm:git:git@github.com:quarkiverse/quarkus-helm.git</connection>
@@ -52,6 +50,18 @@
     </dependencies>
   </dependencyManagement>
   <profiles>
+    <profile>
+      <id>docs</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>!true</value>
+        </property>
+      </activation>
+      <modules>
+        <module>docs</module>
+      </modules>
+    </profile>
     <profile>
       <id>it</id>
       <activation>

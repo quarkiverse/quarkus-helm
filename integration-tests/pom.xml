@@ -13,6 +13,7 @@
 
   <modules>
     <module>helm-kubernetes-minimal</module>
+    <module>helm-kubernetes-minimal-yaml</module>
     <module>helm-kubernetes-with-dependency</module>
     <module>helm-kubernetes-config</module>
     <module>helm-kubernetes-with-templates</module>

@@ -68,6 +68,7 @@ public class HelmProcessor {
     private static final String SERVICE_PORT_PLACEHOLDER = "::service-port";
     private static final String SPLIT = ":";
     private static final String PROPERTIES_CONFIG_SOURCE = "PropertiesConfigSource";
+    private static final String YAML_CONFIG_SOURCE = "YamlConfigSource";
     // Lazy loaded when calling `isBuildTimeProperty(xxx)`.
     private static Set<String> buildProperties;
 
@@ -411,7 +412,8 @@ public class HelmProcessor {
     }
 
     private boolean isPropertiesConfigSource(String sourceName) {
-        return StringUtils.isNotEmpty(sourceName) && sourceName.startsWith(PROPERTIES_CONFIG_SOURCE);
+        return StringUtils.isNotEmpty(sourceName)
+                && (sourceName.startsWith(PROPERTIES_CONFIG_SOURCE) || sourceName.startsWith(YAML_CONFIG_SOURCE));
     }
 
     private boolean isBuildTimeProperty(String name) {

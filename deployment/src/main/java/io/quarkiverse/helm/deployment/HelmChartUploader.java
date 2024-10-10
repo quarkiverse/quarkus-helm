@@ -15,10 +15,13 @@ import java.io.Reader;
 import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.PasswordAuthentication;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
 
 import org.jboss.logging.Logger;
+
+import com.marcnuri.helm.Helm;
 
 public final class HelmChartUploader {
 
@@ -38,24 +41,35 @@ public final class HelmChartUploader {
         try {
             LOGGER.info(
                     "Pushing the Helm Chart at '" + tarball.getName() + "' to the repository: " + helmRepository.url().get());
-            HttpURLConnection connection = deductConnectionByRepositoryType(tarball, helmRepository);
 
-            writeFileOnConnection(tarball, connection);
-
-            if (connection.getResponseCode() >= HttpURLConnection.HTTP_MULT_CHOICE) {
-                String response;
-                if (connection.getErrorStream() != null) {
-                    response = inputStreamToString(connection.getErrorStream(), Charset.defaultCharset());
-                } else if (connection.getInputStream() != null) {
-                    response = inputStreamToString(connection.getInputStream(), Charset.defaultCharset());
-                } else {
-                    response = "No details provided";
-                }
-                throw new RuntimeException("Couldn't upload the Helm chart to the Helm repository: " + response);
+            if (helmRepository.type().get() == HelmRepositoryType.OCI) {
+                Helm.push()
+                        // Location of the packaged chart (.tgz) to push
+                        .withChart(tarball.toPath())
+                        // URI of the remote registry to push the chart to
+                        .withRemote(URI.create(helmRepository.url().orElseThrow()))
+                        .call();
             } else {
-                LOGGER.info("Helm chart was successfully uploaded to the Helm repository.");
+
+                HttpURLConnection connection = deductConnectionByRepositoryType(tarball, helmRepository);
+
+                writeFileOnConnection(tarball, connection);
+
+                if (connection.getResponseCode() >= HttpURLConnection.HTTP_MULT_CHOICE) {
+                    String response;
+                    if (connection.getErrorStream() != null) {
+                        response = inputStreamToString(connection.getErrorStream(), Charset.defaultCharset());
+                    } else if (connection.getInputStream() != null) {
+                        response = inputStreamToString(connection.getInputStream(), Charset.defaultCharset());
+                    } else {
+                        response = "No details provided";
+                    }
+                    throw new RuntimeException("Couldn't upload the Helm chart to the Helm repository: " + response);
+                } else {
+                    LOGGER.info("Helm chart was successfully uploaded to the Helm repository.");
+                }
+                connection.disconnect();
             }
-            connection.disconnect();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

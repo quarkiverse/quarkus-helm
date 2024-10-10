@@ -35,6 +35,11 @@
       <groupId>io.github.yaml-path</groupId>
       <artifactId>yaml-path</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.marcnuri.helm-java</groupId>
+      <artifactId>helm-java</artifactId>
+      <version>0.0.11</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

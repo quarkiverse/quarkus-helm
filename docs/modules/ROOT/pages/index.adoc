@@ -793,6 +793,8 @@ quarkus.helm.repository.username=...
 quarkus.helm.repository.password=...
 ----
 
+**Note**: At the moment, OCI Helm Repositories like Amazon ECR, Azure Container Registry, ... are not supported. https://github.com/quarkiverse/quarkus-helm/issues/371[#371] for future reference and support.
+
 [TIP]
 ====
 All the previous properties can be set via system properties at build time.

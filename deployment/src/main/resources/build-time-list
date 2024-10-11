@@ -2,6 +2,7 @@
 # regular expression or start with
 quarkus.amqp.devservices.enabled
 quarkus.apicurio-registry.devservices.enabled
+quarkus.application.(.+)
 quarkus.artemis.health.enabled
 quarkus.cache.enabled
 quarkus.datasource.db-kind

@@ -379,10 +379,12 @@ public class HelmProcessor {
                 }
             }
 
-            // Incorporate if and only if the system property name is valid in Helm and it's not already defined in the
-            // application properties.
+            // Incorporate if and only if the system property name is valid in Helm
+            // and it's not already defined in the application properties
+            // and it's not a build time property from quarkus
             if (!propertiesFromConfigSource.containsKey(systemProperty)
-                    && HELM_INVALID_CHARACTERS.stream().noneMatch(systemProperty::contains)) {
+                    && HELM_INVALID_CHARACTERS.stream().noneMatch(systemProperty::contains)
+                    && !isBuildTimeProperty(systemProperty)) {
                 // Check whether the system property is provided:
                 defaultValue = getPropertyFromSystem(systemProperty, defaultValue);
 

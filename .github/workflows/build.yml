@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java-version: [ 17 ]
+        java-version: [ 21 ]
         jbang-version: [0.106.1]
     needs: build
     steps:

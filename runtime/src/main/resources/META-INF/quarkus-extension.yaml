@@ -11,3 +11,4 @@ metadata:
   status: "preview"
   cli-plugins:
    - "${project.groupId}:quarkus-helm-cli:${project.version}"
+  icon-url: "https://helm.sh/img/helm.svg"

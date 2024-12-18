@@ -9,7 +9,6 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -44,10 +43,13 @@ import io.quarkus.deployment.IsNormal;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
-import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
+import io.quarkus.deployment.builditem.GeneratedFileSystemResourceBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.deployment.util.FileUtil;
+import io.quarkus.kubernetes.deployment.DeploymentTargetEntry;
+import io.quarkus.kubernetes.deployment.EnabledKubernetesDeploymentTargetsBuildItem;
 import io.quarkus.kubernetes.spi.ConfiguratorBuildItem;
+import io.quarkus.kubernetes.spi.CustomKubernetesOutputDirBuildItem;
 import io.quarkus.kubernetes.spi.DecoratorBuildItem;
 import io.quarkus.kubernetes.spi.DekorateOutputBuildItem;
 import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
@@ -147,14 +149,18 @@ public class HelmProcessor {
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void generateResources(ApplicationInfoBuildItem app, OutputTargetBuildItem outputTarget,
             Optional<DekorateOutputBuildItem> dekorateOutput,
+            EnabledKubernetesDeploymentTargetsBuildItem kubernetesDeploymentTargets,
             List<GeneratedKubernetesResourceBuildItem> generatedResources,
             // this is added to ensure that the build step will be run
-            BuildProducer<ArtifactResultBuildItem> dummy,
+            BuildProducer<GeneratedFileSystemResourceBuildItem> dummy,
+            Optional<CustomKubernetesOutputDirBuildItem> customKubernetesOutputDir,
             Optional<CustomHelmOutputDirBuildItem> customHelmOutputDir,
             HelmChartConfig config) {
 
         if (dekorateOutput.isPresent()) {
-            doGenerateResources(app, outputTarget, dekorateOutput.get(), generatedResources, customHelmOutputDir, config);
+            doGenerateResources(app, outputTarget, dekorateOutput.get(), kubernetesDeploymentTargets, generatedResources,
+                    customKubernetesOutputDir,
+                    customHelmOutputDir, config);
         } else if (config.enabled()) {
             LOGGER.warn("Quarkus Helm extension is skipped since no Quarkus Kubernetes extension is configured. ");
         }
@@ -168,11 +174,17 @@ public class HelmProcessor {
     private void doGenerateResources(ApplicationInfoBuildItem app,
             OutputTargetBuildItem outputTarget,
             DekorateOutputBuildItem dekorateOutput,
+            EnabledKubernetesDeploymentTargetsBuildItem kubernetesDeploymentTargets,
             List<GeneratedKubernetesResourceBuildItem> generatedResources,
+            Optional<CustomKubernetesOutputDirBuildItem> customKubernetesOutputDir,
             Optional<CustomHelmOutputDirBuildItem> customHelmOutputDir,
             HelmChartConfig config) {
         validate(config);
         Project project = (Project) dekorateOutput.getProject();
+
+        Set<String> enabledDeploymentTargets = kubernetesDeploymentTargets.getEntriesSortedByPriority().stream()
+                .map(DeploymentTargetEntry::getName)
+                .collect(Collectors.toSet());
 
         // Deduct folders
         Path inputFolder = getInputDirectory(config, project);
@@ -180,14 +192,14 @@ public class HelmProcessor {
 
         // Dekorate session writer
         final QuarkusHelmWriterSessionListener helmWriter = new QuarkusHelmWriterSessionListener();
-        final Map<String, Set<File>> deploymentTargets = toDeploymentTargets(dekorateOutput.getGeneratedFiles(),
-                generatedResources);
+        final Map<String, Map<String, byte[]>> deploymentTargets = toDeploymentTargets(generatedResources,
+                enabledDeploymentTargets);
 
         // Deduct deployment target to push
         String deploymentTargetToPush = deductDeploymentTarget(config, deploymentTargets);
 
         // separate generated helm charts into the deployment targets
-        for (Map.Entry<String, Set<File>> filesInDeploymentTarget : deploymentTargets.entrySet()) {
+        for (Map.Entry<String, Map<String, byte[]>> filesInDeploymentTarget : deploymentTargets.entrySet()) {
             String deploymentTarget = filesInDeploymentTarget.getKey();
             Path chartOutputFolder = outputFolder.resolve(deploymentTarget);
             deleteOutputHelmFolderIfExists(chartOutputFolder);
@@ -261,7 +273,7 @@ public class HelmProcessor {
         }
     }
 
-    private String deductDeploymentTarget(HelmChartConfig config, Map<String, Set<File>> deploymentTargets) {
+    private String deductDeploymentTarget(HelmChartConfig config, Map<String, Map<String, byte[]>> deploymentTargets) {
         if (config.repository().push()) {
             // if enabled, use the deployment target from the user if set
             if (config.repository().deploymentTarget().isPresent()) {
@@ -307,49 +319,31 @@ public class HelmProcessor {
                 .orElse(outputTarget.getOutputDirectory().resolve(config.outputDirectory()));
     }
 
-    private Map<String, Set<File>> toDeploymentTargets(List<String> generatedFiles,
-            List<GeneratedKubernetesResourceBuildItem> generatedResources) {
-        Map<String, Set<File>> filesByDeploymentTarget = new HashMap<>();
-        for (String generatedFile : generatedFiles) {
-            if (generatedFile.toLowerCase(Locale.ROOT).endsWith(".json")) {
+    private Map<String, Map<String, byte[]>> toDeploymentTargets(
+            List<GeneratedKubernetesResourceBuildItem> generatedResources, Set<String> enabledDeploymentTargets) {
+        Map<String, Map<String, byte[]>> resourceByDeploymentTarget = new HashMap<>();
+        for (GeneratedKubernetesResourceBuildItem generatedResource : generatedResources) {
+            if (generatedResource.getName().toLowerCase(Locale.ROOT).endsWith(".json")) {
                 // skip json files
                 continue;
             }
 
-            File file = new File(generatedFile);
-            String deploymentTarget = file.getName().substring(0, file.getName().indexOf("."));
-            if (filesByDeploymentTarget.containsKey(deploymentTarget)) {
+            String deploymentTarget = generatedResource.getName().substring(0, generatedResource.getName().indexOf("."));
+            if (!enabledDeploymentTargets.contains(deploymentTarget)) {
+                continue;
+            }
+
+            if (resourceByDeploymentTarget.containsKey(deploymentTarget)) {
                 // It's already included.
                 continue;
             }
 
-            Set<File> files = new HashSet<>();
-            if (!file.exists()) {
-                Optional<byte[]> content = generatedResources.stream()
-                        .filter(resource -> file.getName().equals(resource.getName()))
-                        .map(GeneratedKubernetesResourceBuildItem::getContent)
-                        .findFirst();
-                if (content.isPresent()) {
-                    // The dekorate output generated files are sometimes not persisted yet, so we need to workaround it by
-                    // creating a temp file with the content from generatedResources.
-                    try {
-                        File tempFile = File.createTempFile("tmp", file.getName());
-                        tempFile.deleteOnExit();
-                        Files.write(tempFile.toPath(), content.get());
-                        files.add(tempFile);
-                    } catch (IOException ignored) {
-                        // if we could not create the temp file, we add the one from
-                        files.add(file);
-                    }
-                }
-            } else {
-                files.add(file);
-            }
-
-            filesByDeploymentTarget.put(deploymentTarget, files);
+            Map<String, byte[]> resourcesByName = new HashMap<>();
+            resourcesByName.put(generatedResource.getName(), generatedResource.getContent());
+            resourceByDeploymentTarget.put(deploymentTarget, resourcesByName);
         }
 
-        return filesByDeploymentTarget;
+        return resourceByDeploymentTarget;
     }
 
     private String defaultString(Optional<String> value, String defaultStr) {

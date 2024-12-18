@@ -19,6 +19,7 @@ import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.set
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.toExpression;
 import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,7 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -96,7 +96,7 @@ public class QuarkusHelmWriterSessionListener {
             List<ConfigReference> valueReferencesFromDecorators,
             Path inputDir,
             Path outputDir,
-            Collection<File> generatedFiles) {
+            Map<String, byte[]> generatedFiles) {
         Map<String, String> artifacts = new HashMap<>();
         if (helmConfig.enabled()) {
 
@@ -486,7 +486,7 @@ public class QuarkusHelmWriterSessionListener {
     }
 
     private List<Map<Object, Object>> populateValuesFromConfigReferences(HelmChartConfig helmConfig,
-            Collection<File> generatedFiles,
+            Map<String, byte[]> generatedFiles,
             ValuesHolder values,
             List<ConfigReference> valuesReferencesFromDecorators) throws IOException {
         List<ConfigReference> valuesReferencesFromUser = helmConfig.values().entrySet().stream()
@@ -504,13 +504,13 @@ public class QuarkusHelmWriterSessionListener {
                 .collect(Collectors.toList());
 
         List<Map<Object, Object>> allResources = new LinkedList<>();
-        for (File generatedFile : generatedFiles) {
-            if (!generatedFile.getName().toLowerCase().matches(YAML_REG_EXP)) {
+        for (Map.Entry<String, byte[]> generatedFile : generatedFiles.entrySet()) {
+            if (!generatedFile.getKey().toLowerCase().matches(YAML_REG_EXP)) {
                 continue;
             }
 
             // Read helm expression parsers
-            YamlExpressionParser parser = YamlPath.from(new FileInputStream(generatedFile));
+            YamlExpressionParser parser = YamlPath.from(new ByteArrayInputStream(generatedFile.getValue()));
 
             // Seen lookup by default values.yaml file.
             Map<String, Object> seen = new HashMap<>();

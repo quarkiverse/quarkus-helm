@@ -1,4 +1,4 @@
-package io.quarkiverse.helm.deployment.model;
+package io.quarkiverse.helm.model;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 

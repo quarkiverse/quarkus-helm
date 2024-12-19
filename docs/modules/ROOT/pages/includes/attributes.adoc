@@ -1,4 +1,4 @@
-:quarkus-version: 3.17.0
+:quarkus-version: 3.17.4
 :quarkus-helm-version: 1.2.6
 :maven-version: 3.8.1+
 

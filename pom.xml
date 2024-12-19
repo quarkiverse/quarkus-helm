@@ -30,7 +30,7 @@
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <quarkus.version>3.17.4</quarkus.version>
+    <quarkus.version>3.17.5</quarkus.version>
     <yaml-path.version>0.0.12</yaml-path.version>
   </properties>
   <dependencyManagement>

@@ -14,8 +14,8 @@ import io.dekorate.ConfigReference;
 import io.dekorate.utils.Serialization;
 import io.quarkiverse.helm.deployment.HelmChartConfig;
 import io.quarkiverse.helm.deployment.ValuesSchemaPropertyConfig;
-import io.quarkiverse.helm.deployment.model.ValuesSchema;
-import io.quarkiverse.helm.deployment.model.ValuesSchemaProperty;
+import io.quarkiverse.helm.model.ValuesSchema;
+import io.quarkiverse.helm.model.ValuesSchemaProperty;
 
 public final class ValuesSchemaUtils {
     private ValuesSchemaUtils() {

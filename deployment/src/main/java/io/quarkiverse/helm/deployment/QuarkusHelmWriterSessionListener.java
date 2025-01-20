@@ -54,14 +54,13 @@ import io.dekorate.utils.Maps;
 import io.dekorate.utils.Serialization;
 import io.github.yamlpath.YamlExpressionParser;
 import io.github.yamlpath.YamlPath;
-import io.quarkiverse.helm.model.Chart;
-import io.quarkiverse.helm.model.HelmDependency;
-import io.quarkiverse.helm.model.Maintainer;
-import io.quarkiverse.helm.model.ValuesSchema;
 import io.quarkiverse.helm.deployment.utils.FileUtils;
 import io.quarkiverse.helm.deployment.utils.MapUtils;
 import io.quarkiverse.helm.deployment.utils.ReadmeBuilder;
 import io.quarkiverse.helm.deployment.utils.ValuesHolder;
+import io.quarkiverse.helm.model.Chart;
+import io.quarkiverse.helm.model.HelmDependency;
+import io.quarkiverse.helm.model.Maintainer;
 
 public class QuarkusHelmWriterSessionListener {
     private static final String YAML = ".yaml";

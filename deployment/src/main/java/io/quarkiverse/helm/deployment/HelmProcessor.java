@@ -9,8 +9,10 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,10 +36,14 @@ import io.dekorate.Session;
 import io.dekorate.kubernetes.config.ContainerBuilder;
 import io.dekorate.kubernetes.decorator.AddInitContainerDecorator;
 import io.dekorate.project.Project;
+import io.dekorate.utils.Serialization;
 import io.quarkiverse.helm.deployment.decorators.LowPriorityAddEnvVarDecorator;
 import io.quarkiverse.helm.deployment.rules.ConfigReferenceStrategyManager;
 import io.quarkiverse.helm.deployment.utils.HelmConfigUtils;
+import io.quarkiverse.helm.model.Chart;
+import io.quarkiverse.helm.model.ValuesSchema;
 import io.quarkiverse.helm.spi.CustomHelmOutputDirBuildItem;
+import io.quarkiverse.helm.spi.HelmChartBuildItem;
 import io.quarkus.deployment.Capabilities;
 import io.quarkus.deployment.IsNormal;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -152,15 +158,18 @@ public class HelmProcessor {
             EnabledKubernetesDeploymentTargetsBuildItem kubernetesDeploymentTargets,
             List<GeneratedKubernetesResourceBuildItem> generatedResources,
             // this is added to ensure that the build step will be run
+            BuildProducer<HelmChartBuildItem> helmChartBuildItems,
             BuildProducer<GeneratedFileSystemResourceBuildItem> dummy,
             Optional<CustomKubernetesOutputDirBuildItem> customKubernetesOutputDir,
             Optional<CustomHelmOutputDirBuildItem> customHelmOutputDir,
             HelmChartConfig config) {
 
         if (dekorateOutput.isPresent()) {
-            doGenerateResources(app, outputTarget, dekorateOutput.get(), kubernetesDeploymentTargets, generatedResources,
+            helmChartBuildItems.produce(doGenerateResources(app, outputTarget, dekorateOutput.get(),
+                    kubernetesDeploymentTargets,
+                    generatedResources,
                     customKubernetesOutputDir,
-                    customHelmOutputDir, config);
+                    customHelmOutputDir, config));
         } else if (config.enabled()) {
             LOGGER.warn("Quarkus Helm extension is skipped since no Quarkus Kubernetes extension is configured. ");
         }
@@ -171,7 +180,7 @@ public class HelmProcessor {
         helmConfiguration.produce(new ConfiguratorBuildItem(new DisableDefaultHelmListener()));
     }
 
-    private void doGenerateResources(ApplicationInfoBuildItem app,
+    private List<HelmChartBuildItem> doGenerateResources(ApplicationInfoBuildItem app,
             OutputTargetBuildItem outputTarget,
             DekorateOutputBuildItem dekorateOutput,
             EnabledKubernetesDeploymentTargetsBuildItem kubernetesDeploymentTargets,
@@ -198,20 +207,27 @@ public class HelmProcessor {
         // Deduct deployment target to push
         String deploymentTargetToPush = deductDeploymentTarget(config, deploymentTargets);
 
+        List<HelmChartBuildItem> helmCharts = new ArrayList<>();
         // separate generated helm charts into the deployment targets
         for (Map.Entry<String, Map<String, byte[]>> filesInDeploymentTarget : deploymentTargets.entrySet()) {
             String deploymentTarget = filesInDeploymentTarget.getKey();
             Path chartOutputFolder = outputFolder.resolve(deploymentTarget);
             deleteOutputHelmFolderIfExists(chartOutputFolder);
+            String name = config.name().orElse(app.getName());
+            Path appChartDir = chartOutputFolder.resolve(name);
 
             Map<String, String> generated = helmWriter.writeHelmFiles(
-                    config.name().orElse(app.getName()),
+                    name,
                     project,
                     config,
                     getConfigReferencesFromSession(deploymentTarget, dekorateOutput),
                     inputFolder,
                     chartOutputFolder,
                     filesInDeploymentTarget.getValue());
+
+            if (!generated.isEmpty()) {
+                helmCharts.add(read(appChartDir));
+            }
 
             // Push to Helm repository if enabled
             if (config.repository().push() && deploymentTargetToPush.equals(deploymentTarget)) {
@@ -223,6 +239,7 @@ public class HelmProcessor {
                 pushToHelmRepository(new File(tarball), config.repository());
             }
         }
+        return helmCharts;
     }
 
     private void validate(HelmChartConfig config) {
@@ -446,4 +463,53 @@ public class HelmProcessor {
         Collections.reverse(configReferencesFromDecorators);
         return configReferencesFromDecorators;
     }
+
+    private static HelmChartBuildItem read(Path dir) {
+        try {
+            Path chartYamlPath = dir.resolve("Chart.yaml");
+            Path valuesYamlPath = dir.resolve("values.yaml");
+            Path valuesSchemaPath = dir.resolve("values.schema.json");
+            Path templatesDir = dir.resolve("templates");
+            Path notesPath = templatesDir.resolve("NOTES.txt");
+            Path readmePath = dir.resolve("README.md");
+
+            Chart chart = Serialization.unmarshal(Files.readString(chartYamlPath), Chart.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Map<String, Object>> values = Serialization.unmarshal(Files.readString(valuesYamlPath), Map.class);
+            ValuesSchema valuesSchema = Serialization.unmarshal(Files.readString(valuesSchemaPath), ValuesSchema.class);
+
+            Map<String, String> templates = new HashMap<>();
+            if (Files.isDirectory(templatesDir)) {
+                Files.list(templatesDir).forEach(templatePath -> {
+                    try {
+                        if (!Files.isDirectory(templatePath)) {
+                            templates.put(templatePath.getFileName().toString(), Files.readString(templatePath));
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+
+            Optional<String> notes = Files.exists(notesPath) ? Optional.of(Files.readString(notesPath)) : Optional.empty();
+            Optional<String> readme = Files.exists(readmePath) ? Optional.of(Files.readString(readmePath)) : Optional.empty();
+            Path targetDir = dir.getParent();
+            Path helmDir = targetDir.getParent();
+            String deploymentTarget = helmDir.relativize(targetDir).getFileName().toString();
+
+            return HelmChartBuildItem.builder()
+                    .withDeploymentTarget(deploymentTarget)
+                    .withChart(chart)
+                    .withValues(values)
+                    .withValuesSchema(valuesSchema)
+                    .withTemplates(templates)
+                    .withNotes(notes)
+                    .withReadme(readme)
+                    .build();
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read HelmChartBuildItem from file system", e);
+        }
+    }
+
 }

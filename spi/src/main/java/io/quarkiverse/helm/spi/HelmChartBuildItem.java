@@ -90,6 +90,14 @@ public final class HelmChartBuildItem extends MultiBuildItem {
     }
 
     public static HelmChartBuildItem read(Path dir, Function<String, Object> deserializer) {
+        return readAsBuilder(dir, path -> deserializer.apply(Files.readString(path))).build();
+    }
+
+    public interface Deserializer {
+        Object deserialize(Path path) throws IOException;
+    }
+
+    public static HelmChartBuildItem.Builder readAsBuilder(Path dir, Deserializer deserializer) {
         try {
             Path chartYamlPath = dir.resolve("Chart.yaml");
             Path valuesYamlPath = dir.resolve("values.yaml");
@@ -98,11 +106,11 @@ public final class HelmChartBuildItem extends MultiBuildItem {
             Path notesPath = templatesDir.resolve("NOTES.txt");
             Path readmePath = dir.resolve("README.md");
 
-            Chart chart = (Chart) deserializer.apply(Files.readString(chartYamlPath));
+            Chart chart = (Chart) deserializer.deserialize(chartYamlPath);
             @SuppressWarnings("unchecked")
             Map<String, Map<String, Object>> values = (Map<String, Map<String, Object>>) deserializer
-                    .apply(Files.readString(valuesYamlPath));
-            ValuesSchema valuesSchema = (ValuesSchema) deserializer.apply(Files.readString(valuesSchemaPath));
+                    .deserialize(valuesYamlPath);
+            ValuesSchema valuesSchema = (ValuesSchema) deserializer.deserialize(valuesSchemaPath);
 
             Map<String, String> templates = new HashMap<>();
             if (Files.isDirectory(templatesDir)) {
@@ -126,8 +134,7 @@ public final class HelmChartBuildItem extends MultiBuildItem {
                     .withValuesSchema(valuesSchema)
                     .withTemplates(templates)
                     .withNotes(notes)
-                    .withReadme(readme)
-                    .build();
+                    .withReadme(readme);
 
         } catch (IOException e) {
             throw new RuntimeException("Failed to read HelmChartBuildItem from file system", e);

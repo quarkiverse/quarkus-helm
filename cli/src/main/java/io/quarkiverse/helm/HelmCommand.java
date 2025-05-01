@@ -10,7 +10,7 @@ import picocli.CommandLine.Spec;
 
 @TopCommand
 @Command(name = "helm", sortOptions = false, mixinStandardHelpOptions = false, header = "Helm CLI", subcommands = {
-        Install.class, Upgrade.class, Uninstall.class, ChartList.class, Lint.class })
+        Install.class, Upgrade.class, Uninstall.class, ChartList.class, Lint.class, Generate.class })
 public class HelmCommand implements Callable<Integer> {
 
     @Spec

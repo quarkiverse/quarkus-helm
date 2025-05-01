@@ -17,9 +17,18 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>io.quarkiverse.helm</groupId>
+      <artifactId>quarkus-helm-spi</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>io.quarkiverse.mcp</groupId>
       <artifactId>quarkus-mcp-server-cli-adapter</artifactId>
       <version>${quarkus-mcp.version}</version>
+    </dependency>
+   <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-kubernetes-spi</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -33,8 +42,20 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-arc</artifactId>
     </dependency>
+
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-devtools-common</artifactId>
+      <optional>true</optional>
+    </dependency>
   </dependencies>
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>io.quarkus</groupId>

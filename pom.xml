@@ -32,6 +32,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.version>3.22.0</quarkus.version>
+    <quarkus-mcp.version>1.1.1</quarkus-mcp.version>
     <yaml-path.version>0.0.12</yaml-path.version>
   </properties>
   <dependencyManagement>

@@ -354,6 +354,9 @@ jobs:
           quarkus.helm.values."db.auth.username".value=superman
           quarkus.helm.values."db.auth.password".value=superman
           quarkus.helm.values."app.envs.DATASOURCE_USER".value=superman
+          quarkus.helm.values."db.volumePermissions.enabled".value-as-bool=true
+          quarkus.helm.values."db.primary.podSecurityContext.enabled".value-as-bool=false
+          quarkus.helm.values."db.primary.containerSecurityContext.enabled".value-as-bool=false
           EOF
 
           # generate helm manifests

@@ -346,7 +346,7 @@ jobs:
           quarkus.kubernetes.prometheus.generate-service-monitor=false
 
           quarkus.helm.dependencies.postgresql.alias=db
-          quarkus.helm.dependencies.postgresql.version=11.9.1
+          quarkus.helm.dependencies.postgresql.version=18.2.4
           quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
           quarkus.helm.dependencies.postgresql.wait-for-service=quarkus-rest-heroes-db:5432
 
@@ -474,7 +474,7 @@ jobs:
           quarkus.kubernetes.deployment-target=openshift
 
           quarkus.helm.dependencies.postgresql.alias=db
-          quarkus.helm.dependencies.postgresql.version=11.9.1
+          quarkus.helm.dependencies.postgresql.version=18.2.4
           quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
           quarkus.helm.dependencies.postgresql.wait-for-service=quarkus-rest-heroes-db:5432
 

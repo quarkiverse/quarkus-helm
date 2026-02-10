@@ -42,6 +42,7 @@ import io.quarkiverse.helm.deployment.rules.ConfigReferenceStrategyManager;
 import io.quarkiverse.helm.deployment.utils.HelmConfigUtils;
 import io.quarkiverse.helm.model.Chart;
 import io.quarkiverse.helm.model.ValuesSchema;
+import io.quarkiverse.helm.spi.AdditionalHelmTemplateBuildItem;
 import io.quarkiverse.helm.spi.CustomHelmOutputDirBuildItem;
 import io.quarkiverse.helm.spi.HelmChartBuildItem;
 import io.quarkus.deployment.Capabilities;
@@ -162,6 +163,7 @@ public class HelmProcessor {
             BuildProducer<GeneratedFileSystemResourceBuildItem> dummy,
             Optional<CustomKubernetesOutputDirBuildItem> customKubernetesOutputDir,
             Optional<CustomHelmOutputDirBuildItem> customHelmOutputDir,
+            List<AdditionalHelmTemplateBuildItem> additionalHelmTemplateBuildItems,
             HelmChartConfig config) {
 
         if (dekorateOutput.isPresent()) {
@@ -169,7 +171,9 @@ public class HelmProcessor {
                     kubernetesDeploymentTargets,
                     generatedResources,
                     customKubernetesOutputDir,
-                    customHelmOutputDir, config));
+                    customHelmOutputDir,
+                    additionalHelmTemplateBuildItems,
+                    config));
         } else if (config.enabled()) {
             LOGGER.warn("Quarkus Helm extension is skipped since no Quarkus Kubernetes extension is configured. ");
         }
@@ -187,6 +191,7 @@ public class HelmProcessor {
             List<GeneratedKubernetesResourceBuildItem> generatedResources,
             Optional<CustomKubernetesOutputDirBuildItem> customKubernetesOutputDir,
             Optional<CustomHelmOutputDirBuildItem> customHelmOutputDir,
+            List<AdditionalHelmTemplateBuildItem> additionalHelmTemplateBuildItems,
             HelmChartConfig config) {
         validate(config);
         Project project = (Project) dekorateOutput.getProject();
@@ -215,6 +220,10 @@ public class HelmProcessor {
             deleteOutputHelmFolderIfExists(chartOutputFolder);
             String name = config.name().orElse(app.getName());
             Path appChartDir = chartOutputFolder.resolve(name);
+            Map<String, byte[]> additionalTemplates = additionalHelmTemplateBuildItems.stream()
+                    .filter(t -> t.getDeploymentTarget() == null || t.getDeploymentTarget().equals(deploymentTarget))
+                    .collect(Collectors.toMap(AdditionalHelmTemplateBuildItem::getName,
+                            AdditionalHelmTemplateBuildItem::getContent));
 
             Map<String, String> generated = helmWriter.writeHelmFiles(
                     name,
@@ -223,7 +232,8 @@ public class HelmProcessor {
                     getConfigReferencesFromSession(deploymentTarget, dekorateOutput),
                     inputFolder,
                     chartOutputFolder,
-                    filesInDeploymentTarget.getValue());
+                    filesInDeploymentTarget.getValue(),
+                    additionalTemplates);
 
             if (!generated.isEmpty()) {
                 helmCharts.add(read(appChartDir));

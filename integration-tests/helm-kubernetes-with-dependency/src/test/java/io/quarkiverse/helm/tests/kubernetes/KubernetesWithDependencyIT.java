@@ -28,7 +28,7 @@ public class KubernetesWithDependencyIT {
         assertTrue(Stream.of(Paths.get("target", "helm", "kubernetes").toFile().listFiles())
                 .anyMatch(f -> f.getName().startsWith(CHART_NAME) && f.getName().endsWith("-helm.tar.gz")));
 
-        assertNotNull(getResourceAsStream("charts/postgresql-11.6.22.tgz"));
+        assertNotNull(getResourceAsStream("charts/postgresql-18.2.4.tgz"));
     }
 
     @Test
@@ -54,7 +54,7 @@ public class KubernetesWithDependencyIT {
         List<Object> dependencies = (List<Object>) values.get("dependencies");
         Map<String, Object> postgresql = (Map<String, Object>) dependencies.get(0);
         assertEquals("postgresql", postgresql.get("name"));
-        assertEquals("11.6.22", postgresql.get("version"));
+        assertEquals("18.2.4", postgresql.get("version"));
         assertEquals("postgresql", postgresql.get("alias"));
         assertFalse(postgresql.containsKey("enabled"));
     }

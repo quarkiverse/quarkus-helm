@@ -346,7 +346,7 @@ jobs:
           quarkus.kubernetes.prometheus.generate-service-monitor=false
 
           quarkus.helm.dependencies.postgresql.alias=db
-          quarkus.helm.dependencies.postgresql.version=11.9.1
+          quarkus.helm.dependencies.postgresql.version=18.2.4
           quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
           quarkus.helm.dependencies.postgresql.wait-for-service=quarkus-rest-heroes-db:5432
 
@@ -354,6 +354,9 @@ jobs:
           quarkus.helm.values."db.auth.username".value=superman
           quarkus.helm.values."db.auth.password".value=superman
           quarkus.helm.values."app.envs.DATASOURCE_USER".value=superman
+          quarkus.helm.values."db.volumePermissions.enabled".value-as-bool=true
+          quarkus.helm.values."db.primary.podSecurityContext.enabled".value-as-bool=false
+          quarkus.helm.values."db.primary.containerSecurityContext.enabled".value-as-bool=false
           EOF
 
           # generate helm manifests
@@ -474,7 +477,7 @@ jobs:
           quarkus.kubernetes.deployment-target=openshift
 
           quarkus.helm.dependencies.postgresql.alias=db
-          quarkus.helm.dependencies.postgresql.version=11.9.1
+          quarkus.helm.dependencies.postgresql.version=18.2.4
           quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
           quarkus.helm.dependencies.postgresql.wait-for-service=quarkus-rest-heroes-db:5432
 

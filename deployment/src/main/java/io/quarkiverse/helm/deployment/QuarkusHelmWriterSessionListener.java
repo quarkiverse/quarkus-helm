@@ -96,7 +96,8 @@ public class QuarkusHelmWriterSessionListener {
             List<ConfigReference> valueReferencesFromDecorators,
             Path inputDir,
             Path outputDir,
-            Map<String, byte[]> generatedFiles) {
+            Map<String, byte[]> generatedFiles,
+            Map<String, byte[]> additionalTemplates) {
         Map<String, String> artifacts = new HashMap<>();
         if (helmConfig.enabled()) {
 
@@ -105,7 +106,7 @@ public class QuarkusHelmWriterSessionListener {
                 ValuesHolder values = populateValuesFromConfig(helmConfig, inputDir);
                 List<Map<Object, Object>> resources = populateValuesFromConfigReferences(helmConfig, generatedFiles, values,
                         valueReferencesFromDecorators);
-                artifacts.putAll(processTemplates(name, helmConfig, inputDir, outputDir, resources));
+                artifacts.putAll(processTemplates(name, helmConfig, inputDir, outputDir, resources, additionalTemplates));
                 artifacts.putAll(createChartYaml(name, helmConfig, project, inputDir, outputDir));
                 artifacts.putAll(createValuesYaml(name, helmConfig, inputDir, outputDir, values));
 
@@ -332,7 +333,8 @@ public class QuarkusHelmWriterSessionListener {
     private Map<String, String> processTemplates(String name, HelmChartConfig helmConfig,
             Path inputDir,
             Path outputDir,
-            List<Map<Object, Object>> resources) throws IOException {
+            List<Map<Object, Object>> resources,
+            Map<String, byte[]> additionalTemplates) throws IOException {
 
         Map<String, String> templates = new HashMap<>();
         Path templatesDir = getChartOutputDir(name, outputDir).resolve(TEMPLATES);
@@ -384,6 +386,15 @@ public class QuarkusHelmWriterSessionListener {
 
             writeFile(adaptedString, targetFile);
             templates.put(targetFile.toString(), adaptedString);
+        }
+
+        if (!additionalTemplates.isEmpty()) {
+            for (Map.Entry<String, byte[]> additionalTemplate : additionalTemplates.entrySet()) {
+                Path targetFile = templatesDir.resolve(additionalTemplate.getKey());
+                String content = new String(additionalTemplate.getValue());
+                writeFile(content, targetFile);
+                templates.put(targetFile.toString(), content);
+            }
         }
 
         return templates;

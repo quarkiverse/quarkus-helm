@@ -608,7 +608,7 @@ Sometimes, your application requires of some other services to work. The typical
 ----
 dependencies:
   - name: postgresql
-    version: 11.6.22
+    version: 18.2.4
     repository: https://charts.bitnami.com/bitnami
     alias: database # this is optional. The default value is the `name`.
 ----
@@ -637,7 +637,7 @@ Let's now see how you can add this configuration using the Quarkus Helm extensio
 [source,properties]
 ----
 quarkus.helm.dependencies.postgresql.alias=database
-quarkus.helm.dependencies.postgresql.version=11.6.22
+quarkus.helm.dependencies.postgresql.version=18.2.4
 quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
 
 quarkus.helm.values.0.property=database.global.postgresql.auth.postgresPassword
@@ -673,7 +673,7 @@ The good news is that you can force the dependency installation order using the 
 [source,properties]
 ----
 quarkus.helm.dependencies.postgresql.alias=database
-quarkus.helm.dependencies.postgresql.version=11.6.22
+quarkus.helm.dependencies.postgresql.version=18.2.4
 quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
 quarkus.helm.dependencies.postgresql.wait-for-service=chart-database:5432
 ----

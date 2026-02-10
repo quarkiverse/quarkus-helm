@@ -224,7 +224,7 @@ Let's now define a Helm dependency to start a Postgresql database when we instal
 
 [source,properties]
 ----
-quarkus.helm.dependencies.postgresql.version=11.9.1
+quarkus.helm.dependencies.postgresql.version=18.2.4
 quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
 quarkus.helm.dependencies.postgresql.wait-for-service=demo-db:5432
 ----

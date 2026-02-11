@@ -354,6 +354,9 @@ public class QuarkusHelmWriterSessionListener {
             }
 
             String kind = (String) resource.get(KIND);
+
+            ensureServiceAccountSubjectNamespaceIsPopulated(resource);
+
             Path targetFile = templatesDir.resolve(kind.toLowerCase() + YAML);
             String functions = functionsByResource.get(kind.toLowerCase() + YAML);
 
@@ -398,6 +401,27 @@ public class QuarkusHelmWriterSessionListener {
         }
 
         return templates;
+    }
+
+    /**
+     * Service account is always namespaced, so for the resources which subjects don't define the namespace, populate
+     * the namespace with Helm's .Release.Namespace.
+     *
+     * @param resource resource which subject ServiceAccounts to check
+     */
+    private static void ensureServiceAccountSubjectNamespaceIsPopulated(Map<Object, Object> resource) {
+        Object subjectsObj = resource.get("subjects");
+        if (subjectsObj instanceof List) {
+            for (Object subjectObj : (List<?>) subjectsObj) {
+                if (subjectObj instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<Object, Object> subject = (Map<Object, Object>) subjectObj;
+                    if ("ServiceAccount".equals(subject.get("kind")) && !subject.containsKey("namespace")) {
+                        subject.put("namespace", "{{ .Release.Namespace }}");
+                    }
+                }
+            }
+        }
     }
 
     private String getNameFromResource(Map<Object, Object> resource) {

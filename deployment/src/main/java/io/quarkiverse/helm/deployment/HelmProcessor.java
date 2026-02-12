@@ -78,6 +78,15 @@ public class HelmProcessor {
     private static final String SPLIT = ":";
     private static final String PROPERTIES_CONFIG_SOURCE = "PropertiesConfigSource";
     private static final String YAML_CONFIG_SOURCE = "YamlConfigSource";
+    private static final HelmChartBuildItem.Deserializer DESERIALIZER = path -> {
+        final Class<?> type = switch (path.getFileName().toString()) {
+            case "Chart.yaml" -> Chart.class;
+            case "values.yaml" -> Map.class;
+            case "values.schema.json" -> ValuesSchema.class;
+            default -> throw new IllegalArgumentException("Unsupported path: " + path);
+        };
+        return Serialization.unmarshal(Files.readString(path), type);
+    };
     // Lazy loaded when calling `isBuildTimeProperty(xxx)`.
     private static Set<String> buildProperties;
 
@@ -475,51 +484,11 @@ public class HelmProcessor {
     }
 
     private static HelmChartBuildItem read(Path dir) {
-        try {
-            Path chartYamlPath = dir.resolve("Chart.yaml");
-            Path valuesYamlPath = dir.resolve("values.yaml");
-            Path valuesSchemaPath = dir.resolve("values.schema.json");
-            Path templatesDir = dir.resolve("templates");
-            Path notesPath = templatesDir.resolve("NOTES.txt");
-            Path readmePath = dir.resolve("README.md");
-
-            Chart chart = Serialization.unmarshal(Files.readString(chartYamlPath), Chart.class);
-            @SuppressWarnings("unchecked")
-            Map<String, Map<String, Object>> values = Serialization.unmarshal(Files.readString(valuesYamlPath), Map.class);
-            ValuesSchema valuesSchema = Serialization.unmarshal(Files.readString(valuesSchemaPath), ValuesSchema.class);
-
-            Map<String, String> templates = new HashMap<>();
-            if (Files.isDirectory(templatesDir)) {
-                Files.list(templatesDir).forEach(templatePath -> {
-                    try {
-                        if (!Files.isDirectory(templatePath)) {
-                            templates.put(templatePath.getFileName().toString(), Files.readString(templatePath));
-                        }
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
-
-            Optional<String> notes = Files.exists(notesPath) ? Optional.of(Files.readString(notesPath)) : Optional.empty();
-            Optional<String> readme = Files.exists(readmePath) ? Optional.of(Files.readString(readmePath)) : Optional.empty();
-            Path targetDir = dir.getParent();
-            Path helmDir = targetDir.getParent();
-            String deploymentTarget = helmDir.relativize(targetDir).getFileName().toString();
-
-            return HelmChartBuildItem.builder()
-                    .withDeploymentTarget(deploymentTarget)
-                    .withChart(chart)
-                    .withValues(values)
-                    .withValuesSchema(valuesSchema)
-                    .withTemplates(templates)
-                    .withNotes(notes)
-                    .withReadme(readme)
-                    .build();
-
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read HelmChartBuildItem from file system", e);
-        }
+        final var helmChartBuilder = HelmChartBuildItem.readAsBuilder(dir, DESERIALIZER);
+        Path targetDir = dir.getParent();
+        Path helmDir = targetDir.getParent();
+        String deploymentTarget = helmDir.relativize(targetDir).getFileName().toString();
+        return helmChartBuilder.withDeploymentTarget(deploymentTarget).build();
     }
 
 }

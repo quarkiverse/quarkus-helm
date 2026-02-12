@@ -1,0 +1,33 @@
+name: Dependabot Docs Fixer
+on: pull_request
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    # Only run for PRs opened by dependabot
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+          check-latest: true
+          cache: 'maven'
+      - name: Build with Maven
+        run: mvn clean install -DskipTests
+      - name: Commit Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          # Only commit if there are actually changes in the build output
+          git diff-index --quiet HEAD || git commit --amend --no-edit
+          git push -f

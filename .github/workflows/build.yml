@@ -1,11 +1,5 @@
 name: Quarkus Helm Build and Integration tests
 
-# We need to set these defaults so that .bashrc is called for each step.
-# This is needed so that sdkman can be properly intialized
-defaults:
-  run:
-    shell: bash -ieo pipefail {0}
-
 on:
   workflow_dispatch:
   push:
@@ -56,7 +50,6 @@ jobs:
     strategy:
       matrix:
         java-version: [ 21 ]
-        jbang-version: [0.106.1]
     needs: build
     steps:
       - uses: actions/checkout@v3
@@ -67,16 +60,6 @@ jobs:
           java-version: ${{matrix.java-version}}
           check-latest: true
           cache: 'maven'
-      - name: Setup sdkman
-        run: |
-          curl -s "https://get.sdkman.io" | bash
-          source "$HOME/.sdkman/bin/sdkman-init.sh"
-          sdkman_auto_answer=false
-          sdkman_selfupdate_enable=false
-      - name: Setup jbang
-        run: |
-          sdk install jbang ${{matrix.jbang-version}}
-          sdk default jbang ${{matrix.jbang-version}}
       - name: Build with Maven
         run: mvn clean install -DskipTests
 
@@ -104,8 +87,9 @@ jobs:
             -Dquarkus.container-image.insecure=true
           # Get the project version
           export QUARKUS_HELM_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
-          jbang io.quarkiverse.helm:quarkus-helm-cli:$QUARKUS_HELM_VERSION lint
-          jbang io.quarkiverse.helm:quarkus-helm-cli:$QUARKUS_HELM_VERSION install -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-minimal:$VERSION
+          java -jar $GITHUB_WORKSPACE/cli/target/quarkus-helm-cli-$QUARKUS_HELM_VERSION.jar lint
+          java -jar $GITHUB_WORKSPACE/cli/target/quarkus-helm-cli-$QUARKUS_HELM_VERSION.jar install -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY 
+          }}/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-minimal:$VERSION
           ls $GITHUB_WORKSPACE
           ls $GITHUB_WORKSPACE/..
           ls $GITHUB_WORKSPACE/../..

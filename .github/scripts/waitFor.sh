@@ -13,6 +13,7 @@ INTERVAL="${INTERVAL:-15}"
 
 retries=$RETRIES
 until [[ $retries == 0 ]]; do
+  echo
   actual=$(kubectl get $RESOURCE $SELECTOR -n $KUBE_NAMESPACE $EXTRA 2>/dev/null || echo "Waiting for $RESOURCE/$SELECTOR in namespace $KUBE_NAMESPACE -> $EXPECTED to appear")
   if [[ "$actual" =~ .*"$EXPECTED".* ]]; then
     echo "Resource \"$RESOURCE/$SELECTOR\" found" 2>&1
@@ -22,7 +23,6 @@ until [[ $retries == 0 ]]; do
     echo "Waiting for resource \"$RESOURCE/$SELECTOR\" in namespace $KUBE_NAMESPACE ..." 2>&1
     echo "$actual" 2>&1
     kubectl describe $RESOURCE $SELECTOR -n $KUBE_NAMESPACE 2>/dev/null | grep -A 5 "Events:" || true
-    echo
   fi
   sleep "${INTERVAL}s"
   retries=$((retries - 1))

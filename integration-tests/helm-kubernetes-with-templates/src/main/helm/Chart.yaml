@@ -1,0 +1,7 @@
+annotations:
+  links: |
+    - name: Source
+      url: https://github.com/quarkiverse/quarkus-helm
+    - name: Upstream Project
+      url: https://github.com/dekorateio/dekorate
+  type: "app"

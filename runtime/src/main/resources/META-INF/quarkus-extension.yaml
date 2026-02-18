@@ -1,0 +1,14 @@
+---
+name: Quarkus - Helm
+description: Quarkus extension for Helm
+metadata:
+  keywords:
+  - helm
+  - kubernetes
+  - openshift
+  categories:
+  - "cloud"
+  status: "preview"
+  cli-plugins:
+   - "${project.groupId}:quarkus-helm-cli:${project.version}"
+  icon-url: "https://helm.sh/img/helm.svg"

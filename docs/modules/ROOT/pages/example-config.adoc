@@ -1,0 +1,140 @@
+[[example-config]]
+= Example: How to map Integer, String, and Boolean types
+
+include::./includes/attributes.adoc[]
+
+In this example, we're going to create a very simple REST CRUD application in Quarkus and configure Integer, String and boolean properties into our applications.
+
+Sometimes, this is a challenging use case because most of the Kubernetes resources and System properties only support String/text properties.
+
+== Prerequisites
+
+* Maven 3.8+
+* Java 17+
+* Have logged into a Kubernetes cluster
+* Have installed the Helm command line
+
+== Create application
+
+Our application will print a hello message with the string, integer, and boolean config properties. We'll only need the following extensions:
+
+* https://quarkus.io/guides/resteasy-reactive[RESTEASY Reactive]: REST support
+* https://quarkus.io/guides/kubernetes-config[Kubernetes Config Extension]: Use a config map to inject properties into the application.
+
+Let's create our application from scratch:
+
+[source,bash,subs=attributes+]
+----
+mvn io.quarkus.platform:quarkus-maven-plugin:{quarkus-version}:create \
+    -DprojectGroupId=org.acme \
+    -DprojectArtifactId=example \
+    -Dextensions="resteasy-reactive,kubernetes-config"
+cd example
+----
+
+The generated application will contain the following Hello resource:
+
+[source,java]
+----
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+
+@Path("/hello")
+public class GreetingResource {
+
+    @ConfigProperty(name = "hello.message")
+    String message;
+
+    @ConfigProperty(name = "hello.number")
+    int number;
+
+    @ConfigProperty(name = "hello.flag")
+    boolean flag;
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String hello() {
+        return message + ", number=" + number + ", flag=" + flag;
+    }
+}
+----
+
+Next, we need to provide the actual properties via the `application.properties` file:
+
+[source,properties]
+----
+hello.message=Hello from application.properties
+hello.number=1
+hello.flag=true
+----
+
+Now, if we run our application and call our service via `http://localhost:8080/hello`, it will return `Hello from application.properties, number=1, flag=true`.
+
+How can we configure Quarkus Helm to map the hello properties and update them when installing the generated Helm chart?
+
+One way is using System properties, however this only supports String. If we map the above properties using system properties as described in xref:index.adoc#mapping-system-properties[the Mapping System Properties section]:
+
+[source,properties]
+----
+hello.message=${helloMessage}
+hello.number=${helloNumber}
+hello.flag=${helloFlag}
+----
+
+When installing the Helm chart, this would fail because the `hello.number` and `hello.flag` properties are Strings. This is because internally Quarkus Helm is mapping the `helloMessage` system property as container environment properties which only supports String types.
+
+Then, how can we do it? Quarkus Kubernetes Config to the rescue!
+
+Let's add a ConfigMap resource in `src/main/kubernetes/kubernetes.yml`:
+
+[source,yaml]
+----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  hello.message: Hello from configmap
+  hello.number: 2
+  hello.flag: false
+----
+
+The Quarkus Kubernetes extension will incorporate this ConfigMap resource in the generated resources at `target/kubernetes/kubernetes.yml`.
+
+Next, we need to configure Quarkus to read this ConfigMap resource when starting the application in Kubernetes:
+
+[source,properties]
+----
+quarkus.kubernetes-config.enabled=true
+quarkus.kubernetes-config.config-maps=app-config
+----
+
+As it is, if we build our application and install the Helm chart in Kubernetes, when calling the Hello endpoint, it would return: `Hello from configmap, number=2, flag=false`.
+
+So good so far! Next, we can map the ConfigMap values into the Helm Chart values, so we can update these properties when installing the Helm chart. We can do this by adding the following properties:
+
+[source,properties]
+----
+# Map values in ConfigMap
+quarkus.helm.values.message.paths=(kind == ConfigMap).data.'hello.message'
+quarkus.helm.values.number.paths=(kind == ConfigMap).data.'hello.number'
+quarkus.helm.values.number.value-as-int=1 <1>
+quarkus.helm.values.flag.paths=(kind == ConfigMap).data.'hello.flag'
+quarkus.helm.values.flag.value-as-bool=true <2>
+----
+
+<1> Since the default value type for ConfigMap is still a string, we need to let the Quarkus Helm extension that the actual type is an integer using the `value-as-int` property.
+<2> And the same with the flag property. We need to instruct the Quarkus Helm extension that the actual type for the flag field is a boolean using `value-as-bool`.
+
+Finally, after building our application, we can install the Helm chart and configure the Hello properties with the right types. For example, installing the chart as follows:
+
+[source,bash]
+----
+helm install quarkus target/helm/kubernetes/example --set app.number=3 --set app.flag=true --set app.message="Hello from helm"
+----
+
+And calling the service again, it would return `Hello from helm, number=3, flag=true`.
+
+Happy coding!

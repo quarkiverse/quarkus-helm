@@ -1,0 +1,519 @@
+name: Quarkus Helm Build and Integration tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "main"
+    paths-ignore:
+      - '.gitignore'
+      - 'CODEOWNERS'
+      - 'LICENSE'
+      - '*.md'
+      - '*.adoc'
+      - '*.txt'
+      - '.all-contributorsrc'
+  pull_request:
+    paths-ignore:
+      - '.gitignore'
+      - 'CODEOWNERS'
+      - 'LICENSE'
+      - '*.md'
+      - '*.adoc'
+      - '*.txt'
+      - '.all-contributorsrc'
+
+jobs:
+  build:
+    name: Build with JDK ${{ matrix.java-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: [ 17, 21, 25 ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java-version }}
+          check-latest: true
+          cache: 'maven'
+      - name: Build with Maven (JDK ${{ matrix.java-version }}
+        run: |
+          export FROM_SYSTEM_ENV=bar
+          mvn -B formatter:validate install --file pom.xml -DFROM_SYSTEM_PROPERTY=foo -Dtest-system-properties=true
+
+  verify-in-kubernetes:
+    name: Verify Extension in Kubernetes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: [ 21 ]
+    needs: build
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK ${{matrix.java-version}}
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: ${{matrix.java-version}}
+          check-latest: true
+          cache: 'maven'
+      - name: Build with Maven
+        run: mvn clean install -DskipTests
+
+      - name: Kubernetes KinD Cluster
+        id: kind
+        uses: helm/kind-action@v1.13.0
+        with:
+          registry: true
+          registry_name: kind-registry
+          registry_port: 5001
+          registry_enable_delete: true
+
+      - name: Verify Integration Test Minimal
+        run: |
+          K8S_NAMESPACE=helm
+          KIND_REGISTRY_GROUP=local
+          VERSION=latest
+          kubectl create namespace $K8S_NAMESPACE
+          cd integration-tests/helm-kubernetes-minimal
+          mvn clean package -Dquarkus.container-image.build=true \
+            -Dquarkus.container-image.push=true \
+            -Dquarkus.container-image.registry=${{ steps.kind.outputs.LOCAL_REGISTRY }} \
+            -Dquarkus.container-image.group=$KIND_REGISTRY_GROUP \
+            -Dquarkus.container-image.tag=$VERSION \
+            -Dquarkus.container-image.insecure=true
+          # Get the project version
+          export QUARKUS_HELM_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+          java -jar $GITHUB_WORKSPACE/cli/target/quarkus-helm-cli-$QUARKUS_HELM_VERSION.jar lint
+          java -jar $GITHUB_WORKSPACE/cli/target/quarkus-helm-cli-$QUARKUS_HELM_VERSION.jar install -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY 
+          }}/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-minimal:$VERSION
+          ls $GITHUB_WORKSPACE
+          ls $GITHUB_WORKSPACE/..
+          ls $GITHUB_WORKSPACE/../..
+          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-minimal" "$K8S_NAMESPACE" "Running"
+          
+
+      - name: Delete namespace "helm" using Helm
+        run: kubectl delete namespace helm
+
+      - name: Start Helm Repository (ChartMuseum)
+        run: docker run --rm -u 0 -it -d -p 8080:8080 -e DEBUG=1 -e STORAGE=local -e STORAGE_LOCAL_ROOTDIR=/charts -v $(pwd)/charts:/charts chartmuseum/chartmuseum:latest
+
+      - name: Verify Integration Test Minimal using Helm Repository
+        run: |
+          K8S_NAMESPACE=helmrepo
+          KIND_REGISTRY_GROUP=local
+          VERSION=latest
+          kubectl create namespace $K8S_NAMESPACE
+
+          # create image plus push to a Helm repository
+          cd integration-tests/helm-kubernetes-minimal
+          mvn clean package -Dquarkus.container-image.build=true \
+          -Dquarkus.container-image.push=true \
+          -Dquarkus.container-image.registry=${{ steps.kind.outputs.LOCAL_REGISTRY }} \
+          -Dquarkus.container-image.group=$KIND_REGISTRY_GROUP \
+          -Dquarkus.container-image.tag=$VERSION \
+          -Dquarkus.container-image.insecure=true \
+          -Dquarkus.helm.repository.push=true \
+          -Dquarkus.helm.repository.url=http://localhost:8080/api/charts \
+          -Dquarkus.helm.repository.type=CHARTMUSEUM
+
+          # Install Helm repository
+          helm repo add local http://localhost:8080
+
+          # And install application from the Helm repository
+          helm install --devel quarkus-hello-world local/quarkus-helm-integration-tests-kubernetes-minimal -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-minimal:$VERSION
+          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-minimal" "$K8S_NAMESPACE" "Running"
+
+      - name: (Only if it failed) Log Integration Test Minimal using Helm Repository at failures
+        if: failure()
+        run: |
+          K8S_NAMESPACE=helmrepo
+          echo "Deployment resource:"
+          kubectl get deployment quarkus-helm-integration-tests-kubernetes-minimal -o yaml -n $K8S_NAMESPACE
+          echo "Logs of the deployment:"
+          kubectl logs deploy/quarkus-helm-integration-tests-kubernetes-minimal --all-containers=true -n $K8S_NAMESPACE
+          POD_NAME=$(kubectl get pod -l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-minimal -o name -n $K8S_NAMESPACE)
+          echo "Describe pod:"
+          kubectl describe $POD_NAME -n $K8S_NAMESPACE
+          echo "Logs of running pod:"
+          kubectl logs $POD_NAME -n $K8S_NAMESPACE
+          echo "Logs of terminated pod:"
+          kubectl logs -p $POD_NAME -n $K8S_NAMESPACE
+
+      - name: Delete namespace "helmrepo" using Helm
+        run: kubectl delete namespace helmrepo
+
+      - name: Verify Integration Test With Templates using Helm Repository
+        run: |
+          K8S_NAMESPACE=helmtemplates
+          KIND_REGISTRY_GROUP=local
+          VERSION=latest
+          kubectl create namespace $K8S_NAMESPACE
+
+          # create image plus push to a Helm repository
+          cd integration-tests/helm-kubernetes-with-templates
+          mvn clean package -Dquarkus.container-image.build=true \
+          -Dquarkus.container-image.push=true \
+          -Dquarkus.container-image.registry=${{ steps.kind.outputs.LOCAL_REGISTRY }} \
+          -Dquarkus.container-image.group=$KIND_REGISTRY_GROUP \
+          -Dquarkus.container-image.tag=$VERSION \
+          -Dquarkus.container-image.insecure=true \
+          -Dquarkus.helm.repository.push=true \
+          -Dquarkus.helm.repository.url=http://localhost:8080/api/charts \
+          -Dquarkus.helm.repository.type=CHARTMUSEUM
+
+          # Update Helm repository
+          helm repo update local
+
+          # And install application from the Helm repository
+          helm install --devel quarkus-with-templates local/my-chart-with-templates -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-with-templates:$VERSION --set app.favorite.drink=coca
+          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-with-templates" "$K8S_NAMESPACE" "Running"
+
+          if [ $(kubectl get configmap/my-configmap -n $K8S_NAMESPACE -o yaml | grep "drink: coca" | wc -l) -ne 1 ]
+          then
+            echo ConfigMap with wrong content
+            kubectl get configmap/my-configmap -n $K8S_NAMESPACE -o yaml
+            exit 1
+          fi
+
+          if [ $(kubectl get services/quarkus-helm-integration-tests-kubernetes-with-templates -n $K8S_NAMESPACE -o jsonpath='{.metadata.labels}' | grep \"generator\":\"helm\" | wc -l) -ne 1 ]
+          then
+            echo Service with wrong content
+            kubectl get services/quarkus-helm-integration-tests-kubernetes-with-templates -n $K8S_NAMESPACE -o yaml
+            exit 1
+          fi
+
+          if [ $(kubectl get services/quarkus-helm-integration-tests-kubernetes-with-templates -n $K8S_NAMESPACE -o jsonpath='{.metadata.annotations}' | grep \"app.quarkus.io/build-timestamp\":\"my-ch\" | wc -l) -ne 1 ]
+          then
+            echo Service with wrong content
+            kubectl get services/quarkus-helm-integration-tests-kubernetes-with-templates -n $K8S_NAMESPACE -o yaml
+            exit 1
+          fi
+
+
+          # Verify the if statement works:
+          ## By default, the ingress "my-ingress" should have been installed
+          if [ $(kubectl get ingress/my-ingress -n $K8S_NAMESPACE -o jsonpath='{.metadata.name}' | grep my-ingress | wc -l) -ne 1 ]
+          then
+            echo "Ingress not found!"
+            exit 1
+          fi
+
+          ## Let's update our Helm chart by not installing the ingress
+          helm upgrade --devel quarkus-with-templates local/my-chart-with-templates -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-with-templates:$VERSION --set app.favorite.drink=coca --set app.ingress.enabled=false
+          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-with-templates" "$K8S_NAMESPACE" "Running"
+
+          ## Now, the ingress "my-ingress" should have NOT been installed
+          if [ $(kubectl get ingress/my-ingress -n $K8S_NAMESPACE -o jsonpath='{.metadata.name}' | grep my-ingress | wc -l) -ne 0 ]
+          then
+            echo "Ingress was found!"
+            exit 1
+          fi
+
+      - name: Delete namespace "helmtemplates" using Helm
+        run: kubectl delete namespace helmtemplates
+
+      - name: Verify Integration Test With Dependency
+        run: |
+          K8S_NAMESPACE=helmdeps1
+          KIND_REGISTRY_GROUP=local
+          VERSION=latest
+          NAME=quarkus-helm-integration-tests-kubernetes-with-dependency
+          kubectl create namespace $K8S_NAMESPACE
+
+          # create image plus push to a Helm repository
+          cd integration-tests/helm-kubernetes-with-dependency
+          mvn clean package -DskipTests -Dquarkus.container-image.build=true \
+          -Dquarkus.container-image.push=true \
+          -Dquarkus.container-image.registry=${{ steps.kind.outputs.LOCAL_REGISTRY }} \
+          -Dquarkus.container-image.group=$KIND_REGISTRY_GROUP \
+          -Dquarkus.container-image.tag=$VERSION \
+          -Dquarkus.container-image.insecure=true
+
+          # And install application
+          helm install quarkus-with-dependency target/helm/kubernetes/quarkus-helm-integration-tests-kubernetes-with-dependency --dependency-update -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/$NAME:$VERSION
+          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=$NAME" "$K8S_NAMESPACE" "Running"
+
+      - name: Delete namespace "helmdeps1"
+        run: kubectl delete namespace helmdeps1
+
+      - name: Verify Integration Test With Dependency Disabled
+        run: |
+          K8S_NAMESPACE=helmdeps2
+          KIND_REGISTRY_GROUP=local
+          VERSION=latest
+          NAME=quarkus-helm-integration-tests-kubernetes-with-dependency
+          kubectl create namespace $K8S_NAMESPACE
+
+          # create image plus push to a Helm repository
+          cd integration-tests/helm-kubernetes-with-dependency
+          mvn clean package -DskipTests -Dquarkus.container-image.build=true \
+          -Dquarkus.container-image.push=true \
+          -Dquarkus.container-image.registry=${{ steps.kind.outputs.LOCAL_REGISTRY }} \
+          -Dquarkus.container-image.group=$KIND_REGISTRY_GROUP \
+          -Dquarkus.container-image.tag=$VERSION \
+          -Dquarkus.container-image.insecure=true
+
+          # And install application
+          helm install quarkus-with-dependency target/helm/kubernetes/quarkus-helm-integration-tests-kubernetes-with-dependency --dependency-update -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/$NAME:$VERSION --set postgresql.enabled=false
+          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=$NAME" "$K8S_NAMESPACE" "Running"
+
+      - name: Delete namespace "helmdeps2"
+        run: kubectl delete namespace helmdeps2
+
+      - name: Verify Integration Test With Config
+        run: |
+          K8S_NAMESPACE=helmconfig
+          KIND_REGISTRY_GROUP=local
+          VERSION=latest
+          NAME=quarkus-helm-integration-tests-kubernetes-config
+          kubectl create namespace $K8S_NAMESPACE
+
+          # create image plus push to a Helm repository
+          cd integration-tests/helm-kubernetes-config
+          mvn clean package -DskipTests -Dquarkus.container-image.build=true \
+          -Dquarkus.container-image.push=true \
+          -Dquarkus.container-image.registry=${{ steps.kind.outputs.LOCAL_REGISTRY }} \
+          -Dquarkus.container-image.group=$KIND_REGISTRY_GROUP \
+          -Dquarkus.container-image.tag=$VERSION \
+          -Dquarkus.container-image.insecure=true
+
+          # And install application
+          helm install quarkus-with-config target/helm/kubernetes/quarkus-helm-integration-tests-kubernetes-config -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/$NAME:$VERSION  --set app.number=3 --set app.flag=true --set app.message="Hello %s from helm"
+          # Wait for the app to start
+          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=$NAME" "$K8S_NAMESPACE" "Running"
+          # Verify application
+          # POD_NAME=$(kubectl get pod -l app.kubernetes.io/name=$NAME -n $K8S_NAMESPACE -o name)
+          # RESULT=$(kubectl exec -n $K8S_NAMESPACE $POD_NAME -- wget -qO- http://localhost:8080/)
+          # if [[ "$RESULT" = *"Hello World from helm, number=3, flag=true"* ]]
+          # then
+          #   exit 0
+          # fi
+          # echo "Application is not working. Result was: $RESULT"
+          # exit 1
+
+      - name: Delete namespace "helmconfig"
+        run: kubectl delete namespace helmconfig
+
+      - name: Verify Super Hero microservice from Super Hero workshop using Helm Repository
+        run: |
+          K8S_NAMESPACE=super-heroes
+          KIND_REGISTRY_GROUP=local
+          VERSION=latest
+          QUARKUS_HELM_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+          QUARKUS_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${quarkus.version}' --non-recursive exec:exec)
+          kubectl create namespace $K8S_NAMESPACE
+          kubectl config set-context --current --namespace=$K8S_NAMESPACE
+
+          # checkout the quarkus super heroes repository
+          git clone https://github.com/quarkusio/quarkus-super-heroes
+          cd quarkus-super-heroes/rest-heroes
+
+          # install Quarkus Helm extension
+          ./mvnw quarkus:add-extension -Dextensions="io.quarkiverse.helm:quarkus-helm:$QUARKUS_HELM_VERSION"
+
+          # remove the third party installations via templates (we'll install these services via Helm dependencies :) )
+          rm -rf src/main/kubernetes
+
+          # remove the default application.yml as we'll provide a different one with our Helm properties
+          rm -rf src/main/resources/application.yml
+
+          # copy the import.sql file from
+          cp deploy/db-init/initialize-tables.sql src/main/resources/
+
+          cat > src/main/resources/application.properties << "EOF"
+          quarkus.application.name=rest-heroes
+          quarkus.http.port=8080
+          quarkus.hibernate-orm.sql-load-script=initialize-tables.sql
+          quarkus.hibernate-orm.database.generation=drop-and-create
+          quarkus.datasource.reactive.url=postgresql://quarkus-rest-heroes-db:5432/heroes_database
+          quarkus.datasource.username=${DATASOURCE_USER}
+          quarkus.datasource.password=${DATASOURCE_PASSWORD:superman}
+          quarkus.kubernetes.deployment-target=kubernetes
+          quarkus.kubernetes.prometheus.generate-service-monitor=false
+
+          quarkus.helm.dependencies.postgresql.alias=db
+          quarkus.helm.dependencies.postgresql.version=18.2.4
+          quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
+          quarkus.helm.dependencies.postgresql.wait-for-service=quarkus-rest-heroes-db:5432
+
+          quarkus.helm.values."db.auth.database".value=heroes_database
+          quarkus.helm.values."db.auth.username".value=superman
+          quarkus.helm.values."db.auth.password".value=superman
+          quarkus.helm.values."app.envs.DATASOURCE_USER".value=superman
+          quarkus.helm.values."db.volumePermissions.enabled".value-as-bool=true
+          quarkus.helm.values."db.primary.podSecurityContext.enabled".value-as-bool=false
+          quarkus.helm.values."db.primary.containerSecurityContext.enabled".value-as-bool=false
+          EOF
+
+          # generate helm manifests
+          ./mvnw clean package -DskipTests \
+            -Dquarkus.platform.version=$QUARKUS_VERSION -Dquarkus.platform.group-id=io.quarkus \
+            -Dquarkus.container-image.builder=docker \
+            -Dquarkus.container-image.build=true \
+            -Dquarkus.container-image.push=true \
+            -Dquarkus.container-image.registry=${{ steps.kind.outputs.LOCAL_REGISTRY }} \
+            -Dquarkus.container-image.group=$KIND_REGISTRY_GROUP \
+            -Dquarkus.container-image.tag=$VERSION \
+            -Dquarkus.container-image.insecure=true \
+            -Dquarkus.helm.repository.push=true \
+            -Dquarkus.helm.repository.url=http://localhost:8080/api/charts \
+            -Dquarkus.helm.repository.type=CHARTMUSEUM
+
+          # Update Helm repository
+          helm repo update local
+
+          # And install application from the Helm repository
+          helm install quarkus-rest-heroes local/rest-heroes -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/rest-heroes:$VERSION
+          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=rest-heroes" "$K8S_NAMESPACE" "Running"
+
+          POD_NAME=$(kubectl get pod -l app.kubernetes.io/name=rest-heroes -n $K8S_NAMESPACE -o name)
+          if [ $(kubectl exec -i $POD_NAME --container rest-heroes -n $K8S_NAMESPACE -- sh -c "curl -s -i localhost:8080") = *"500 Internal Server Error"* ]
+          then
+            echo Service rest-heroes is not working
+            kubectl describe $POD_NAME
+            kubectl logs $POD_NAME
+            exit 1
+          fi
+
+      - name: (Only if it failed) Log REST Heroes traces at failures
+        if: failure()
+        run: |
+          echo "Deployment resource:"
+          kubectl get deployment rest-heroes -o yaml
+          echo "Logs of the deployment:"
+          kubectl logs deploy/rest-heroes --all-containers=true -n $KUBERNETES_NAMESPACE
+          POD_NAME=$(kubectl get pod -l app.kubernetes.io/name=rest-heroes -o name)
+          echo "Describe pod:"
+          kubectl describe $POD_NAME
+          echo "Logs of running pod:"
+          kubectl logs $POD_NAME
+          echo "Logs of terminated pod:"
+          kubectl logs -p $POD_NAME
+
+      - name: Delete namespace "super-heroes" using Helm
+        run: kubectl delete namespace super-heroes
+
+  verify-in-openshift:
+    name: Verify Extension in OpenShift
+    # the action "manusa/actions-setup-openshift@v1.1.4" only works in ubuntu-20.04
+    runs-on: ubuntu-20.04
+    needs: verify-in-kubernetes
+    # the step "manusa/actions-setup-openshift" is broken:
+    if: false
+    strategy:
+      matrix:
+        java-version: [ 17 ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK ${{matrix.java-version}}
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: ${{matrix.java-version}}
+          check-latest: true
+          cache: 'maven'
+      - name: Build with Maven
+        run: mvn clean install -DskipTests
+
+      - name: Setup OpenShift
+        uses: manusa/actions-setup-openshift@v1.1.4
+        with:
+          oc version: v3.11.0
+          github token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify Super Hero microservice from Super Hero workshop
+        run: |
+          OC_NAMESPACE=super-heroes
+          REGISTRY_PORT=5000
+          REGISTRY=localhost:$REGISTRY_PORT
+          REGISTRY_GROUP=jcarvaja
+          VERSION=openshift
+          QUARKUS_HELM_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+          QUARKUS_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${quarkus.version}' --non-recursive exec:exec)
+          oc new-project $OC_NAMESPACE
+
+          # setup container registry
+          oc new-app registry:2 -l app=registry
+          oc wait --timeout=160s --for=condition=ready pod -l app=registry
+
+          # checkout the quarkus super heroes repository
+          git clone https://github.com/quarkusio/quarkus-super-heroes
+          cd quarkus-super-heroes/rest-heroes
+
+          # install Quarkus Helm extension
+          ./mvnw quarkus:add-extension -Dextensions="io.quarkiverse.helm:quarkus-helm:$QUARKUS_HELM_VERSION"
+
+          # remove the third party installations via templates (we'll install these services via Helm dependencies :) )
+          rm -rf src/main/kubernetes
+
+          # remove the default application.yml as we'll provide a different one with our Helm properties
+          rm -rf src/main/resources/application.yml
+
+          # copy the import.sql file from
+          cp deploy/db-init/initialize-tables.sql src/main/resources/
+
+          cat > src/main/resources/application.properties << "EOF"
+          quarkus.application.name=rest-heroes
+          quarkus.http.port=8080
+          quarkus.hibernate-orm.sql-load-script=initialize-tables.sql
+          quarkus.hibernate-orm.database.generation=drop-and-create
+          quarkus.datasource.reactive.url=postgresql://quarkus-rest-heroes-db:5432/heroes_database
+          quarkus.datasource.username=superman
+          quarkus.datasource.password=superman
+          quarkus.kubernetes.deployment-target=openshift
+
+          quarkus.helm.dependencies.postgresql.alias=db
+          quarkus.helm.dependencies.postgresql.version=18.2.4
+          quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
+          quarkus.helm.dependencies.postgresql.wait-for-service=quarkus-rest-heroes-db:5432
+
+          quarkus.helm.values."db.auth.database".value=heroes_database
+          quarkus.helm.values."db.auth.username".value=superman
+          quarkus.helm.values."db.auth.password".value=superman
+          quarkus.helm.values."db.volumePermissions.enabled".value-as-bool=false
+          quarkus.helm.values."db.volumePermissions.securityContext.runAsUser".value=auto
+          quarkus.helm.values."db.securityContext.enabled".value-as-bool=false
+          quarkus.helm.values."db.shmVolume.chmod.enabled".value-as-bool=false
+          quarkus.helm.values."db.primary.containerSecurityContext.enabled".value-as-bool=false
+          quarkus.helm.values."db.primary.containerSecurityContext.runAsUser".value=auto
+          quarkus.helm.values."db.primary.podSecurityContext.enabled".value-as-bool=false
+          quarkus.helm.values."db.primary.podSecurityContext.fsGroup".value=auto
+          EOF
+
+          # start port-forward to allow pushing images to our registry
+          oc port-forward $(oc get pod -l app=registry -o name) $REGISTRY_PORT:5000 &
+          PF_REGISTRY_PID=$!
+
+          # generate helm manifests
+          ./mvnw clean package -DskipTests \
+            -Dquarkus.platform.version=$QUARKUS_VERSION -Dquarkus.platform.group-id=io.quarkus \
+            -Dquarkus.container-image.builder=docker \
+            -Dquarkus.container-image.build=true \
+            -Dquarkus.container-image.push=true \
+            -Dquarkus.container-image.registry=$REGISTRY \
+            -Dquarkus.container-image.group=$REGISTRY_GROUP \
+            -Dquarkus.container-image.tag=$VERSION
+
+          # after pushing the image, we can now stop the port forwarding
+          kill -9 $PF_REGISTRY_PID
+
+          # And install application
+          helm install --dependency-update quarkus-rest-heroes target/helm/openshift/rest-heroes/ --set app.image=registry:5000/$REGISTRY_GROUP:$VERSION
+          oc wait --timeout=160s --for=condition=ready pod -l app.kubernetes.io/name=rest-heroes
+
+          POD_NAME=$(oc get pod -l app.kubernetes.io/name=rest-heroes -o name)
+          if [ $(oc exec -i $POD_NAME --container rest-heroes -- sh -c "curl -s -i localhost:8080") = *"500 Internal Server Error"* ]
+          then
+            echo Service rest-heroes is not working
+            oc describe $POD_NAME
+            oc logs $POD_NAME
+            exit 1
+          fi
+
+      - name: Delete namespace "super-heroes" using Helm
+        run: oc delete project super-heroes

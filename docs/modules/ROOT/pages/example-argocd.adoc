@@ -1,0 +1,62 @@
+[[example-argocd]]
+= Example: How to configure a Continuous Delivery (CD) workflow using Quarkus Helm and ArgoCD
+
+In this example, we're going to use the REST CRUD application in Quarkus from xref:example-crud.adoc[this example]. Then, we're going to push the Helm chart resources into a GIT repository. Next, we're going to use the ArgoCD user interface to add a new application and configure it to use the GIT repository where we pushed the generated Helm chart.
+
+== Prerequisites
+
+* Maven 3.8+
+* Java 17+
+* Have logged into an ArgoCD instance
+* Have installed the GIT command line
+
+== Create application/Configure container image/Configure Quarkus Helm
+
+We're going to continue with the same REST CRUD application that we created for xref:example-crud.adoc[this example], so if you haven't seen this example yet, go for it.
+
+== Generate the Quarkus Helm charts out of the target folder
+
+After configuring xref:example-crud.adoc#configure-quarkus-helm[the Quarkus Helm extension], the generated Helm charts will be created at `target/helm/kubernetes/demo` folder and usually the `target` folder is ignored when pushing changes into GIT, so let's configure the Quarkus Helm repository to create the Helm charts into another repository.
+
+[source,properties]
+----
+quarkus.helm.output-directory=../folder
+----
+
+Now, the Quarkus Helm extension will create the charts into the upper level project folder and will create a `folder` directory name.
+
+Next, assuming your project is already a GIT repository, you need to commit this directory and push it:
+
+[source,bash]
+----
+git add folder
+git commit -m "Added folder that contains generated Helm charts"
+git push
+----
+
+Finally, let's go to ArgoCD.
+
+== Create Application in ArgoCD
+
+Assuming that you're configured the ArgoCD project and the destination clusters/namespaces, you need to go to the ArgoCD user interface and click on the "+ NEW APP":
+
+image::argocd-create-app.png[]
+
+In the next form, set the application name as you wish, the sync policy to automatic and as source and the ArgoCD project.
+
+Next, configure the Source by selecting the URL of your GIT repository and the correct branch. When doing this, ArgoCD will automatically detect the Helm charts that were found. Select the right one in the Path field.
+
+Then, use the cluster URL you configured in the destination.
+
+Moreover, ArgoCD will automatically map the Helm values YAML file into form parameters, so you can easily provide or overwrite any property:
+
+image::argocd-create-app-parameters.png[]
+
+Now, click on "Create" and ArgoCD will automatically display all the resources, the application health and sync status:
+
+== Updating the generated Helm chart
+
+You have everything set up for the CD workflow now!
+This means that everytime you make changes to the generated Helm chart and commit/push these changes, ArgoCD will detect these changes and synchronize the running application :)
+
+image::argocd-create-app-parameters.png[]

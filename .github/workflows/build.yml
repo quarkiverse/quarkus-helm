@@ -63,6 +63,11 @@ jobs:
       - name: Build with Maven
         run: mvn clean install -DskipTests
 
+      - name: Configure Docker daemon for KinD insecure registry
+        run: |
+          echo '{"insecure-registries": ["kind-registry:5001"]}' | sudo tee /etc/docker/daemon.json
+          sudo systemctl restart docker
+
       - name: Kubernetes KinD Cluster
         id: kind
         uses: helm/kind-action@v1.13.0

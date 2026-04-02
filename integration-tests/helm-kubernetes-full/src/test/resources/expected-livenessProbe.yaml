@@ -1,0 +1,6 @@
+          livenessProbe:
+            failureThreshold: {{ .Values.app.livenessProbe.failureThreshold }}
+            httpGet:
+              path: {{ .Values.app.livenessProbe.httpGet.path }}
+              port: {{ .Values.app.ports.custom }}
+              scheme: {{ .Values.app.livenessProbe.httpGet.scheme }}

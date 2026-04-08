@@ -1,0 +1,6 @@
+          readinessProbe:
+            failureThreshold: {{ .Values.app.readinessProbe.failureThreshold }}
+            httpGet:
+              path: {{ .Values.app.readinessProbe.httpGet.path }}
+              port: {{ .Values.app.ports.management }}
+              scheme: {{ .Values.app.readinessProbe.httpGet.scheme }}

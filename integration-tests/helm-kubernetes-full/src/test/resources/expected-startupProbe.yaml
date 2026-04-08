@@ -1,0 +1,6 @@
+          startupProbe:
+            failureThreshold: {{ .Values.app.startupProbe.failureThreshold }}
+            httpGet:
+              path: {{ .Values.app.startupProbe.httpGet.path }}
+              port: {{ .Values.app.ports.management }}
+              scheme: {{ .Values.app.startupProbe.httpGet.scheme }}

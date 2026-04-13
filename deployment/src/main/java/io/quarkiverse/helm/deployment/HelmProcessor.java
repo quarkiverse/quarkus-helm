@@ -42,6 +42,7 @@ import io.quarkiverse.helm.deployment.rules.ConfigReferenceStrategyManager;
 import io.quarkiverse.helm.deployment.utils.HelmConfigUtils;
 import io.quarkiverse.helm.model.Chart;
 import io.quarkiverse.helm.model.ValuesSchema;
+import io.quarkiverse.helm.spi.AdditionalHelmCRDBuildItem;
 import io.quarkiverse.helm.spi.AdditionalHelmTemplateBuildItem;
 import io.quarkiverse.helm.spi.CustomHelmOutputDirBuildItem;
 import io.quarkiverse.helm.spi.HelmChartBuildItem;
@@ -164,6 +165,7 @@ public class HelmProcessor {
             Optional<CustomKubernetesOutputDirBuildItem> customKubernetesOutputDir,
             Optional<CustomHelmOutputDirBuildItem> customHelmOutputDir,
             List<AdditionalHelmTemplateBuildItem> additionalHelmTemplateBuildItems,
+            List<AdditionalHelmCRDBuildItem> additionalHelmCRDBuildItems,
             HelmChartConfig config) {
 
         if (dekorateOutput.isPresent()) {
@@ -173,6 +175,7 @@ public class HelmProcessor {
                     customKubernetesOutputDir,
                     customHelmOutputDir,
                     additionalHelmTemplateBuildItems,
+                    additionalHelmCRDBuildItems,
                     config));
         } else if (config.enabled()) {
             LOGGER.warn("Quarkus Helm extension is skipped since no Quarkus Kubernetes extension is configured. ");
@@ -192,6 +195,7 @@ public class HelmProcessor {
             Optional<CustomKubernetesOutputDirBuildItem> customKubernetesOutputDir,
             Optional<CustomHelmOutputDirBuildItem> customHelmOutputDir,
             List<AdditionalHelmTemplateBuildItem> additionalHelmTemplateBuildItems,
+            List<AdditionalHelmCRDBuildItem> additionalHelmCRDBuildItems,
             HelmChartConfig config) {
         validate(config);
         Project project = (Project) dekorateOutput.getProject();
@@ -225,6 +229,11 @@ public class HelmProcessor {
                     .collect(Collectors.toMap(AdditionalHelmTemplateBuildItem::getName,
                             AdditionalHelmTemplateBuildItem::getContent));
 
+            Map<String, byte[]> additionalCRDs = additionalHelmCRDBuildItems.stream()
+                    .filter(t -> t.getDeploymentTarget() == null || t.getDeploymentTarget().equals(deploymentTarget))
+                    .collect(Collectors.toMap(AdditionalHelmCRDBuildItem::getName,
+                            AdditionalHelmCRDBuildItem::getContent));
+
             Map<String, String> generated = helmWriter.writeHelmFiles(
                     name,
                     project,
@@ -233,7 +242,8 @@ public class HelmProcessor {
                     inputFolder,
                     chartOutputFolder,
                     filesInDeploymentTarget.getValue(),
-                    additionalTemplates);
+                    additionalTemplates,
+                    additionalCRDs);
 
             if (!generated.isEmpty()) {
                 helmCharts.add(read(appChartDir));

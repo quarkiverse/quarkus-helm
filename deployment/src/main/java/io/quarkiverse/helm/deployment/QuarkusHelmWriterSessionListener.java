@@ -97,7 +97,8 @@ public class QuarkusHelmWriterSessionListener {
             Path inputDir,
             Path outputDir,
             Map<String, byte[]> generatedFiles,
-            Map<String, byte[]> additionalTemplates) {
+            Map<String, byte[]> additionalTemplates,
+            Map<String, byte[]> additionalCRDs) {
         Map<String, String> artifacts = new HashMap<>();
         if (helmConfig.enabled()) {
 
@@ -114,6 +115,7 @@ public class QuarkusHelmWriterSessionListener {
                 artifacts.putAll(createEmptyChartFolder(name, outputDir));
                 artifacts.putAll(addNotesIntoTemplatesFolder(name, helmConfig, inputDir, outputDir));
                 artifacts.putAll(addAdditionalResources(name, inputDir, outputDir));
+                artifacts.putAll(addAdditionalCRDs(name, outputDir, additionalCRDs));
 
                 // Final step: packaging
                 if (helmConfig.createTarFile() || helmConfig.repository().push()) {
@@ -140,6 +142,25 @@ public class QuarkusHelmWriterSessionListener {
             if (ADDITIONAL_CHART_FILES.stream().anyMatch(source.getName()::equalsIgnoreCase)) {
                 artifacts.putAll(addAdditionalResource(name, outputDir, source));
             }
+        }
+
+        return artifacts;
+    }
+
+    private Map<String, String> addAdditionalCRDs(String name, Path outputDir, Map<String, byte[]> additionalCRDs)
+            throws IOException {
+        if (additionalCRDs == null || additionalCRDs.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Path crdDir = getChartOutputDir(name, outputDir).resolve("crds");
+        Files.createDirectories(crdDir);
+
+        Map<String, String> artifacts = new HashMap<>();
+        for (Map.Entry<String, byte[]> entry : additionalCRDs.entrySet()) {
+            Path destination = crdDir.resolve(entry.getKey());
+            writeFile(new String(entry.getValue()), destination);
+            artifacts.put(destination.toString(), EMPTY);
         }
 
         return artifacts;

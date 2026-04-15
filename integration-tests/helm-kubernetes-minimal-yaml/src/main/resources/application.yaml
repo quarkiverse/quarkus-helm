@@ -1,0 +1,3 @@
+foo:
+  bar: ${FOO_BAR:baz}
+  ~: ${BAR_FOO}

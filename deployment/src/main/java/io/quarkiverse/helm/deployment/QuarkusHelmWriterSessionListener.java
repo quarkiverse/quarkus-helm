@@ -590,6 +590,10 @@ public class QuarkusHelmWriterSessionListener {
             // Next, process the environmental properties, so we can decide if it's a property coming from values.yaml or not.
             for (ConfigReference valueReference : valuesReferences) {
                 if (valueIsEnvironmentProperty(valueReference)) {
+                    if (!isPlainEnvironmentProperty(valueReference)) {
+                        continue;
+                    }
+
                     String valueReferenceProperty = deductProperty(helmConfig, valueReference.getProperty());
                     Object valueReferenceValue = valueReference.getValue();
                     String environmentProperty = getEnvironmentPropertyName(valueReference);
@@ -628,6 +632,12 @@ public class QuarkusHelmWriterSessionListener {
         }
 
         return property;
+    }
+
+    static boolean isPlainEnvironmentProperty(ConfigReference valueReference) {
+        return valueReference.getPaths() != null
+                && Arrays.stream(valueReference.getPaths())
+                        .anyMatch(path -> path.endsWith(".value"));
     }
 
     private void processValueReference(String property, Object value, ConfigReference valueReference, ValuesHolder values,

@@ -43,6 +43,11 @@
             <configuration>
               <deployment>${project.groupId}:${project.artifactId}-deployment:${project.version}
               </deployment>
+              <capabilities>
+                <provides>
+                  <capability>io.quarkiverse.helm.crd-support</capability>
+                </provides>
+              </capabilities>
             </configuration>
           </execution>
         </executions>

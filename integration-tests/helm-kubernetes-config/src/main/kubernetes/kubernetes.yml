@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  hello.message: Hello %s from configmap
+  hello.number: 1
+  hello.flag: true

@@ -61,6 +61,7 @@ import io.quarkiverse.helm.deployment.utils.ValuesHolder;
 import io.quarkiverse.helm.model.Chart;
 import io.quarkiverse.helm.model.HelmDependency;
 import io.quarkiverse.helm.model.Maintainer;
+import io.quarkiverse.helm.spi.AdditionalHelmTemplateBuildItem;
 
 public class QuarkusHelmWriterSessionListener {
     private static final String YAML = ".yaml";
@@ -98,7 +99,8 @@ public class QuarkusHelmWriterSessionListener {
             Path outputDir,
             Map<String, byte[]> generatedFiles,
             Map<String, byte[]> additionalTemplates,
-            Map<String, byte[]> additionalCRDs) {
+            Map<String, byte[]> additionalCRDs,
+            List<AdditionalHelmTemplateBuildItem.ReplacedResource> replacedResources) {
         Map<String, String> artifacts = new HashMap<>();
         if (helmConfig.enabled()) {
 
@@ -107,7 +109,8 @@ public class QuarkusHelmWriterSessionListener {
                 ValuesHolder values = populateValuesFromConfig(helmConfig, inputDir);
                 List<Map<Object, Object>> resources = populateValuesFromConfigReferences(helmConfig, generatedFiles, values,
                         valueReferencesFromDecorators);
-                artifacts.putAll(processTemplates(name, helmConfig, inputDir, outputDir, resources, additionalTemplates));
+                artifacts.putAll(processTemplates(name, helmConfig, inputDir, outputDir, resources, additionalTemplates,
+                        replacedResources));
                 artifacts.putAll(createChartYaml(name, helmConfig, project, inputDir, outputDir));
                 artifacts.putAll(createValuesYaml(name, helmConfig, inputDir, outputDir, values));
 
@@ -355,7 +358,8 @@ public class QuarkusHelmWriterSessionListener {
             Path inputDir,
             Path outputDir,
             List<Map<Object, Object>> resources,
-            Map<String, byte[]> additionalTemplates) throws IOException {
+            Map<String, byte[]> additionalTemplates,
+            List<AdditionalHelmTemplateBuildItem.ReplacedResource> replacedResources) throws IOException {
 
         Map<String, String> templates = new HashMap<>();
         Path templatesDir = getChartOutputDir(name, outputDir).resolve(TEMPLATES);
@@ -364,6 +368,12 @@ public class QuarkusHelmWriterSessionListener {
         Map<String, String> functionsByResource = processUserDefinedTemplates(inputDir, templates, templatesDir);
         // Split yamls in separated files by kind
         for (Map<Object, Object> resource : resources) {
+            String kind = (String) resource.get(KIND);
+
+            if (isReplaced(kind, getNameFromResource(resource), replacedResources)) {
+                continue;
+            }
+
             // Add user defined expressions
             if (helmConfig.expressions() != null) {
                 YamlExpressionParser parser = new YamlExpressionParser(Arrays.asList(resource));
@@ -373,8 +383,6 @@ public class QuarkusHelmWriterSessionListener {
                     }
                 }
             }
-
-            String kind = (String) resource.get(KIND);
 
             ensureServiceAccountSubjectNamespaceIsPopulated(resource);
 
@@ -455,6 +463,12 @@ public class QuarkusHelmWriterSessionListener {
         }
 
         return null;
+    }
+
+    boolean isReplaced(String kind, String name,
+            List<AdditionalHelmTemplateBuildItem.ReplacedResource> replacedResources) {
+        return replacedResources.stream()
+                .anyMatch(replaced -> replaced.kind().equals(kind) && replaced.name().equals(name));
     }
 
     private Map<String, String> processUserDefinedTemplates(Path inputDir, Map<String, String> templates, Path templatesDir)

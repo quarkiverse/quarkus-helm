@@ -224,10 +224,19 @@ public class HelmProcessor {
             deleteOutputHelmFolderIfExists(chartOutputFolder);
             String name = config.name().orElse(app.getName());
             Path appChartDir = chartOutputFolder.resolve(name);
-            Map<String, byte[]> additionalTemplates = additionalHelmTemplateBuildItems.stream()
+            List<AdditionalHelmTemplateBuildItem> additionalHelmTemplateBuildItemsForTarget = additionalHelmTemplateBuildItems
+                    .stream()
                     .filter(t -> t.getDeploymentTarget() == null || t.getDeploymentTarget().equals(deploymentTarget))
+                    .collect(Collectors.toList());
+
+            Map<String, byte[]> additionalTemplates = additionalHelmTemplateBuildItemsForTarget.stream()
                     .collect(Collectors.toMap(AdditionalHelmTemplateBuildItem::getName,
                             AdditionalHelmTemplateBuildItem::getContent));
+
+            List<AdditionalHelmTemplateBuildItem.ReplacedResource> replacedResources = additionalHelmTemplateBuildItemsForTarget
+                    .stream()
+                    .flatMap(t -> t.getReplacedResources().stream())
+                    .collect(Collectors.toList());
 
             Map<String, byte[]> additionalCRDs = additionalHelmCRDBuildItems.stream()
                     .filter(t -> t.getDeploymentTarget() == null || t.getDeploymentTarget().equals(deploymentTarget))
@@ -243,7 +252,8 @@ public class HelmProcessor {
                     chartOutputFolder,
                     filesInDeploymentTarget.getValue(),
                     additionalTemplates,
-                    additionalCRDs);
+                    additionalCRDs,
+                    replacedResources);
 
             if (!generated.isEmpty()) {
                 helmCharts.add(read(appChartDir));

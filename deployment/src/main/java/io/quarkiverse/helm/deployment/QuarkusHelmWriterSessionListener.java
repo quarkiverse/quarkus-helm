@@ -416,12 +416,228 @@ public class QuarkusHelmWriterSessionListener {
             for (Map.Entry<String, byte[]> additionalTemplate : additionalTemplates.entrySet()) {
                 Path targetFile = templatesDir.resolve(additionalTemplate.getKey());
                 String content = new String(additionalTemplate.getValue());
-                writeFile(content, targetFile);
-                templates.put(targetFile.toString(), content);
+
+                String processedContent = processAdditionalTemplateContent(content, helmConfig);
+                writeFile(processedContent, targetFile);
+                templates.put(targetFile.toString(), processedContent);
             }
         }
 
         return templates;
+    }
+
+    /**
+     * Processes an additional template by applying user-defined expressions.
+     * Supports both plain YAML (parsed via YAMLPath) and Helm templates (string-based replacement).
+     *
+     * @param content the raw template content
+     * @param helmConfig the Helm chart configuration containing expressions
+     * @return the processed template content
+     * @throws IOException if serialization fails
+     */
+    private String processAdditionalTemplateContent(String content, HelmChartConfig helmConfig) throws IOException {
+        if (helmConfig.expressions() == null || helmConfig.expressions().isEmpty()) {
+            return content;
+        }
+
+        // Detect Helm template syntax ({{ ... }})
+        if (content.contains("{{")) {
+            return applyExpressionsToHelmTemplate(content, helmConfig.expressions());
+        }
+
+        // Plain YAML - parse and apply via YAMLPath
+        List<Map<Object, Object>> resources = deserializeResources(content);
+        if (resources.isEmpty()) {
+            return content;
+        }
+
+        StringBuilder result = new StringBuilder();
+        boolean first = true;
+        for (Map<Object, Object> resource : resources) {
+            if (helmConfig.expressions() != null) {
+                YamlExpressionParser parser = new YamlExpressionParser(Arrays.asList(resource));
+                for (ExpressionConfig expressionConfig : helmConfig.expressions().values()) {
+                    if (expressionConfig.path() != null && expressionConfig.expression() != null) {
+                        readAndSet(parser, expressionConfig.path(), expressionConfig.expression());
+                    }
+                }
+            }
+
+            ensureServiceAccountSubjectNamespaceIsPopulated(resource);
+
+            String kind = (String) resource.get(KIND);
+            String adaptedString = Serialization.yamlMapper().writeValueAsString(resource);
+
+            for (Map.Entry<String, AddIfStatementConfig> addIfStatement : helmConfig.addIfStatement().entrySet()) {
+                AddIfStatementConfig addIfStatementConfig = addIfStatement.getValue();
+                if ((addIfStatementConfig.onResourceKind().isEmpty()
+                        || addIfStatementConfig.onResourceKind().get().equals(kind))
+                        && (addIfStatementConfig.onResourceName().isEmpty()
+                                || addIfStatementConfig.onResourceName().get()
+                                        .equals(getNameFromResource(resource)))) {
+                    String propertyName = addIfStatementConfig.property().orElse(addIfStatement.getKey());
+                    String property = deductProperty(helmConfig, propertyName);
+
+                    adaptedString = String.format(IF_STATEMENT_START_TAG, property)
+                            + System.lineSeparator()
+                            + adaptedString
+                            + System.lineSeparator()
+                            + TEMPLATE_FUNCTION_END_TAG
+                            + System.lineSeparator();
+                }
+            }
+
+            adaptedString = applyKnownPatterns(adaptedString);
+
+            if (!first) {
+                result.append("---\n");
+            }
+            first = false;
+            result.append(adaptedString);
+        }
+        return result.toString();
+    }
+
+    /**
+     * https://github.com/wanaku-ai/wanaku/issues/1376
+     * Applies expressions to a Helm template using string-based replacement.
+     * This handles templates that already contain Helm directives ({{ ... }}).
+     *
+     * @param content the Helm template content
+     * @param expressions the configured expressions
+     * @return the processed template content
+     */
+    private String applyExpressionsToHelmTemplate(String content, Map<String, ExpressionConfig> expressions) {
+        String result = content;
+        for (ExpressionConfig expressionConfig : expressions.values()) {
+            if (expressionConfig.path() != null && expressionConfig.expression() != null) {
+                String path = expressionConfig.path();
+                String expression = expressionConfig.expression();
+
+                // Extract the field name from YAMLPath (e.g., ".roleRef.name" from "(kind == ClusterRoleBinding).roleRef.name")
+                String fieldPath = extractFieldPath(path);
+                if (fieldPath != null) {
+                    result = replaceFieldInHelmTemplate(result, fieldPath, expression);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Extracts the field path from a YAMLPath expression.
+     * E.g., "(kind == ClusterRoleBinding && metadata.name == foo).roleRef.name" -> "roleRef.name"
+     *
+     * @param yamlPath the YAMLPath expression
+     * @return the field path after the last ')', or null if not found
+     */
+    private String extractFieldPath(String yamlPath) {
+        int lastParen = yamlPath.lastIndexOf(')');
+        if (lastParen >= 0 && lastParen + 1 < yamlPath.length()) {
+            String after = yamlPath.substring(lastParen + 1).trim();
+            if (after.startsWith(".")) {
+                return after.substring(1);
+            }
+            return after;
+        }
+        return null;
+    }
+
+    /**
+     * Replaces a field value in a Helm template using regex.
+     * Matches YAML key: value patterns and replaces the value.
+     *
+     * @param content the template content
+     * @param fieldPath the dot-notation field path (e.g., "roleRef.name")
+     * @param expression the Helm expression to insert
+     * @return the modified content
+     */
+    private String replaceFieldInHelmTemplate(String content, String fieldPath, String expression) {
+        String[] parts = fieldPath.split("\\.");
+        if (parts.length == 0) {
+            return content;
+        }
+
+        String parentField = parts[0];
+        String targetField = parts[parts.length - 1];
+        String replacement = targetField + ": " + expression;
+
+        String[] lines = content.split("\n");
+        return processLinesForFieldReplacement(lines, parentField, targetField, replacement);
+    }
+
+    private String processLinesForFieldReplacement(String[] lines, String parentField, String targetField, String replacement) {
+        StringBuilder result = new StringBuilder();
+        BlockTracker tracker = new BlockTracker(parentField);
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            String trimmed = line.trim();
+
+            tracker.updateState(trimmed, line.length() - trimmed.length());
+
+            if (tracker.isInParentBlock() && isTargetFieldLine(trimmed, targetField)) {
+                int indent = line.length() - trimmed.length();
+                result.append(" ".repeat(indent)).append(replacement);
+            } else {
+                result.append(line);
+            }
+
+            if (i < lines.length - 1) {
+                result.append("\n");
+            }
+        }
+
+        return result.toString();
+    }
+
+    private boolean isTargetFieldLine(String trimmed, String targetField) {
+        return trimmed.startsWith(targetField + ":") && !trimmed.startsWith(targetField + "-");
+    }
+
+    /**
+     * Tracks whether we're inside a parent YAML block (e.g., "roleRef:") by monitoring indentation levels.
+     */
+    private static class BlockTracker {
+        private final String parentField;
+        private boolean inParentBlock = false;
+        private int parentIndent = -1;
+
+        BlockTracker(String parentField) {
+            this.parentField = parentField;
+        }
+
+        void updateState(String trimmedLine, int currentIndent) {
+            if (isParentFieldLine(trimmedLine)) {
+                inParentBlock = true;
+                parentIndent = currentIndent;
+            } else if (inParentBlock && hasExitedBlock(currentIndent, trimmedLine)) {
+                inParentBlock = false;
+            }
+        }
+
+        private boolean isParentFieldLine(String trimmed) {
+            return trimmed.equals(parentField + ":") || trimmed.startsWith(parentField + ": ");
+        }
+
+        private boolean hasExitedBlock(int currentIndent, String trimmed) {
+            return currentIndent <= parentIndent && !trimmed.isEmpty();
+        }
+
+        boolean isInParentBlock() {
+            return inParentBlock;
+        }
+    }
+
+    private List<Map<Object, Object>> deserializeResources(String content) {
+        try {
+            YamlExpressionParser parser = YamlPath.from(new ByteArrayInputStream(content.getBytes()));
+            return parser.getResources();
+        } catch (Exception e) {
+            LOGGER.info(
+                    "Could not parse additional template content as YAML, skipping expression processing: " + e.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     /**

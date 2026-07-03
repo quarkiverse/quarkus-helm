@@ -35,6 +35,11 @@
       <groupId>io.github.yaml-path</groupId>
       <artifactId>yaml-path</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-junit</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

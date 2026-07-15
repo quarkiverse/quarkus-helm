@@ -1,0 +1,7 @@
+postgresql:
+  global:
+    postgresql:
+      auth:
+        key: value
+app:
+  serviceType: NodePort

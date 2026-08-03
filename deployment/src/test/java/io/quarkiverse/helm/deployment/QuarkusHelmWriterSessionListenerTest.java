@@ -53,7 +53,8 @@ public class QuarkusHelmWriterSessionListenerTest {
                 outputDir,
                 generatedFiles,
                 additionalTemplates,
-                Collections.emptyMap());
+                Collections.emptyMap(),
+                Collections.emptyList());
 
         Path clusterRoleBindingFile = outputDir.resolve(chartName).resolve("templates").resolve("clusterrolebinding.yaml");
         assertTrue(Files.exists(clusterRoleBindingFile),
@@ -94,7 +95,8 @@ public class QuarkusHelmWriterSessionListenerTest {
                 outputDir,
                 generatedFiles,
                 additionalTemplates,
-                Collections.emptyMap());
+                Collections.emptyMap(),
+                Collections.emptyList());
 
         Path helpersFile = outputDir.resolve(chartName).resolve("templates").resolve("_helpers.tpl");
         assertTrue(Files.exists(helpersFile),
@@ -147,7 +149,8 @@ public class QuarkusHelmWriterSessionListenerTest {
                 outputDir,
                 generatedFiles,
                 additionalTemplates,
-                Collections.emptyMap());
+                Collections.emptyMap(),
+                Collections.emptyList());
 
         Path outputFile = outputDir.resolve(chartName).resolve("templates").resolve("validating-clusterrolebinding.yaml");
         assertTrue(Files.exists(outputFile), "Helm template file should exist");

@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java-version: [ 21 ]
+        java-version: [ 25 ]
     needs: build
     steps:
       - uses: actions/checkout@v3
@@ -341,6 +341,13 @@ jobs:
           quarkus.kubernetes.deployment-target=kubernetes
           quarkus.kubernetes.prometheus.generate-service-monitor=false
 
+          quarkus.openapi.generator.server.spec=openapi.yml
+          quarkus.openapi.generator.server.base-package=io.quarkus.sample.superheroes.hero.api
+          quarkus.openapi.generator.server.use=openapitools
+          quarkus.openapi.generator.server.use-bean-validation=true
+          quarkus.openapi.generator.server.use-builder=true
+          quarkus.openapi.generator.server.use-reactive=true
+
           quarkus.helm.dependencies.postgresql.alias=db
           quarkus.helm.dependencies.postgresql.version=18.2.4
           quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
@@ -357,6 +364,7 @@ jobs:
 
           # generate helm manifests
           ./mvnw clean package -DskipTests \
+            -Dhelm.version=$QUARKUS_HELM_VERSION \
             -Dquarkus.platform.version=$QUARKUS_VERSION -Dquarkus.platform.group-id=io.quarkus \
             -Dquarkus.container-image.builder=docker \
             -Dquarkus.container-image.build=true \
@@ -472,6 +480,13 @@ jobs:
           quarkus.datasource.password=superman
           quarkus.kubernetes.deployment-target=openshift
 
+          quarkus.openapi.generator.server.spec=openapi.yml
+          quarkus.openapi.generator.server.base-package=io.quarkus.sample.superheroes.hero.api
+          quarkus.openapi.generator.server.use=openapitools
+          quarkus.openapi.generator.server.use-bean-validation=true
+          quarkus.openapi.generator.server.use-builder=true
+          quarkus.openapi.generator.server.use-reactive=true
+
           quarkus.helm.dependencies.postgresql.alias=db
           quarkus.helm.dependencies.postgresql.version=18.2.4
           quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
@@ -496,6 +511,7 @@ jobs:
 
           # generate helm manifests
           ./mvnw clean package -DskipTests \
+            -Dhelm.version=$QUARKUS_HELM_VERSION \
             -Dquarkus.platform.version=$QUARKUS_VERSION -Dquarkus.platform.group-id=io.quarkus \
             -Dquarkus.container-image.builder=docker \
             -Dquarkus.container-image.build=true \

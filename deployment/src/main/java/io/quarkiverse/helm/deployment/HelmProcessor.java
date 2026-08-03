@@ -224,10 +224,19 @@ public class HelmProcessor {
             deleteOutputHelmFolderIfExists(chartOutputFolder);
             String name = config.name().orElse(app.getName());
             Path appChartDir = chartOutputFolder.resolve(name);
-            Map<String, byte[]> additionalTemplates = additionalHelmTemplateBuildItems.stream()
+            List<AdditionalHelmTemplateBuildItem> additionalHelmTemplateBuildItemsForTarget = additionalHelmTemplateBuildItems
+                    .stream()
                     .filter(t -> t.getDeploymentTarget() == null || t.getDeploymentTarget().equals(deploymentTarget))
+                    .collect(Collectors.toList());
+
+            Map<String, byte[]> additionalTemplates = additionalHelmTemplateBuildItemsForTarget.stream()
                     .collect(Collectors.toMap(AdditionalHelmTemplateBuildItem::getName,
                             AdditionalHelmTemplateBuildItem::getContent));
+
+            List<AdditionalHelmTemplateBuildItem.ReplacedResource> replacedResources = additionalHelmTemplateBuildItemsForTarget
+                    .stream()
+                    .flatMap(t -> t.getReplacedResources().stream())
+                    .collect(Collectors.toList());
 
             Map<String, byte[]> additionalCRDs = additionalHelmCRDBuildItems.stream()
                     .filter(t -> t.getDeploymentTarget() == null || t.getDeploymentTarget().equals(deploymentTarget))
@@ -238,12 +247,13 @@ public class HelmProcessor {
                     name,
                     project,
                     config,
-                    getConfigReferencesFromSession(deploymentTarget, dekorateOutput),
+                    getConfigReferencesFromSession(deploymentTarget, dekorateOutput, app.getName()),
                     inputFolder,
                     chartOutputFolder,
                     filesInDeploymentTarget.getValue(),
                     additionalTemplates,
-                    additionalCRDs);
+                    additionalCRDs,
+                    replacedResources);
 
             if (!generated.isEmpty()) {
                 helmCharts.add(read(appChartDir));
@@ -470,7 +480,7 @@ public class HelmProcessor {
     }
 
     private List<ConfigReference> getConfigReferencesFromSession(String deploymentTarget,
-            DekorateOutputBuildItem dekorateOutput) {
+            DekorateOutputBuildItem dekorateOutput, String resourceName) {
         List<ConfigReference> configReferencesFromDecorators = ((Session) dekorateOutput.getSession())
                 .getResourceRegistry()
                 .getConfigReferences(deploymentTarget)
@@ -481,6 +491,22 @@ public class HelmProcessor {
                 .collect(Collectors.toList());
 
         Collections.reverse(configReferencesFromDecorators);
+
+        // Since Quarkus 3.37, `replicas` is baked directly into the Deployment/StatefulSet resource
+        // (see io.quarkus.kubernetes.deployment.BaseAddDeploymentResourceDecorator) instead of being
+        // applied through a dedicated decorator that exposes a ConfigReference, so it's no longer
+        // discoverable from the session above. Synthesize it explicitly so it still ends up in
+        // values.yaml, using the same resource paths dekorate's own (now unused)
+        // ApplyReplicasToDeploymentDecorator/ApplyReplicasToStatefulSetDecorator relied on.
+        boolean replicasAlreadyPresent = configReferencesFromDecorators.stream()
+                .anyMatch(cr -> "replicas".equals(cr.getProperty()));
+        if (!replicasAlreadyPresent) {
+            configReferencesFromDecorators.add(new ConfigReference.Builder("replicas", new String[] {
+                    String.format("(kind == Deployment && metadata.name == %s).spec.replicas", resourceName),
+                    String.format("(kind == StatefulSet && metadata.name == %s).spec.replicas", resourceName)
+            }).build());
+        }
+
         return configReferencesFromDecorators;
     }
 

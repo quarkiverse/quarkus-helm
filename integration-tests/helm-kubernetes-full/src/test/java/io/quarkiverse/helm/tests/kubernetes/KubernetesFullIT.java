@@ -9,19 +9,27 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
-import io.dekorate.utils.Serialization;
-import io.dekorate.utils.Strings;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 public class KubernetesFullIT {
 
     private static final String CHART_NAME = "my-chart";
     private static final String ROOT_CONFIG_NAME = "app";
+    private static ObjectMapper mapper;
+
+    @BeforeAll
+    public static void init() {
+        mapper = new ObjectMapper(new YAMLFactory());
+    }
 
     @Test
     public void shouldHelmManifestsBeGenerated() throws IOException {
@@ -33,20 +41,19 @@ public class KubernetesFullIT {
         assertNotNull(getResourceAsStream("values.schema.json"));
         assertNotNull(getResourceAsStream("values-dev.yaml"));
         assertNotNull(getResourceAsStream("templates/deployment.yaml"));
-        assertTrue(Strings.read(getResourceAsStream("templates/deployment.yaml"))
-                .contains(Strings.read(KubernetesFullIT.class.getResourceAsStream("/expected-livenessProbe.yaml"))));
-        assertTrue(Strings.read(getResourceAsStream("templates/deployment.yaml"))
-                .contains(Strings.read(KubernetesFullIT.class.getResourceAsStream("/expected-startupProbe.yaml"))));
-        assertTrue(Strings.read(getResourceAsStream("templates/deployment.yaml"))
-                .contains(Strings.read(KubernetesFullIT.class.getResourceAsStream("/expected-readinessProbe.yaml"))));
+        assertTrue(readString(getResourceAsStream("templates/deployment.yaml"))
+                .contains(readString(KubernetesFullIT.class.getResourceAsStream("/expected-livenessProbe.yaml"))));
+        assertTrue(readString(getResourceAsStream("templates/deployment.yaml"))
+                .contains(readString(KubernetesFullIT.class.getResourceAsStream("/expected-startupProbe.yaml"))));
+        assertTrue(readString(getResourceAsStream("templates/deployment.yaml"))
+                .contains(readString(KubernetesFullIT.class.getResourceAsStream("/expected-readinessProbe.yaml"))));
         assertNotNull(getResourceAsStream("templates/NOTES.txt"));
         assertNotNull(getResourceAsStream("crds/crontabs.stable.example.com.yaml"));
     }
 
     @Test
     public void chartsShouldContainExpectedData() throws IOException {
-        Map<String, Object> chart = Serialization.yamlMapper()
-                .readValue(getResourceAsStream("Chart.yaml"), Map.class);
+        Map<String, Object> chart = mapper.readValue(getResourceAsStream("Chart.yaml"), Map.class);
         assertNotNull(chart, "Chart.yaml is null!");
 
         assertNotNull(chart.containsKey("annotations"), "Does not contain `annotations` from the user Charts.yml!");
@@ -55,8 +62,7 @@ public class KubernetesFullIT {
 
     @Test
     public void valuesShouldContainExpectedData() throws IOException {
-        Map<String, Object> values = Serialization.yamlMapper()
-                .readValue(getResourceAsStream("values.yaml"), Map.class);
+        Map<String, Object> values = mapper.readValue(getResourceAsStream("values.yaml"), Map.class);
         assertNotNull(values, "Values is null!");
 
         assertNotNull(values.containsKey(ROOT_CONFIG_NAME), "Does not contain `" + ROOT_CONFIG_NAME + "`");
@@ -121,9 +127,8 @@ public class KubernetesFullIT {
 
     @Test
     public void valuesShouldContainExpectedDataInDevProfile() throws IOException {
-        Map<String, Object> values = Serialization.yamlMapper()
-                .readValue(getResourceAsStream("values-dev.yaml"),
-                        Map.class);
+        Map<String, Object> values = mapper.readValue(getResourceAsStream("values-dev.yaml"),
+                Map.class);
         assertNotNull(values, "Values is null!");
 
         assertNotNull(values.containsKey(ROOT_CONFIG_NAME), "Does not contain `" + ROOT_CONFIG_NAME + "`");
@@ -143,8 +148,7 @@ public class KubernetesFullIT {
     @Test
     @EnabledIfSystemProperty(named = "test-system-properties", matches = "true")
     public void valuesShouldContainDataFromSystem() throws IOException {
-        Map<String, Object> values = Serialization.yamlMapper()
-                .readValue(getResourceAsStream("values.yaml"), Map.class);
+        Map<String, Object> values = mapper.readValue(getResourceAsStream("values.yaml"), Map.class);
         assertNotNull(values, "Values is null!");
         Map<String, Object> helmExampleValues = (Map<String, Object>) values.get(ROOT_CONFIG_NAME);
         Map<String, Object> envs = (Map<String, Object>) helmExampleValues.get("envs");
@@ -153,7 +157,11 @@ public class KubernetesFullIT {
         assertEquals("bar", envs.get("FROM_SYSTEM_ENV"));
     }
 
-    private final InputStream getResourceAsStream(String file) throws FileNotFoundException {
+    private InputStream getResourceAsStream(String file) throws FileNotFoundException {
         return new FileInputStream(Paths.get("target", "helm", "kubernetes").resolve(CHART_NAME).resolve(file).toFile());
+    }
+
+    private static String readString(InputStream is) throws IOException {
+        return new String(is.readAllBytes(), StandardCharsets.UTF_8);
     }
 }

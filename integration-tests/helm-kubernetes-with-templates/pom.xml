@@ -38,8 +38,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.dekorate</groupId>
-      <artifactId>dekorate-core</artifactId>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -49,6 +49,7 @@
       <plugin>
         <groupId>io.quarkus</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>
+        <extensions>true</extensions>
         <executions>
           <execution>
             <goals>

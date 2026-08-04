@@ -11,18 +11,25 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import io.dekorate.utils.Serialization;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 public class KubernetesYamlConfigSourceIT {
     private static final String CHART_NAME = "quarkus-helm-integration-tests-kubernetes-minimal-yaml";
     private static final String ROOT_CONFIG_NAME = "app";
+    private static ObjectMapper mapper;
+
+    @BeforeAll
+    public static void init() {
+        mapper = new ObjectMapper(new YAMLFactory());
+    }
 
     @Test
     public void shouldHelmManifestsBeGenerated() throws IOException {
-        Map chart = Serialization.yamlMapper()
-                .readValue(getResourceAsStream("Chart.yaml"), Map.class);
+        Map chart = mapper.readValue(getResourceAsStream("Chart.yaml"), Map.class);
         assertNotNull(chart, "Chart is null!");
         assertEquals(CHART_NAME, chart.get("name"));
         // Values.yaml manifest
@@ -35,8 +42,7 @@ public class KubernetesYamlConfigSourceIT {
 
     @Test
     public void valuesShouldContainExpectedData() throws IOException {
-        Map<String, Object> values = Serialization.yamlMapper()
-                .readValue(getResourceAsStream("values.yaml"), Map.class);
+        Map<String, Object> values = mapper.readValue(getResourceAsStream("values.yaml"), Map.class);
         assertNotNull(values, "Values is null!");
 
         assertNotNull(values.containsKey(ROOT_CONFIG_NAME), "Does not contain `" + ROOT_CONFIG_NAME + "`");

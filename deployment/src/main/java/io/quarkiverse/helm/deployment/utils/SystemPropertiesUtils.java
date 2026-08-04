@@ -1,13 +1,13 @@
 package io.quarkiverse.helm.deployment.utils;
 
+import static io.quarkiverse.helm.deployment.utils.StringUtils.isEmpty;
+import static io.quarkiverse.helm.deployment.utils.StringUtils.isNotEmpty;
+import static io.quarkus.runtime.util.StringUtil.isNullOrEmpty;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import static io.quarkiverse.helm.deployment.utils.StringUtils.isEmpty;
-import static io.quarkiverse.helm.deployment.utils.StringUtils.isNotEmpty;
-import static io.quarkus.runtime.util.StringUtil.isNullOrEmpty;
 
 public final class SystemPropertiesUtils {
 

@@ -10,7 +10,6 @@ import java.util.regex.Pattern;
 
 public final class MapUtils {
     private MapUtils() {
-
     }
 
     public static Map<String, Object> toPlainMap(Map<String, Object> map) {
@@ -63,7 +62,28 @@ public final class MapUtils {
                 result.put(String.join(".", newPath), entry.getValue());
             }
         }
-
         return result;
+    }
+
+    /**
+     * Merge a nested map to an existing one.
+     *
+     * @param existing the existing map.
+     * @param map the map that will be merged into the existing.
+     */
+    public static void merge(Map<String, Object> existing, Map<String, Object> map) {
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+            Object existingValue = existing.get(key);
+            if (existingValue == null) {
+                existing.put(key, value);
+            } else if (existingValue instanceof Map && value instanceof Map) {
+                merge((Map<String, Object>) existingValue, (Map<String, Object>) value);
+            } else {
+                existing.put(key, value);
+            }
+        }
     }
 }

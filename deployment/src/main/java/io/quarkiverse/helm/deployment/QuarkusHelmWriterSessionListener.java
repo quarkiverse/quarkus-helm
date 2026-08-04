@@ -2,8 +2,7 @@ package io.quarkiverse.helm.deployment;
 
 import static io.quarkiverse.helm.deployment.utils.HelmConfigUtils.deductProperty;
 import static io.quarkiverse.helm.deployment.utils.HelmTarArchiver.createTarBall;
-import static io.quarkiverse.helm.deployment.utils.MapUtils.toMultiValueUnsortedMap;
-import static io.quarkiverse.helm.deployment.utils.MapUtils.toPlainMap;
+import static io.quarkiverse.helm.deployment.utils.MapUtils.*;
 import static io.quarkiverse.helm.deployment.utils.StringUtils.isEmpty;
 import static io.quarkiverse.helm.deployment.utils.ValuesSchemaUtils.createSchema;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.EMPTY;
@@ -50,7 +49,6 @@ import io.dekorate.Logger;
 import io.dekorate.LoggerFactory;
 import io.dekorate.project.Project;
 import io.dekorate.utils.Exec;
-import io.dekorate.utils.Maps;
 import io.github.yamlpath.YamlExpressionParser;
 import io.github.yamlpath.YamlPath;
 import io.quarkiverse.helm.deployment.utils.FileUtils;
@@ -316,9 +314,9 @@ public class QuarkusHelmWriterSessionListener {
             }
             result.putAll(yaml);
             // first, incorporate the properties from the file
-            Maps.merge(valuesAsMultiValueMap, result);
+            merge(valuesAsMultiValueMap, result);
             // then, merge it with the generated data
-            Maps.merge(result, valuesAsMultiValueMap);
+            merge(result, valuesAsMultiValueMap);
             return result;
         }
 

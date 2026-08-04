@@ -4,6 +4,7 @@ import static io.quarkiverse.helm.deployment.utils.HelmConfigUtils.deductPropert
 import static io.quarkiverse.helm.deployment.utils.HelmTarArchiver.createTarBall;
 import static io.quarkiverse.helm.deployment.utils.MapUtils.toMultiValueUnsortedMap;
 import static io.quarkiverse.helm.deployment.utils.MapUtils.toPlainMap;
+import static io.quarkiverse.helm.deployment.utils.StringUtils.isEmpty;
 import static io.quarkiverse.helm.deployment.utils.ValuesSchemaUtils.createSchema;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.EMPTY;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.END_EXPRESSION_TOKEN;
@@ -17,7 +18,6 @@ import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.rea
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.readAndSet;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.set;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.toExpression;
-import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -41,9 +41,9 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import io.dekorate.ConfigReference;
 import io.dekorate.Logger;
@@ -51,7 +51,6 @@ import io.dekorate.LoggerFactory;
 import io.dekorate.project.Project;
 import io.dekorate.utils.Exec;
 import io.dekorate.utils.Maps;
-import io.dekorate.utils.Serialization;
 import io.github.yamlpath.YamlExpressionParser;
 import io.github.yamlpath.YamlPath;
 import io.quarkiverse.helm.deployment.utils.FileUtils;
@@ -84,6 +83,9 @@ public class QuarkusHelmWriterSessionListener {
     private static final String TEMPLATE_FUNCTION_END_TAG = "{{- end }}";
     private static final String HELM_HELPER_PREFIX = "_";
     private static final boolean APPEND = true;
+    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(
+            new YAMLFactory().enable(com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.MINIMIZE_QUOTES));
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
     private static final Logger LOGGER = LoggerFactory.getLogger();
 
     /**
@@ -305,9 +307,13 @@ public class QuarkusHelmWriterSessionListener {
         File templateValuesFile = inputDir.resolve(file).toFile();
         if (templateValuesFile.exists()) {
             Map<String, Object> result = new HashMap<>();
-            Map<String, Object> yaml = Serialization.unmarshal(templateValuesFile,
-                    new TypeReference<Map<String, Object>>() {
-                    });
+            Map<String, Object> yaml;
+            try {
+                yaml = YAML_MAPPER.readValue(templateValuesFile, new TypeReference<>() {
+                });
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to read " + templateValuesFile, e);
+            }
             result.putAll(yaml);
             // first, incorporate the properties from the file
             Maps.merge(valuesAsMultiValueMap, result);
@@ -390,7 +396,7 @@ public class QuarkusHelmWriterSessionListener {
             String functions = functionsByResource.get(kind.toLowerCase() + YAML);
 
             // Adapt the values tag to Helm standards:
-            String adaptedString = Serialization.yamlMapper().writeValueAsString(resource);
+            String adaptedString = YAML_MAPPER.writeValueAsString(resource);
             if (functions != null) {
                 adaptedString = functions + System.lineSeparator() + adaptedString;
             }
@@ -474,7 +480,7 @@ public class QuarkusHelmWriterSessionListener {
             ensureServiceAccountSubjectNamespaceIsPopulated(resource);
 
             String kind = (String) resource.get(KIND);
-            String adaptedString = Serialization.yamlMapper().writeValueAsString(resource);
+            String adaptedString = YAML_MAPPER.writeValueAsString(resource);
 
             for (Map.Entry<String, AddIfStatementConfig> addIfStatement : helmConfig.addIfStatement().entrySet()) {
                 AddIfStatementConfig addIfStatementConfig = addIfStatement.getValue();
@@ -750,9 +756,14 @@ public class QuarkusHelmWriterSessionListener {
         // Populate from custom `values.yaml` file if exists
         File templateValuesFile = inputDir.resolve(VALUES + YAML).toFile();
         if (templateValuesFile.exists()) {
-            Map<String, Object> yaml = toPlainMap(Serialization.unmarshal(templateValuesFile,
-                    new TypeReference<Map<String, Object>>() {
-                    }));
+            Map<String, Object> yaml;
+            try {
+                yaml = toPlainMap(YAML_MAPPER.readValue(templateValuesFile,
+                        new TypeReference<>() {
+                        }));
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to read " + templateValuesFile, e);
+            }
 
             for (Map.Entry<String, Object> entry : yaml.entrySet()) {
                 Object value = entry.getValue();
@@ -883,14 +894,14 @@ public class QuarkusHelmWriterSessionListener {
                 if (actualValue != null) {
                     set(parser, path, toExpression(property, value, found, valueReference, defaultConversion));
                     values.putIfAbsent(property, valueReference, actualValue, profile);
-                    if (StringUtils.isEmpty(profile)) {
+                    if (isEmpty(profile)) {
                         seen.putIfAbsent(property, actualValue);
                     }
                 }
             }
         } else {
             values.putIfAbsent(property, valueReference, value, profile);
-            if (StringUtils.isEmpty(profile)) {
+            if (isEmpty(profile)) {
                 seen.putIfAbsent(property, value);
             }
         }
@@ -935,19 +946,19 @@ public class QuarkusHelmWriterSessionListener {
         Object chartContent = chart;
         if (userChartFile.exists()) {
             chartContent = mergeWithFileIfExists(inputDir, CHART_FILENAME,
-                    toMultiValueUnsortedMap(Serialization.yamlMapper().readValue(Serialization.asYaml(chart), Map.class)));
+                    toMultiValueUnsortedMap(YAML_MAPPER.convertValue(chart, Map.class)));
         }
 
         return writeFileAsYaml(chartContent, yml);
     }
 
     private Map<String, String> writeFileAsYaml(Object data, Path file) throws IOException {
-        String value = Serialization.asYaml(data);
+        String value = YAML_MAPPER.writeValueAsString(data);
         return writeFile(applyKnownPatterns(value), file);
     }
 
     private Map<String, String> writeFileAsJson(Object data, Path file) throws IOException {
-        String value = Serialization.asJson(data);
+        String value = JSON_MAPPER.writeValueAsString(data);
         return writeFile(applyKnownPatterns(value), file);
     }
 

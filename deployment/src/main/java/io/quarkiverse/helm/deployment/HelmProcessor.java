@@ -31,12 +31,14 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.ConfigValue;
 import org.jboss.logging.Logger;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
 import io.dekorate.ConfigReference;
 import io.dekorate.Session;
 import io.dekorate.kubernetes.config.ContainerBuilder;
 import io.dekorate.kubernetes.decorator.AddInitContainerDecorator;
 import io.dekorate.project.Project;
-import io.dekorate.utils.Serialization;
 import io.quarkiverse.helm.deployment.decorators.LowPriorityAddEnvVarDecorator;
 import io.quarkiverse.helm.deployment.rules.ConfigReferenceStrategyManager;
 import io.quarkiverse.helm.deployment.utils.HelmConfigUtils;
@@ -64,6 +66,8 @@ import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
 public class HelmProcessor {
     private static final Logger LOGGER = Logger.getLogger(HelmProcessor.class);
+    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     private static final String NAME_FORMAT_REG_EXP = "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
     private static final List<String> HELM_INVALID_CHARACTERS = Arrays.asList("-");
@@ -519,10 +523,10 @@ public class HelmProcessor {
             Path notesPath = templatesDir.resolve("NOTES.txt");
             Path readmePath = dir.resolve("README.md");
 
-            Chart chart = Serialization.unmarshal(Files.readString(chartYamlPath), Chart.class);
+            Chart chart = YAML_MAPPER.readValue(Files.readString(chartYamlPath), Chart.class);
             @SuppressWarnings("unchecked")
-            Map<String, Map<String, Object>> values = Serialization.unmarshal(Files.readString(valuesYamlPath), Map.class);
-            ValuesSchema valuesSchema = Serialization.unmarshal(Files.readString(valuesSchemaPath), ValuesSchema.class);
+            Map<String, Map<String, Object>> values = YAML_MAPPER.readValue(Files.readString(valuesYamlPath), Map.class);
+            ValuesSchema valuesSchema = JSON_MAPPER.readValue(Files.readString(valuesSchemaPath), ValuesSchema.class);
 
             Map<String, String> templates = new HashMap<>();
             if (Files.isDirectory(templatesDir)) {

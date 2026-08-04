@@ -150,19 +150,3 @@ Decorators are the Dekorate pattern for mutating generated Kubernetes resources 
 | 8 integration test classes | `Serialization`, `Strings` | Low |
 
 ---
-
-## 10. Migration Tasks
-
-- [x] Replace `io.dekorate.utils.Serialization` and `io.dekorate.utils.Strings` with Jackson `ObjectMapper(YAMLFactory)` and JDK `InputStream.readAllBytes()` in all 8 integration test modules
-- [ ] Replace `io.dekorate.utils.Serialization` with Jackson / Fabric8 in `ValuesSchemaUtils.java`
-- [ ] Replace `io.dekorate.utils.Serialization` in `HelmProcessor.java` and `QuarkusHelmWriterSessionListener.java`
-- [ ] Replace `io.dekorate.utils.Strings.defaultIfEmpty` with commons-lang3 in `SystemPropertiesUtils.java`
-- [ ] Replace `io.dekorate.utils.Maps` with JDK `Map` utilities in `QuarkusHelmWriterSessionListener.java`
-- [ ] Replace `io.dekorate.utils.Exec` with JDK `ProcessBuilder` in `QuarkusHelmWriterSessionListener.java`
-- [ ] Replace `io.dekorate.Logger` / `LoggerFactory` with `org.jboss.logging.Logger` in `QuarkusHelmWriterSessionListener.java`
-- [ ] Create project-local `ConfigReference` class to replace `io.dekorate.ConfigReference` across all deployment files
-- [ ] Replace `io.dekorate.kubernetes.config.ContainerBuilder` with Fabric8 `ContainerBuilder` in `HelmProcessor.java`
-- [ ] Replace `io.dekorate.kubernetes.config.EnvBuilder` with Fabric8 `EnvVarBuilder` in `LowPriorityAddEnvVarDecorator.java`
-- [ ] Refactor `LowPriorityAddEnvVarDecorator` to remove Dekorate `AddEnvVarDecorator` base class (use Quarkus `@BuildStep` + Fabric8 model)
-- [ ] Replace `io.dekorate.Session` / `WithSession` / `Configurator` / `BaseConfigFluent` with Quarkus build items in `HelmProcessor.java` and `DisableDefaultHelmListener.java`
-- [ ] Replace `io.dekorate.project.Project` / `BuildInfo` with Quarkus build items in deployment code and test classes

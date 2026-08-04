@@ -162,6 +162,6 @@ public class KubernetesFullIT {
     }
 
     private static String readString(InputStream is) throws IOException {
-        return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        return new String(is.readAllBytes(), StandardCharsets.UTF_8).strip();
     }
 }

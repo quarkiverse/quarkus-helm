@@ -8,7 +8,14 @@ Dekorate enters the project in two ways:
 
 | Module | Dekorate Dependency | Scope | How it arrives |
 |---|---|---|---|
-| `deployment` | `io.dekorate:*` (multiple packages) | compile | Transitive via `io.quarkus:quarkus-kubernetes-deployment` |
+| `deployment` | `io.dekorate:kubernetes-annotations` | compile | Transitive via `io.quarkus:quarkus-kubernetes-deployment` |
+| `deployment` | `io.dekorate:dekorate-core` | compile | Transitive via `io.dekorate:kubernetes-annotations` |
+| `deployment` | `io.dekorate:option-annotations` | compile | Transitive via `io.dekorate:kubernetes-annotations` |
+| `deployment` | `io.dekorate:docker-annotations` | compile | Transitive via `io.dekorate:kubernetes-annotations` |
+| `deployment` | `io.dekorate:openshift-annotations` | compile | Transitive via `io.quarkus:quarkus-kubernetes-deployment` |
+| `deployment` | `io.dekorate:s2i-annotations` | compile | Transitive via `io.dekorate:openshift-annotations` |
+| `deployment` | `io.dekorate:knative-annotations` | compile | Transitive via `io.quarkus:quarkus-kubernetes-deployment` |
+| `deployment` | `io.dekorate:prometheus-annotations` | compile | Transitive via `io.quarkus:quarkus-kubernetes-deployment` |
 | 8 integration-test modules | `io.dekorate:dekorate-core` | test | Direct dependency in each test `pom.xml` |
 
 ### Dependency Replacement

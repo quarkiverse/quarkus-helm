@@ -414,7 +414,7 @@ jobs:
   verify-in-openshift:
     name: Verify Extension in OpenShift
     # the action "manusa/actions-setup-openshift@v1.1.4" only works in ubuntu-20.04
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: verify-in-kubernetes
     # the step "manusa/actions-setup-openshift" is broken:
     if: false

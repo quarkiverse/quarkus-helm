@@ -82,6 +82,8 @@ public class QuarkusHelmWriterSessionListener {
     private static final String HELM_HELPER_PREFIX = "_";
     private static final boolean APPEND = true;
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(
+            new YAMLFactory().enable(com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.MINIMIZE_QUOTES));
+    private static final ObjectMapper YAML_TEMPLATE_MAPPER = new ObjectMapper(
             new YAMLFactory()
                     .enable(com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.MINIMIZE_QUOTES)
                     .enable(com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
@@ -396,7 +398,7 @@ public class QuarkusHelmWriterSessionListener {
             String functions = functionsByResource.get(kind.toLowerCase() + YAML);
 
             // Adapt the values tag to Helm standards:
-            String adaptedString = YAML_MAPPER.writeValueAsString(resource);
+            String adaptedString = YAML_TEMPLATE_MAPPER.writeValueAsString(resource);
             if (functions != null) {
                 adaptedString = functions + System.lineSeparator() + adaptedString;
             }
@@ -480,7 +482,7 @@ public class QuarkusHelmWriterSessionListener {
             ensureServiceAccountSubjectNamespaceIsPopulated(resource);
 
             String kind = (String) resource.get(KIND);
-            String adaptedString = YAML_MAPPER.writeValueAsString(resource);
+            String adaptedString = YAML_TEMPLATE_MAPPER.writeValueAsString(resource);
 
             for (Map.Entry<String, AddIfStatementConfig> addIfStatement : helmConfig.addIfStatement().entrySet()) {
                 AddIfStatementConfig addIfStatementConfig = addIfStatement.getValue();

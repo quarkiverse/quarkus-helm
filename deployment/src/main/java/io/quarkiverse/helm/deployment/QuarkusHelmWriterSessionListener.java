@@ -47,11 +47,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import io.dekorate.ConfigReference;
-import io.dekorate.utils.Exec;
 import io.github.yamlpath.YamlExpressionParser;
 import io.github.yamlpath.YamlPath;
 import io.quarkiverse.helm.deployment.utils.FileUtils;
 import io.quarkiverse.helm.deployment.utils.MapUtils;
+import io.quarkiverse.helm.deployment.utils.ProcessExec;
 import io.quarkiverse.helm.deployment.utils.ReadmeBuilder;
 import io.quarkiverse.helm.deployment.utils.ValuesHolder;
 import io.quarkiverse.helm.model.Chart;
@@ -200,7 +200,8 @@ public class QuarkusHelmWriterSessionListener {
         if (helmConfig.dependencies() != null && !helmConfig.dependencies().isEmpty()) {
             Path chartFolder = getChartOutputDir(name, outputDir);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            boolean success = Exec.inPath(chartFolder)
+            // Replaced Dekorate's Exec.inPath() with project-local ProcessExec
+            boolean success = ProcessExec.inPath(chartFolder)
                     .redirectingOutput(out)
                     .commands("helm", "dependency", "build");
 

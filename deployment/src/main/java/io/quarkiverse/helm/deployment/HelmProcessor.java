@@ -36,7 +36,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import io.dekorate.ConfigReference;
 import io.dekorate.Session;
-import io.dekorate.project.Project;
 import io.quarkiverse.helm.deployment.rules.ConfigReferenceStrategyManager;
 import io.quarkiverse.helm.deployment.utils.HelmConfigUtils;
 import io.quarkiverse.helm.model.Chart;
@@ -205,14 +204,16 @@ public class HelmProcessor {
             List<AdditionalHelmCRDBuildItem> additionalHelmCRDBuildItems,
             HelmChartConfig config) {
         validate(config);
-        Project project = (Project) dekorateOutput.getProject();
+        // Use Quarkus build items instead of Dekorate's Project for root dir and version
+        Path projectRoot = outputTarget.getOutputDirectory().getParent();
+        String projectVersion = app.getVersion();
 
         Set<String> enabledDeploymentTargets = kubernetesDeploymentTargets.getEntriesSortedByPriority().stream()
                 .map(DeploymentTargetEntry::getName)
                 .collect(Collectors.toSet());
 
         // Deduct folders
-        Path inputFolder = getInputDirectory(config, project);
+        Path inputFolder = getInputDirectory(config, projectRoot);
         Path outputFolder = getOutputDirectory(config, customHelmOutputDir, outputTarget);
 
         // Dekorate session writer
@@ -258,7 +259,7 @@ public class HelmProcessor {
 
             Map<String, String> generated = helmWriter.writeHelmFiles(
                     name,
-                    project,
+                    projectVersion,
                     config,
                     configReferences,
                     inputFolder,
@@ -363,10 +364,11 @@ public class HelmProcessor {
         }
     }
 
-    private Path getInputDirectory(HelmChartConfig config, Project project) {
+    // Replaced Dekorate's Project.getRoot() with the project root path from OutputTargetBuildItem
+    private Path getInputDirectory(HelmChartConfig config, Path projectRoot) {
         Path path = Paths.get(config.inputDirectory());
         if (!path.isAbsolute()) {
-            return project.getRoot().resolve(path);
+            return projectRoot.resolve(path);
         }
 
         return path;

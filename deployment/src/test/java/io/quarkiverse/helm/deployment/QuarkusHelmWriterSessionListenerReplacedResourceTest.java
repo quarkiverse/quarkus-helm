@@ -13,8 +13,6 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import io.dekorate.project.BuildInfo;
-import io.dekorate.project.Project;
 import io.quarkiverse.helm.spi.AdditionalHelmTemplateBuildItem.ReplacedResource;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
@@ -148,10 +146,7 @@ class QuarkusHelmWriterSessionListenerReplacedResourceTest {
         Files.createDirectories(inputDir);
         Files.writeString(inputDir.resolve("NOTES.txt"), "notes");
 
-        BuildInfo buildInfo = new BuildInfo("test-chart", "1.0.0", "jar", "generic", null, null, null, null);
-        Project project = new Project(null, buildInfo, null);
-
-        listener.writeHelmFiles("test-chart", project, helmConfig, List.of(), inputDir, outputDir,
+        listener.writeHelmFiles("test-chart", "1.0.0", helmConfig, List.of(), inputDir, outputDir,
                 generatedFiles, Map.of(), Map.of(), replacedResources);
 
         return outputDir.resolve("test-chart").resolve("templates").resolve("rolebinding.yaml");

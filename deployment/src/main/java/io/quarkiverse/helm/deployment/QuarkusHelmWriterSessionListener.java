@@ -47,7 +47,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import io.dekorate.ConfigReference;
-import io.dekorate.project.Project;
 import io.dekorate.utils.Exec;
 import io.github.yamlpath.YamlExpressionParser;
 import io.github.yamlpath.YamlPath;
@@ -95,8 +94,9 @@ public class QuarkusHelmWriterSessionListener {
      *
      * @return the list of the Helm generated files.
      */
+    // Replaced Dekorate's Project with projectVersion string (from ApplicationInfoBuildItem)
     public Map<String, String> writeHelmFiles(String name,
-            Project project,
+            String projectVersion,
             HelmChartConfig helmConfig,
             List<ConfigReference> valueReferencesFromDecorators,
             Path inputDir,
@@ -115,7 +115,7 @@ public class QuarkusHelmWriterSessionListener {
                         valueReferencesFromDecorators);
                 artifacts.putAll(processTemplates(name, helmConfig, inputDir, outputDir, resources, additionalTemplates,
                         replacedResources));
-                artifacts.putAll(createChartYaml(name, helmConfig, project, inputDir, outputDir));
+                artifacts.putAll(createChartYaml(name, helmConfig, projectVersion, inputDir, outputDir));
                 artifacts.putAll(createValuesYaml(name, helmConfig, inputDir, outputDir, values));
 
                 // To follow Helm file structure standards:
@@ -127,7 +127,7 @@ public class QuarkusHelmWriterSessionListener {
                 // Final step: packaging
                 if (helmConfig.createTarFile() || helmConfig.repository().push()) {
                     fetchDependencies(name, helmConfig, outputDir);
-                    artifacts.putAll(createTarball(name, helmConfig, project, outputDir, artifacts));
+                    artifacts.putAll(createTarball(name, helmConfig, projectVersion, outputDir, artifacts));
                 }
 
             } catch (IOException e) {
@@ -327,13 +327,13 @@ public class QuarkusHelmWriterSessionListener {
         return valuesAsMultiValueMap;
     }
 
-    private Map<String, String> createTarball(String name, HelmChartConfig helmConfig, Project project,
+    private Map<String, String> createTarball(String name, HelmChartConfig helmConfig, String projectVersion,
             Path outputDir,
             Map<String, String> artifacts) throws IOException {
 
         File tarballFile = outputDir.resolve(String.format("%s-%s%s.%s",
                 name,
-                getVersion(helmConfig, project),
+                getVersion(helmConfig, projectVersion),
                 helmConfig.tarFileClassifier().map(c -> "-" + c).orElse(EMPTY),
                 helmConfig.extension()))
                 .toFile();
@@ -358,8 +358,9 @@ public class QuarkusHelmWriterSessionListener {
         return Collections.singletonMap(tarballFile.toString(), null);
     }
 
-    private String getVersion(HelmChartConfig helmConfig, Project project) {
-        return helmConfig.version().orElse(project.getBuildInfo().getVersion());
+    // Replaced Dekorate's Project.getBuildInfo().getVersion() with projectVersion from ApplicationInfoBuildItem
+    private String getVersion(HelmChartConfig helmConfig, String projectVersion) {
+        return helmConfig.version().orElse(projectVersion);
     }
 
     private Map<String, String> processTemplates(String name, HelmChartConfig helmConfig,
@@ -909,12 +910,12 @@ public class QuarkusHelmWriterSessionListener {
         }
     }
 
-    private Map<String, String> createChartYaml(String name, HelmChartConfig helmConfig, Project project,
+    private Map<String, String> createChartYaml(String name, HelmChartConfig helmConfig, String projectVersion,
             Path inputDir, Path outputDir)
             throws IOException {
         final Chart chart = new Chart();
         chart.setName(name);
-        chart.setVersion(getVersion(helmConfig, project));
+        chart.setVersion(getVersion(helmConfig, projectVersion));
         helmConfig.description().ifPresent(chart::setDescription);
         helmConfig.home().ifPresent(chart::setHome);
         helmConfig.sources().ifPresent(chart::setSources);

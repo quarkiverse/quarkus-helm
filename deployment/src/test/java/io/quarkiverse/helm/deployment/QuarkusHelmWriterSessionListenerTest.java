@@ -14,18 +14,12 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import io.dekorate.project.BuildInfo;
-import io.dekorate.project.Project;
-
 public class QuarkusHelmWriterSessionListenerTest {
+
+    private static final String PROJECT_VERSION = "1.0.0";
 
     @TempDir
     Path tempDir;
-
-    private Project buildProject(Path root) {
-        return new Project(root, "", "", "",
-                new BuildInfo("test-app", "1.0.0", "jar", "maven", "3.8", null, null, null));
-    }
 
     @Test
     public void shouldApplyExpressionsToAdditionalTemplates() throws IOException {
@@ -37,8 +31,6 @@ public class QuarkusHelmWriterSessionListenerTest {
         Files.createDirectories(inputDir);
         Files.createDirectories(outputDir);
 
-        Project project = buildProject(inputDir);
-
         HelmChartConfig helmConfig = new TestHelmChartConfig(chartName, inputDir);
 
         Map<String, byte[]> generatedFiles = buildGeneratedFiles();
@@ -46,7 +38,7 @@ public class QuarkusHelmWriterSessionListenerTest {
 
         listener.writeHelmFiles(
                 chartName,
-                project,
+                PROJECT_VERSION,
                 helmConfig,
                 Collections.emptyList(),
                 inputDir,
@@ -77,8 +69,6 @@ public class QuarkusHelmWriterSessionListenerTest {
         Files.createDirectories(inputDir);
         Files.createDirectories(outputDir);
 
-        Project project = buildProject(inputDir);
-
         HelmChartConfig helmConfig = new TestHelmChartConfig(chartName, inputDir);
 
         Map<String, byte[]> generatedFiles = buildGeneratedFiles();
@@ -88,7 +78,7 @@ public class QuarkusHelmWriterSessionListenerTest {
 
         listener.writeHelmFiles(
                 chartName,
-                project,
+                PROJECT_VERSION,
                 helmConfig,
                 Collections.emptyList(),
                 inputDir,
@@ -118,8 +108,6 @@ public class QuarkusHelmWriterSessionListenerTest {
         Files.createDirectories(inputDir);
         Files.createDirectories(outputDir);
 
-        Project project = buildProject(inputDir);
-
         HelmChartConfig helmConfig = new TestHelmChartConfig(chartName, inputDir, true);
 
         Map<String, byte[]> generatedFiles = buildGeneratedFiles();
@@ -142,7 +130,7 @@ public class QuarkusHelmWriterSessionListenerTest {
 
         listener.writeHelmFiles(
                 chartName,
-                project,
+                PROJECT_VERSION,
                 helmConfig,
                 Collections.emptyList(),
                 inputDir,

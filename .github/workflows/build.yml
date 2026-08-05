@@ -94,11 +94,11 @@ jobs:
           export QUARKUS_HELM_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
           java -jar $GITHUB_WORKSPACE/cli/target/quarkus-helm-cli-$QUARKUS_HELM_VERSION.jar lint
           java -jar $GITHUB_WORKSPACE/cli/target/quarkus-helm-cli-$QUARKUS_HELM_VERSION.jar install -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY 
-          }}/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-minimal:$VERSION
+          }}/$KIND_REGISTRY_GROUP/quarkus-helm-it-kubernetes-minimal:$VERSION
           ls $GITHUB_WORKSPACE
           ls $GITHUB_WORKSPACE/..
           ls $GITHUB_WORKSPACE/../..
-          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-minimal" "$K8S_NAMESPACE" "Running"
+          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=quarkus-helm-it-kubernetes-minimal" "$K8S_NAMESPACE" "Running"
           
 
       - name: Delete namespace "helm" using Helm
@@ -130,18 +130,18 @@ jobs:
           helm repo add local http://localhost:8080
 
           # And install application from the Helm repository
-          helm install --devel quarkus-hello-world local/quarkus-helm-integration-tests-kubernetes-minimal -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-minimal:$VERSION
-          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-minimal" "$K8S_NAMESPACE" "Running"
+          helm install --devel quarkus-hello-world local/quarkus-helm-it-kubernetes-minimal -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/quarkus-helm-it-kubernetes-minimal:$VERSION
+          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=quarkus-helm-it-kubernetes-minimal" "$K8S_NAMESPACE" "Running"
 
       - name: (Only if it failed) Log Integration Test Minimal using Helm Repository at failures
         if: failure()
         run: |
           K8S_NAMESPACE=helmrepo
           echo "Deployment resource:"
-          kubectl get deployment quarkus-helm-integration-tests-kubernetes-minimal -o yaml -n $K8S_NAMESPACE
+          kubectl get deployment quarkus-helm-it-kubernetes-minimal -o yaml -n $K8S_NAMESPACE
           echo "Logs of the deployment:"
-          kubectl logs deploy/quarkus-helm-integration-tests-kubernetes-minimal --all-containers=true -n $K8S_NAMESPACE
-          POD_NAME=$(kubectl get pod -l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-minimal -o name -n $K8S_NAMESPACE)
+          kubectl logs deploy/quarkus-helm-it-kubernetes-minimal --all-containers=true -n $K8S_NAMESPACE
+          POD_NAME=$(kubectl get pod -l app.kubernetes.io/name=quarkus-helm-it-kubernetes-minimal -o name -n $K8S_NAMESPACE)
           echo "Describe pod:"
           kubectl describe $POD_NAME -n $K8S_NAMESPACE
           echo "Logs of running pod:"
@@ -175,8 +175,8 @@ jobs:
           helm repo update local
 
           # And install application from the Helm repository
-          helm install --devel quarkus-with-templates local/my-chart-with-templates -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-with-templates:$VERSION --set app.favorite.drink=coca
-          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-with-templates" "$K8S_NAMESPACE" "Running"
+          helm install --devel quarkus-with-templates local/my-chart-with-templates -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/quarkus-helm-it-kubernetes-with-templates:$VERSION --set app.favorite.drink=coca
+          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=quarkus-helm-it-kubernetes-with-templates" "$K8S_NAMESPACE" "Running"
 
           if [ $(kubectl get configmap/my-configmap -n $K8S_NAMESPACE -o yaml | grep "drink: coca" | wc -l) -ne 1 ]
           then
@@ -185,17 +185,17 @@ jobs:
             exit 1
           fi
 
-          if [ $(kubectl get services/quarkus-helm-integration-tests-kubernetes-with-templates -n $K8S_NAMESPACE -o jsonpath='{.metadata.labels}' | grep \"generator\":\"helm\" | wc -l) -ne 1 ]
+          if [ $(kubectl get services/quarkus-helm-it-kubernetes-with-templates -n $K8S_NAMESPACE -o jsonpath='{.metadata.labels}' | grep \"generator\":\"helm\" | wc -l) -ne 1 ]
           then
             echo Service with wrong content
-            kubectl get services/quarkus-helm-integration-tests-kubernetes-with-templates -n $K8S_NAMESPACE -o yaml
+            kubectl get services/quarkus-helm-it-kubernetes-with-templates -n $K8S_NAMESPACE -o yaml
             exit 1
           fi
 
-          if [ $(kubectl get services/quarkus-helm-integration-tests-kubernetes-with-templates -n $K8S_NAMESPACE -o jsonpath='{.metadata.annotations}' | grep \"app.quarkus.io/build-timestamp\":\"my-ch\" | wc -l) -ne 1 ]
+          if [ $(kubectl get services/quarkus-helm-it-kubernetes-with-templates -n $K8S_NAMESPACE -o jsonpath='{.metadata.annotations}' | grep \"app.quarkus.io/build-timestamp\":\"my-ch\" | wc -l) -ne 1 ]
           then
             echo Service with wrong content
-            kubectl get services/quarkus-helm-integration-tests-kubernetes-with-templates -n $K8S_NAMESPACE -o yaml
+            kubectl get services/quarkus-helm-it-kubernetes-with-templates -n $K8S_NAMESPACE -o yaml
             exit 1
           fi
 
@@ -209,8 +209,8 @@ jobs:
           fi
 
           ## Let's update our Helm chart by not installing the ingress
-          helm upgrade --devel quarkus-with-templates local/my-chart-with-templates -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-with-templates:$VERSION --set app.favorite.drink=coca --set app.ingress.enabled=false
-          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-with-templates" "$K8S_NAMESPACE" "Running"
+          helm upgrade --devel quarkus-with-templates local/my-chart-with-templates -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/quarkus-helm-it-kubernetes-with-templates:$VERSION --set app.favorite.drink=coca --set app.ingress.enabled=false
+          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=quarkus-helm-it-kubernetes-with-templates" "$K8S_NAMESPACE" "Running"
 
           ## Now, the ingress "my-ingress" should have NOT been installed
           if [ $(kubectl get ingress/my-ingress -n $K8S_NAMESPACE -o jsonpath='{.metadata.name}' | grep my-ingress | wc -l) -ne 0 ]
@@ -227,7 +227,7 @@ jobs:
           K8S_NAMESPACE=helmdeps1
           KIND_REGISTRY_GROUP=local
           VERSION=latest
-          NAME=quarkus-helm-integration-tests-kubernetes-with-dependency
+          NAME=quarkus-helm-it-kubernetes-with-dependency
           kubectl create namespace $K8S_NAMESPACE
 
           # create image plus push to a Helm repository
@@ -240,7 +240,7 @@ jobs:
           -Dquarkus.container-image.insecure=true
 
           # And install application
-          helm install quarkus-with-dependency target/helm/kubernetes/quarkus-helm-integration-tests-kubernetes-with-dependency --dependency-update -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/$NAME:$VERSION
+          helm install quarkus-with-dependency target/helm/kubernetes/quarkus-helm-it-kubernetes-with-dependency --dependency-update -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/$NAME:$VERSION
           bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=$NAME" "$K8S_NAMESPACE" "Running"
 
       - name: Delete namespace "helmdeps1"
@@ -251,7 +251,7 @@ jobs:
           K8S_NAMESPACE=helmdeps2
           KIND_REGISTRY_GROUP=local
           VERSION=latest
-          NAME=quarkus-helm-integration-tests-kubernetes-with-dependency
+          NAME=quarkus-helm-it-kubernetes-with-dependency
           kubectl create namespace $K8S_NAMESPACE
 
           # create image plus push to a Helm repository
@@ -264,7 +264,7 @@ jobs:
           -Dquarkus.container-image.insecure=true
 
           # And install application
-          helm install quarkus-with-dependency target/helm/kubernetes/quarkus-helm-integration-tests-kubernetes-with-dependency --dependency-update -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/$NAME:$VERSION --set postgresql.enabled=false
+          helm install quarkus-with-dependency target/helm/kubernetes/quarkus-helm-it-kubernetes-with-dependency --dependency-update -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/$NAME:$VERSION --set postgresql.enabled=false
           bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=$NAME" "$K8S_NAMESPACE" "Running"
 
       - name: Delete namespace "helmdeps2"
@@ -275,7 +275,7 @@ jobs:
           K8S_NAMESPACE=helmconfig
           KIND_REGISTRY_GROUP=local
           VERSION=latest
-          NAME=quarkus-helm-integration-tests-kubernetes-config
+          NAME=quarkus-helm-it-kubernetes-config
           kubectl create namespace $K8S_NAMESPACE
 
           # create image plus push to a Helm repository
@@ -288,7 +288,7 @@ jobs:
           -Dquarkus.container-image.insecure=true
 
           # And install application
-          helm install quarkus-with-config target/helm/kubernetes/quarkus-helm-integration-tests-kubernetes-config -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/$NAME:$VERSION  --set app.number=3 --set app.flag=true --set app.message="Hello %s from helm"
+          helm install quarkus-with-config target/helm/kubernetes/quarkus-helm-it-kubernetes-config -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/$NAME:$VERSION  --set app.number=3 --set app.flag=true --set app.message="Hello %s from helm"
           # Wait for the app to start
           bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=$NAME" "$K8S_NAMESPACE" "Running"
           # Verify application

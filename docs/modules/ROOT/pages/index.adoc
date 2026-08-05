@@ -774,7 +774,7 @@ And let's use the template "mychart.labels":
 
 [source,properties]
 ----
-quarkus.helm.expressions.0.path=(kind == Service && metadata.name == quarkus-helm-integration-tests-kubernetes-with-templates).metadata.labels
+quarkus.helm.expressions.0.path=(kind == Service && metadata.name == quarkus-helm-it-kubernetes-with-templates).metadata.labels
 quarkus.helm.expressions.0.expression={{- template "mychart.labels" }}
 ----
 

@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +64,18 @@ public class KubernetesWithDependencyIT {
         assertEquals("18.2.4", postgresql.get("version"));
         assertEquals("postgresql", postgresql.get("alias"));
         assertFalse(postgresql.containsKey("enabled"));
+    }
+
+    @Test
+    public void deploymentShouldContainInitContainer() throws IOException {
+        String deployment = new String(getResourceAsStream("templates/deployment.yaml").readAllBytes(),
+                StandardCharsets.UTF_8);
+        assertTrue(deployment.contains("name: wait-for-postgresql"), "Init container 'wait-for-postgresql' not found");
+        assertTrue(deployment.contains("image: busybox:1.34.1"), "Init container image not found");
+        assertTrue(deployment.contains("nc -z -w3 quarkus-with-dependency-postgresql 5432"),
+                "Wait-for-service command not found");
+        assertTrue(deployment.contains("{{ .Values.postgresql.enabled | quote }}"),
+                "Condition env var Helm expression not found");
     }
 
     private InputStream getResourceAsStream(String file) throws FileNotFoundException {

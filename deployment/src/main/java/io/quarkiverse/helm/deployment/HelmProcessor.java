@@ -36,8 +36,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import io.dekorate.ConfigReference;
 import io.dekorate.Session;
-import io.dekorate.kubernetes.config.ContainerBuilder;
-import io.dekorate.kubernetes.decorator.AddInitContainerDecorator;
 import io.dekorate.project.Project;
 import io.quarkiverse.helm.deployment.decorators.LowPriorityAddEnvVarDecorator;
 import io.quarkiverse.helm.deployment.rules.ConfigReferenceStrategyManager;
@@ -63,6 +61,8 @@ import io.quarkus.kubernetes.spi.CustomKubernetesOutputDirBuildItem;
 import io.quarkus.kubernetes.spi.DecoratorBuildItem;
 import io.quarkus.kubernetes.spi.DekorateOutputBuildItem;
 import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
+import io.quarkus.kubernetes.spi.KubernetesEnvBuildItem;
+import io.quarkus.kubernetes.spi.KubernetesInitContainerBuildItem;
 
 public class HelmProcessor {
     private static final Logger LOGGER = Logger.getLogger(HelmProcessor.class);
@@ -110,7 +110,9 @@ public class HelmProcessor {
 
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void configureHelmDependencyOrder(Capabilities capabilities, ApplicationInfoBuildItem info, HelmChartConfig config,
-            BuildProducer<DecoratorBuildItem> decorators) {
+            BuildProducer<DecoratorBuildItem> decorators,
+            BuildProducer<KubernetesInitContainerBuildItem> initContainers,
+            BuildProducer<KubernetesEnvBuildItem> envVars) {
         if (config.dependencies() == null || config.dependencies().isEmpty()) {
             return;
         }
@@ -121,16 +123,11 @@ public class HelmProcessor {
             HelmDependencyConfig dependency = entry.getValue();
             if (dependency.waitForService().isPresent()) {
                 String containerName = "wait-for-" + defaultString(dependency.name(), entry.getKey());
-                ContainerBuilder container = new ContainerBuilder()
-                        .withName(containerName)
-                        .withImage(dependency.waitForServiceImage())
-                        .withCommand("sh");
 
-                String argument = null;
+                String argument;
 
                 String service = dependency.waitForService().get();
                 if (service.contains(SPLIT)) {
-                    // it's service name and service port
                     String[] parts = service.split(SPLIT);
                     String serviceName = parts[0];
                     String servicePort = parts[1];
@@ -143,17 +140,21 @@ public class HelmProcessor {
                             .replaceAll(SERVICE_NAME_PLACEHOLDER, service);
                 }
 
-                // if the condition is set, we need to map it as env property as well
+                Map<String, String> initContainerEnvVars = new HashMap<>();
                 if (dependency.condition().isPresent()) {
                     String property = HelmConfigUtils.deductProperty(config, dependency.condition().get());
+                    initContainerEnvVars.put(property, "true");
                     decorators.produce(new DecoratorBuildItem(
                             new LowPriorityAddEnvVarDecorator(deploymentName, containerName, property, "true")));
 
                     argument = String.format(INIT_CONTAINER_CONDITION_FORMAT, property, argument);
                 }
 
-                decorators.produce(new DecoratorBuildItem(
-                        new AddInitContainerDecorator(deploymentName, container.withArguments("-c", argument).build())));
+                initContainers.produce(
+                        KubernetesInitContainerBuildItem.create(containerName, dependency.waitForServiceImage())
+                                .withCommand(List.of("sh"))
+                                .withArguments(List.of("-c", argument))
+                                .withEnvVars(initContainerEnvVars));
             }
         }
     }

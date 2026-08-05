@@ -47,11 +47,13 @@ public class KnativeIT {
 
     @Test
     public void valuesShouldContainExpectedData() throws IOException {
+        @SuppressWarnings("unchecked")
         Map<String, Object> values = mapper.readValue(getResourceAsStream("values.yaml"), Map.class);
         assertNotNull(values, "Values is null!");
 
         assertNotNull(values.containsKey(ROOT_CONFIG_NAME), "Does not contain `" + ROOT_CONFIG_NAME + "`");
         assertNotNull(values.get(ROOT_CONFIG_NAME) instanceof Map, "Value `" + ROOT_CONFIG_NAME + "` is not a map!");
+        @SuppressWarnings("unchecked")
         Map<String, Object> app = (Map<String, Object>) values.get(ROOT_CONFIG_NAME);
 
         // Should NOT contain the port
@@ -59,6 +61,7 @@ public class KnativeIT {
         assertNull(getHttpPortFor(app, "readinessProbe"));
     }
 
+    @SuppressWarnings("unchecked")
     private Object getHttpPortFor(Map<String, Object> values, String probeName) {
         Map<String, Object> probe = (Map<String, Object>) values.get(probeName);
         Map<String, Object> httpGet = (Map<String, Object>) probe.get("httpGet");

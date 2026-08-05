@@ -66,7 +66,7 @@ public final class MapUtils {
     }
 
     /**
-     * Merge a nested map to an existing one.
+     * Replaced Dekorate's io.dekorate.utils.Maps.merge() — recursive deep-merge for nested maps.
      *
      * @param existing the existing map.
      * @param map the map that will be merged into the existing.

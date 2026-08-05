@@ -6,6 +6,8 @@ import java.util.List;
 import io.dekorate.ConfigReference;
 import io.quarkus.builder.item.MultiBuildItem;
 
+// Replaced Dekorate's LowPriorityAddEnvVarDecorator — synthesizes ConfigReferences for Helm values
+// mapping without extending Dekorate's AddEnvVarDecorator decorator pipeline
 public final class HelmEnvVarConfigReferenceBuildItem extends MultiBuildItem {
 
     private final String deploymentName;

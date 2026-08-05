@@ -80,13 +80,17 @@ public class QuarkusHelmWriterSessionListener {
     private static final String TEMPLATE_FUNCTION_END_TAG = "{{- end }}";
     private static final String HELM_HELPER_PREFIX = "_";
     private static final boolean APPEND = true;
+    // Replaced Dekorate's Serialization.yamlMapper()/jsonMapper() with Jackson ObjectMapper instances
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(
             new YAMLFactory().enable(com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.MINIMIZE_QUOTES));
+    // Replaced Dekorate's Serialization for templates — ALWAYS_QUOTE_NUMBERS_AS_STRINGS ensures Kubernetes
+    // labels that look like numbers are quoted (Go's JSON unmarshaler requires strings)
     private static final ObjectMapper YAML_TEMPLATE_MAPPER = new ObjectMapper(
             new YAMLFactory()
                     .enable(com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.MINIMIZE_QUOTES)
                     .enable(com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+    // Replaced Dekorate's io.dekorate.Logger with org.jboss.logging.Logger
     private static final Logger LOGGER = Logger.getLogger(QuarkusHelmWriterSessionListener.class);
 
     /**

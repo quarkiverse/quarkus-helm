@@ -62,7 +62,9 @@ import io.quarkus.kubernetes.spi.KubernetesEnvBuildItem;
 import io.quarkus.kubernetes.spi.KubernetesInitContainerBuildItem;
 
 public class HelmProcessor {
+    // Replaced Dekorate's io.dekorate.Logger with org.jboss.logging.Logger
     private static final Logger LOGGER = Logger.getLogger(HelmProcessor.class);
+    // Replaced Dekorate's Serialization.yamlMapper()/jsonMapper() with Jackson ObjectMapper instances
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
@@ -83,6 +85,8 @@ public class HelmProcessor {
     // Lazy loaded when calling `isBuildTimeProperty(xxx)`.
     private static Set<String> buildProperties;
 
+    // Replaced Dekorate's LowPriorityAddEnvVarDecorator with KubernetesEnvBuildItem (env var)
+    // and HelmEnvVarConfigReferenceBuildItem (Helm values mapping)
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void mapSystemPropertiesIfEnabled(Capabilities capabilities, ApplicationInfoBuildItem info, HelmChartConfig helmConfig,
             BuildProducer<KubernetesEnvBuildItem> envVars,
@@ -107,6 +111,8 @@ public class HelmProcessor {
         }
     }
 
+    // Replaced Dekorate's AddInitContainerDecorator with KubernetesInitContainerBuildItem
+    // and LowPriorityAddEnvVarDecorator with HelmEnvVarConfigReferenceBuildItem
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void configureHelmDependencyOrder(Capabilities capabilities, ApplicationInfoBuildItem info, HelmChartConfig config,
             BuildProducer<KubernetesInitContainerBuildItem> initContainers,

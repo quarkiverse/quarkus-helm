@@ -16,6 +16,7 @@ import io.quarkiverse.helm.model.ValuesSchema;
 import io.quarkiverse.helm.model.ValuesSchemaProperty;
 
 public final class ValuesSchemaUtils {
+    // Replaced Dekorate's Serialization.unmarshal/asJson with ObjectMapper.convertValue()
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private ValuesSchemaUtils() {

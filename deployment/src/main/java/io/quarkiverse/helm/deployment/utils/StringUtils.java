@@ -1,5 +1,6 @@
 package io.quarkiverse.helm.deployment.utils;
 
+// Replaced Dekorate's io.dekorate.utils.Strings isEmpty/isNotEmpty
 public final class StringUtils {
 
     // TODO: Code to be moved to: io.quarkus.runtime.util.StringUtil

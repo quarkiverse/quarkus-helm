@@ -1,6 +1,6 @@
 # Quarkus Helm
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Version](https://img.shields.io/maven-central/v/io.quarkiverse.helm/quarkus-helm?logo=apache-maven&style=flat-square)](https://search.maven.org/artifact/io.quarkiverse.helm/quarkus-helm)
@@ -119,7 +119,16 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- markdownlint-disable -->
 <table>
   <tr>
-    <td align="center"><a href="https://github.com/Sgitario"><img src="https://avatars.githubusercontent.com/u/6310047?v=4&s=100" width="100px;" alt=""/><br /><sub><b>Jose Carvajal</b></sub></a><br /><a href="https://github.com/quarkiverse/quarkus-helm/commits?author=Sgitario" title="Code">💻</a> <a href="#maintenance-sgitario" title="Maintenance">🚧</a></td>
+    <td align="center"><a href="https://github.com/Sgitario"><img src="https://avatars.githubusercontent.com/u/6310047?v=4&s=100" width="100px;" alt=""/><br /><sub><b>Jose Carvajal</b></sub></a><br /><a href="https://github.com/quarkiverse/quarkus-helm/commits?author=Sgitario" title="Code">💻</a> <a title="Maintenance">🚧</a></td>
+    <td align="center"><a href="https://github.com/xstefank"><img src="https://avatars.githubusercontent.com/u/6178544?v=4&s=100" width="100px;" alt=""/><br /><sub><b>Martin Stefanko</b></sub></a><br /><a href="https://github.com/quarkiverse/quarkus-helm/commits?author=xstefank" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/cmoulliard"><img src="https://avatars.githubusercontent.com/u/463790?v=4&s=100" width="100px;" alt=""/><br /><sub><b>Charles Moulliard</b></sub></a><br /><a href="https://github.com/quarkiverse/quarkus-helm/commits?author=cmoulliard" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/gastaldi"><img src="https://avatars.githubusercontent.com/u/54133?v=4&s=100" width="100px;" alt=""/><br /><sub><b>George Gastaldi</b></sub></a><br /><a href="https://github.com/quarkiverse/quarkus-helm/commits?author=gastaldi" title="Code">💻</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/iocanel"><img src="https://avatars.githubusercontent.com/u/402408?v=4&s=100" width="100px;" alt=""/><br /><sub><b>Ioannis Canellos</b></sub></a><br /><a href="https://github.com/quarkiverse/quarkus-helm/commits?author=iocanel" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/growi"><img src="https://avatars.githubusercontent.com/u/1098437?v=4&s=100" width="100px;" alt=""/><br /><sub><b>Björn Großewinkelmann</b></sub></a><br /><a href="https://github.com/quarkiverse/quarkus-helm/commits?author=growi" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/TheJavaGuy"><img src="https://avatars.githubusercontent.com/u/5765698?v=4&s=100" width="100px;" alt=""/><br /><sub><b>Ivan Milosavljevic</b></sub></a><br /><a href="https://github.com/quarkiverse/quarkus-helm/commits?author=TheJavaGuy" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/matheusandre1"><img src="https://avatars.githubusercontent.com/u/92062874?v=4&s=100" width="100px;" alt=""/><br /><sub><b>Matheus André</b></sub></a><br /><a href="https://github.com/quarkiverse/quarkus-helm/commits?author=matheusandre1" title="Code">💻</a></td>
   </tr>
 </table>
 

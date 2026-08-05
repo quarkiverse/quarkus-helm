@@ -108,7 +108,7 @@ public class KubernetesFullIT {
         assertEquals("default", envs.get("OVERRIDE_PART2"));
         // Should contain system property OVERRIDE_PORT which value is specified
         // using "quarkus.kubernetes.env.vars.OVERRIDE_PORT=8081"
-        assertEquals(8081, envs.get("OVERRIDE_PORT"));
+        assertEquals("8081", envs.get("OVERRIDE_PORT"));
         // Should parse the nested properties accordingly
         assertEquals("nestedValue", envs.get("PARENT_PROPERTY"));
         assertEquals("nestedValue", envs.get("NESTED_PROPERTY"));

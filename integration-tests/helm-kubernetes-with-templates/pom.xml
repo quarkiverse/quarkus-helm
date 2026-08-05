@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>io.quarkiverse.helm</groupId>
-    <artifactId>quarkus-helm-integration-tests</artifactId>
+    <artifactId>quarkus-helm-it</artifactId>
     <version>1.4.3-SNAPSHOT</version>
   </parent>
 
-  <artifactId>quarkus-helm-integration-tests-kubernetes-with-templates</artifactId>
+  <artifactId>quarkus-helm-it-kubernetes-with-templates</artifactId>
   <name>Quarkus - Helm - Integration Tests - Kubernetes - With Templates</name>
 
   <dependencies>
@@ -18,7 +18,7 @@
 
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-container-image-docker</artifactId>
+      <artifactId>${container-image.artifactId}</artifactId>
     </dependency>
 
     <dependency>

@@ -7,9 +7,13 @@
     <version>1.4.3-SNAPSHOT</version>
   </parent>
 
-  <artifactId>quarkus-helm-integration-tests</artifactId>
+  <artifactId>quarkus-helm-it</artifactId>
   <packaging>pom</packaging>
   <name>Quarkus - Helm - Integration Tests</name>
+
+  <properties>
+    <container-image.artifactId>quarkus-container-image-docker</container-image.artifactId>
+  </properties>
 
   <modules>
     <module>helm-kubernetes-minimal</module>
@@ -21,4 +25,16 @@
     <module>helm-knative-minimal</module>
     <module>helm-openshift-minimal</module>
   </modules>
+
+  <profiles>
+    <profile>
+      <id>docker</id>
+    </profile>
+    <profile>
+      <id>podman</id>
+      <properties>
+        <container-image.artifactId>quarkus-container-image-podman</container-image.artifactId>
+      </properties>
+    </profile>
+  </profiles>
 </project>

@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>io.quarkiverse.helm</groupId>
-    <artifactId>quarkus-helm-integration-tests</artifactId>
+    <artifactId>quarkus-helm-it</artifactId>
     <version>1.4.3-SNAPSHOT</version>
   </parent>
 
-  <artifactId>quarkus-helm-integration-tests-kubernetes-minimal-yaml</artifactId>
+  <artifactId>quarkus-helm-it-kubernetes-minimal-yaml</artifactId>
   <name>Quarkus - Helm - Integration Tests - Kubernetes - Minimal - Yaml config source</name>
 
   <dependencies>
@@ -18,7 +18,7 @@
 
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-container-image-jib</artifactId>
+      <artifactId>${container-image.artifactId}</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>

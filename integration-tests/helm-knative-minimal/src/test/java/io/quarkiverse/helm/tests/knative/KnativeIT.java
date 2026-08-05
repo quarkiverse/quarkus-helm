@@ -19,7 +19,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 public class KnativeIT {
 
-    private static final String CHART_NAME = "quarkus-helm-integration-tests-knative-minimal";
+    private static final String CHART_NAME = "quarkus-helm-it-knative-minimal";
     private static final String ROOT_CONFIG_NAME = "app";
     private static ObjectMapper mapper;
 

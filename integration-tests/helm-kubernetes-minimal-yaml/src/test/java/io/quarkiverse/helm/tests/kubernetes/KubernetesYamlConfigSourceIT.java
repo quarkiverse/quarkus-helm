@@ -18,7 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 public class KubernetesYamlConfigSourceIT {
-    private static final String CHART_NAME = "quarkus-helm-integration-tests-kubernetes-minimal-yaml";
+    private static final String CHART_NAME = "quarkus-helm-it-kubernetes-minimal-yaml";
     private static final String ROOT_CONFIG_NAME = "app";
     private static ObjectMapper mapper;
 

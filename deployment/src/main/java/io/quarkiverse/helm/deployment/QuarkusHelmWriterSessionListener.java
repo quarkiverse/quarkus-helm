@@ -40,13 +40,13 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.jboss.logging.Logger;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import io.dekorate.ConfigReference;
-import io.dekorate.Logger;
-import io.dekorate.LoggerFactory;
 import io.dekorate.project.Project;
 import io.dekorate.utils.Exec;
 import io.github.yamlpath.YamlExpressionParser;
@@ -84,7 +84,7 @@ public class QuarkusHelmWriterSessionListener {
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(
             new YAMLFactory().enable(com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.MINIMIZE_QUOTES));
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
-    private static final Logger LOGGER = LoggerFactory.getLogger();
+    private static final Logger LOGGER = Logger.getLogger(QuarkusHelmWriterSessionListener.class);
 
     /**
      * Needs to be public in order to be called from outside the session context.

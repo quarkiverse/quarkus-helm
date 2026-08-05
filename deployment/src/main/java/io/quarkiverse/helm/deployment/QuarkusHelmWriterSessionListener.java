@@ -82,7 +82,9 @@ public class QuarkusHelmWriterSessionListener {
     private static final String HELM_HELPER_PREFIX = "_";
     private static final boolean APPEND = true;
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(
-            new YAMLFactory().enable(com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.MINIMIZE_QUOTES));
+            new YAMLFactory()
+                    .enable(com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.MINIMIZE_QUOTES)
+                    .enable(com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
     private static final Logger LOGGER = Logger.getLogger(QuarkusHelmWriterSessionListener.class);
 

@@ -8,6 +8,7 @@ metadata:
   - openshift
   categories:
   - "cloud"
+  guide: https://docs.quarkiverse.io/quarkus-helm/dev/index.html
   status: "preview"
   cli-plugins:
    - "${project.groupId}:quarkus-helm-cli:${project.version}"

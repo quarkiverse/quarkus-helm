@@ -194,10 +194,10 @@ public class HelmProcessor {
     }
 
     /*
-      Set the property: helm enabled to false.
-      That will disable the decorator(s) of the Dekorate Helm Annotations dependency
-      when included part of the application
-    */
+     * Set the property: helm enabled to false.
+     * That will disable the decorator(s) of the Dekorate Helm Annotations dependency
+     * when included part of the application
+     */
     @BuildStep
     void disableDefaultHelmListener(BuildProducer<ConfiguratorBuildItem> helmConfiguration) {
         helmConfiguration.produce(new ConfiguratorBuildItem(new DisableDefaultHelmListener()));

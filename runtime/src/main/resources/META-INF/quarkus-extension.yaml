@@ -12,4 +12,4 @@ metadata:
   status: "preview"
   cli-plugins:
    - "${project.groupId}:quarkus-helm-cli:${project.version}"
-  icon-url: "https://helm.sh/img/helm.svg"
+  icon-url: https://github.com/cncf/artwork/blob/main/projects/helm/icon/color/helm-icon-color.png

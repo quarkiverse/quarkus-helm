@@ -31,13 +31,11 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.ConfigValue;
 import org.jboss.logging.Logger;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
 import io.dekorate.ConfigReference;
 import io.dekorate.Session;
-import io.dekorate.kubernetes.config.ContainerBuilder;
-import io.dekorate.kubernetes.decorator.AddInitContainerDecorator;
-import io.dekorate.project.Project;
-import io.dekorate.utils.Serialization;
-import io.quarkiverse.helm.deployment.decorators.LowPriorityAddEnvVarDecorator;
 import io.quarkiverse.helm.deployment.rules.ConfigReferenceStrategyManager;
 import io.quarkiverse.helm.deployment.utils.HelmConfigUtils;
 import io.quarkiverse.helm.model.Chart;
@@ -58,12 +56,16 @@ import io.quarkus.kubernetes.deployment.DeploymentTargetEntry;
 import io.quarkus.kubernetes.deployment.EnabledKubernetesDeploymentTargetsBuildItem;
 import io.quarkus.kubernetes.spi.ConfiguratorBuildItem;
 import io.quarkus.kubernetes.spi.CustomKubernetesOutputDirBuildItem;
-import io.quarkus.kubernetes.spi.DecoratorBuildItem;
 import io.quarkus.kubernetes.spi.DekorateOutputBuildItem;
 import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
+import io.quarkus.kubernetes.spi.KubernetesInitContainerBuildItem;
 
 public class HelmProcessor {
+    // Replaced Dekorate's io.dekorate.Logger with org.jboss.logging.Logger
     private static final Logger LOGGER = Logger.getLogger(HelmProcessor.class);
+    // Replaced Dekorate's Serialization.yamlMapper()/jsonMapper() with Jackson ObjectMapper instances
+    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     private static final String NAME_FORMAT_REG_EXP = "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
     private static final List<String> HELM_INVALID_CHARACTERS = Arrays.asList("-");
@@ -82,9 +84,13 @@ public class HelmProcessor {
     // Lazy loaded when calling `isBuildTimeProperty(xxx)`.
     private static Set<String> buildProperties;
 
+    // Replaced Dekorate's LowPriorityAddEnvVarDecorator with HelmEnvVarConfigReferenceBuildItem (Helm values mapping).
+    // Env vars are NOT produced here — they are already added by Quarkus kubernetes extension
+    // (e.g. via quarkus.kubernetes.env.vars.*). Producing KubernetesEnvBuildItem would conflict
+    // with explicit env var values because KubernetesEnvBuildItem has no priority concept.
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void mapSystemPropertiesIfEnabled(Capabilities capabilities, ApplicationInfoBuildItem info, HelmChartConfig helmConfig,
-            BuildProducer<DecoratorBuildItem> decorators) {
+            BuildProducer<HelmEnvVarConfigReferenceBuildItem> helmEnvVarConfigReferences) {
         if (helmConfig.mapSystemProperties()) {
             String deploymentName = getDeploymentName(capabilities, info);
             Config config = ConfigProvider.getConfig();
@@ -98,15 +104,19 @@ public class HelmProcessor {
 
             for (Map.Entry<String, String> entry : propertiesFromConfigSource.entrySet()) {
                 if (!isBuildTimeProperty(entry.getKey())) {
-                    mapProperty(deploymentName, decorators, entry.getValue(), propertiesFromConfigSource);
+                    mapProperty(deploymentName, helmEnvVarConfigReferences, entry.getValue(),
+                            propertiesFromConfigSource);
                 }
             }
         }
     }
 
+    // Replaced Dekorate's AddInitContainerDecorator with KubernetesInitContainerBuildItem
+    // and LowPriorityAddEnvVarDecorator with HelmEnvVarConfigReferenceBuildItem
     @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
     void configureHelmDependencyOrder(Capabilities capabilities, ApplicationInfoBuildItem info, HelmChartConfig config,
-            BuildProducer<DecoratorBuildItem> decorators) {
+            BuildProducer<KubernetesInitContainerBuildItem> initContainers,
+            BuildProducer<HelmEnvVarConfigReferenceBuildItem> helmEnvVarConfigReferences) {
         if (config.dependencies() == null || config.dependencies().isEmpty()) {
             return;
         }
@@ -117,16 +127,11 @@ public class HelmProcessor {
             HelmDependencyConfig dependency = entry.getValue();
             if (dependency.waitForService().isPresent()) {
                 String containerName = "wait-for-" + defaultString(dependency.name(), entry.getKey());
-                ContainerBuilder container = new ContainerBuilder()
-                        .withName(containerName)
-                        .withImage(dependency.waitForServiceImage())
-                        .withCommand("sh");
 
-                String argument = null;
+                String argument;
 
                 String service = dependency.waitForService().get();
                 if (service.contains(SPLIT)) {
-                    // it's service name and service port
                     String[] parts = service.split(SPLIT);
                     String serviceName = parts[0];
                     String servicePort = parts[1];
@@ -139,17 +144,21 @@ public class HelmProcessor {
                             .replaceAll(SERVICE_NAME_PLACEHOLDER, service);
                 }
 
-                // if the condition is set, we need to map it as env property as well
+                Map<String, String> initContainerEnvVars = new HashMap<>();
                 if (dependency.condition().isPresent()) {
                     String property = HelmConfigUtils.deductProperty(config, dependency.condition().get());
-                    decorators.produce(new DecoratorBuildItem(
-                            new LowPriorityAddEnvVarDecorator(deploymentName, containerName, property, "true")));
+                    initContainerEnvVars.put(property, "true");
+                    helmEnvVarConfigReferences.produce(
+                            new HelmEnvVarConfigReferenceBuildItem(deploymentName, containerName, property, "true"));
 
                     argument = String.format(INIT_CONTAINER_CONDITION_FORMAT, property, argument);
                 }
 
-                decorators.produce(new DecoratorBuildItem(
-                        new AddInitContainerDecorator(deploymentName, container.withArguments("-c", argument).build())));
+                initContainers.produce(
+                        KubernetesInitContainerBuildItem.create(containerName, dependency.waitForServiceImage())
+                                .withCommand(List.of("sh"))
+                                .withArguments(List.of("-c", argument))
+                                .withEnvVars(initContainerEnvVars));
             }
         }
     }
@@ -159,6 +168,7 @@ public class HelmProcessor {
             Optional<DekorateOutputBuildItem> dekorateOutput,
             EnabledKubernetesDeploymentTargetsBuildItem kubernetesDeploymentTargets,
             List<GeneratedKubernetesResourceBuildItem> generatedResources,
+            List<HelmEnvVarConfigReferenceBuildItem> helmEnvVarConfigReferences,
             // this is added to ensure that the build step will be run
             BuildProducer<HelmChartBuildItem> helmChartBuildItems,
             BuildProducer<GeneratedFileSystemResourceBuildItem> dummy,
@@ -172,6 +182,7 @@ public class HelmProcessor {
             helmChartBuildItems.produce(doGenerateResources(app, outputTarget, dekorateOutput.get(),
                     kubernetesDeploymentTargets,
                     generatedResources,
+                    helmEnvVarConfigReferences,
                     customKubernetesOutputDir,
                     customHelmOutputDir,
                     additionalHelmTemplateBuildItems,
@@ -182,6 +193,11 @@ public class HelmProcessor {
         }
     }
 
+    /*
+     * Set the property: helm enabled to false.
+     * That will disable the decorator(s) of the Dekorate Helm Annotations dependency
+     * when included part of the application
+     */
     @BuildStep
     void disableDefaultHelmListener(BuildProducer<ConfiguratorBuildItem> helmConfiguration) {
         helmConfiguration.produce(new ConfiguratorBuildItem(new DisableDefaultHelmListener()));
@@ -192,20 +208,23 @@ public class HelmProcessor {
             DekorateOutputBuildItem dekorateOutput,
             EnabledKubernetesDeploymentTargetsBuildItem kubernetesDeploymentTargets,
             List<GeneratedKubernetesResourceBuildItem> generatedResources,
+            List<HelmEnvVarConfigReferenceBuildItem> helmEnvVarConfigReferences,
             Optional<CustomKubernetesOutputDirBuildItem> customKubernetesOutputDir,
             Optional<CustomHelmOutputDirBuildItem> customHelmOutputDir,
             List<AdditionalHelmTemplateBuildItem> additionalHelmTemplateBuildItems,
             List<AdditionalHelmCRDBuildItem> additionalHelmCRDBuildItems,
             HelmChartConfig config) {
         validate(config);
-        Project project = (Project) dekorateOutput.getProject();
+        // Use Quarkus build items instead of Dekorate's Project for root dir and version
+        Path projectRoot = outputTarget.getOutputDirectory().getParent();
+        String projectVersion = app.getVersion();
 
         Set<String> enabledDeploymentTargets = kubernetesDeploymentTargets.getEntriesSortedByPriority().stream()
                 .map(DeploymentTargetEntry::getName)
                 .collect(Collectors.toSet());
 
         // Deduct folders
-        Path inputFolder = getInputDirectory(config, project);
+        Path inputFolder = getInputDirectory(config, projectRoot);
         Path outputFolder = getOutputDirectory(config, customHelmOutputDir, outputTarget);
 
         // Dekorate session writer
@@ -243,11 +262,17 @@ public class HelmProcessor {
                     .collect(Collectors.toMap(AdditionalHelmCRDBuildItem::getName,
                             AdditionalHelmCRDBuildItem::getContent));
 
+            List<ConfigReference> configReferences = getConfigReferencesFromSession(deploymentTarget, dekorateOutput,
+                    app.getName());
+            for (HelmEnvVarConfigReferenceBuildItem item : helmEnvVarConfigReferences) {
+                configReferences.addAll(item.toConfigReferences());
+            }
+
             Map<String, String> generated = helmWriter.writeHelmFiles(
                     name,
-                    project,
+                    projectVersion,
                     config,
-                    getConfigReferencesFromSession(deploymentTarget, dekorateOutput, app.getName()),
+                    configReferences,
                     inputFolder,
                     chartOutputFolder,
                     filesInDeploymentTarget.getValue(),
@@ -350,10 +375,11 @@ public class HelmProcessor {
         }
     }
 
-    private Path getInputDirectory(HelmChartConfig config, Project project) {
+    // Replaced Dekorate's Project.getRoot() with the project root path from OutputTargetBuildItem
+    private Path getInputDirectory(HelmChartConfig config, Path projectRoot) {
         Path path = Paths.get(config.inputDirectory());
         if (!path.isAbsolute()) {
-            return project.getRoot().resolve(path);
+            return projectRoot.resolve(path);
         }
 
         return path;
@@ -401,7 +427,8 @@ public class HelmProcessor {
         return value.get();
     }
 
-    private String mapProperty(String deploymentName, BuildProducer<DecoratorBuildItem> decorators, String property,
+    private String mapProperty(String deploymentName,
+            BuildProducer<HelmEnvVarConfigReferenceBuildItem> helmEnvVarConfigReferences, String property,
             Map<String, String> propertiesFromConfigSource) {
         if (!hasSystemProperties(property)) {
             return property;
@@ -416,7 +443,8 @@ public class HelmProcessor {
                 systemProperty = systemProperty.substring(0, splitPosition);
 
                 if (hasSystemProperties(defaultValue)) {
-                    defaultValue = mapProperty(deploymentName, decorators, defaultValue, propertiesFromConfigSource);
+                    defaultValue = mapProperty(deploymentName, helmEnvVarConfigReferences, defaultValue,
+                            propertiesFromConfigSource);
                 }
             }
 
@@ -429,8 +457,8 @@ public class HelmProcessor {
                 // Check whether the system property is provided:
                 defaultValue = getPropertyFromSystem(systemProperty, defaultValue);
 
-                decorators.produce(new DecoratorBuildItem(
-                        new LowPriorityAddEnvVarDecorator(deploymentName, systemProperty, defaultValue)));
+                helmEnvVarConfigReferences.produce(
+                        new HelmEnvVarConfigReferenceBuildItem(deploymentName, systemProperty, defaultValue));
 
                 lastPropertyValue = defaultValue;
             }
@@ -519,10 +547,10 @@ public class HelmProcessor {
             Path notesPath = templatesDir.resolve("NOTES.txt");
             Path readmePath = dir.resolve("README.md");
 
-            Chart chart = Serialization.unmarshal(Files.readString(chartYamlPath), Chart.class);
+            Chart chart = YAML_MAPPER.readValue(Files.readString(chartYamlPath), Chart.class);
             @SuppressWarnings("unchecked")
-            Map<String, Map<String, Object>> values = Serialization.unmarshal(Files.readString(valuesYamlPath), Map.class);
-            ValuesSchema valuesSchema = Serialization.unmarshal(Files.readString(valuesSchemaPath), ValuesSchema.class);
+            Map<String, Map<String, Object>> values = YAML_MAPPER.readValue(Files.readString(valuesYamlPath), Map.class);
+            ValuesSchema valuesSchema = JSON_MAPPER.readValue(Files.readString(valuesSchemaPath), ValuesSchema.class);
 
             Map<String, String> templates = new HashMap<>();
             if (Files.isDirectory(templatesDir)) {

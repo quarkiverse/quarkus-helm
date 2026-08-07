@@ -6,15 +6,15 @@ metadata:
   name: my-ingress
 spec:
   rules:
-    - http:
-        paths:
-          - backend:
-              service:
-                name: quarkus-helm-integration-tests-kubernetes-with-templates
-                port:
-                  name: http
-            path: /
-            pathType: Prefix
+  - http:
+      paths:
+      - backend:
+          service:
+            name: quarkus-helm-it-kubernetes-with-templates
+            port:
+              name: http
+        path: /
+        pathType: Prefix
 
 {{- end }}
 ---
@@ -24,12 +24,12 @@ metadata:
   name: another-unused-ingress
 spec:
   rules:
-    - http:
-        paths:
-          - backend:
-              service:
-                name: another-service
-                port:
-                  name: http
-            path: /
-            pathType: Prefix
+  - http:
+      paths:
+      - backend:
+          service:
+            name: another-service
+            port:
+              name: http
+        path: /
+        pathType: Prefix

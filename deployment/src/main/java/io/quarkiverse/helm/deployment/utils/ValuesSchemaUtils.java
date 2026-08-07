@@ -1,23 +1,24 @@
 package io.quarkiverse.helm.deployment.utils;
 
 import static io.quarkiverse.helm.deployment.utils.HelmConfigUtils.deductProperty;
+import static io.quarkiverse.helm.deployment.utils.StringUtils.isNotEmpty;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.StringUtils;
-
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.dekorate.ConfigReference;
-import io.dekorate.utils.Serialization;
 import io.quarkiverse.helm.deployment.HelmChartConfig;
 import io.quarkiverse.helm.deployment.ValuesSchemaPropertyConfig;
 import io.quarkiverse.helm.model.ValuesSchema;
 import io.quarkiverse.helm.model.ValuesSchemaProperty;
 
 public final class ValuesSchemaUtils {
+    // Replaced Dekorate's Serialization.unmarshal/asJson with ObjectMapper.convertValue()
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private ValuesSchemaUtils() {
 
     }
@@ -115,7 +116,7 @@ public final class ValuesSchemaUtils {
                 }
             }
 
-            if (StringUtils.isNotEmpty(propertyFromConfig.getValue().type())) {
+            if (isNotEmpty(propertyFromConfig.getValue().type())) {
                 property.setType(propertyFromConfig.getValue().type());
             }
 
@@ -123,7 +124,7 @@ public final class ValuesSchemaUtils {
         }
 
         // convert to map
-        return Serialization.unmarshal(Serialization.asJson(schema), new TypeReference<Map<String, Object>>() {
+        return MAPPER.convertValue(schema, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
         });
     }
 }

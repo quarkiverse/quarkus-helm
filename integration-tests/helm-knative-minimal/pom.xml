@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>io.quarkiverse.helm</groupId>
-    <artifactId>quarkus-helm-integration-tests</artifactId>
+    <artifactId>quarkus-helm-it</artifactId>
     <version>1.4.3-SNAPSHOT</version>
   </parent>
 
-  <artifactId>quarkus-helm-integration-tests-knative-minimal</artifactId>
+  <artifactId>quarkus-helm-it-knative-minimal</artifactId>
   <name>Quarkus - Helm - Integration Tests - Knative - Minimal</name>
 
   <dependencies>
@@ -43,8 +43,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.dekorate</groupId>
-      <artifactId>dekorate-core</artifactId>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -54,6 +54,7 @@
       <plugin>
         <groupId>io.quarkus</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>
+        <extensions>true</extensions>
         <executions>
           <execution>
             <goals>

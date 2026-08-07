@@ -1,9 +1,8 @@
 package io.quarkiverse.helm.deployment.utils;
 
-import static io.dekorate.utils.Strings.defaultIfEmpty;
-import static io.github.yamlpath.utils.StringUtils.isNullOrEmpty;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static io.quarkiverse.helm.deployment.utils.StringUtils.isEmpty;
+import static io.quarkiverse.helm.deployment.utils.StringUtils.isNotEmpty;
+import static io.quarkus.runtime.util.StringUtil.isNullOrEmpty;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,7 +30,7 @@ public final class SystemPropertiesUtils {
         String value = Optional.ofNullable(System.getProperty(propertyName))
                 .orElseGet(() -> System.getenv(propertyName));
 
-        return defaultIfEmpty(value, defaultValue);
+        return (value == null || value.isEmpty() ? defaultValue : value);
     }
 
     private static List<String> substringsBetween(String str, String open, String close) {

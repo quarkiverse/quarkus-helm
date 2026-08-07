@@ -22,7 +22,7 @@ spec:
         paths:
           - backend:
               service:
-                name: quarkus-helm-integration-tests-kubernetes-with-templates
+                name: quarkus-helm-it-kubernetes-with-templates
                 port:
                   name: http
             path: /

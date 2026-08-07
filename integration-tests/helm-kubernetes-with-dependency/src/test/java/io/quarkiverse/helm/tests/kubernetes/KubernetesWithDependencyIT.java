@@ -9,19 +9,28 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import io.dekorate.utils.Serialization;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 public class KubernetesWithDependencyIT {
 
-    private static final String CHART_NAME = "quarkus-helm-integration-tests-kubernetes-with-dependency";
+    private static final String CHART_NAME = "quarkus-helm-it-kubernetes-with-dependency";
     private static final String ROOT_CONFIG_NAME = "app";
+    private static ObjectMapper mapper;
+
+    @BeforeAll
+    public static void init() {
+        mapper = new ObjectMapper(new YAMLFactory());
+    }
 
     @Test
     public void shouldHelmManifestsBeGenerated() throws IOException {
@@ -33,8 +42,7 @@ public class KubernetesWithDependencyIT {
 
     @Test
     public void valuesFileShouldContainDependencyValues() throws IOException {
-        Map<String, Object> values = Serialization.yamlMapper()
-                .readValue(getResourceAsStream("values.yaml"), Map.class);
+        Map<String, Object> values = mapper.readValue(getResourceAsStream("values.yaml"), Map.class);
         assertNotNull(values.containsKey(ROOT_CONFIG_NAME), "Does not contain `" + ROOT_CONFIG_NAME + "`");
         Map<String, Object> app = (Map<String, Object>) values.get("app");
         assertEquals("NodePort", app.get("serviceType"));
@@ -49,8 +57,7 @@ public class KubernetesWithDependencyIT {
 
     @Test
     public void chartFileShouldContainExpectedData() throws IOException {
-        Map<String, Object> values = Serialization.yamlMapper()
-                .readValue(getResourceAsStream("Chart.yaml"), Map.class);
+        Map<String, Object> values = mapper.readValue(getResourceAsStream("Chart.yaml"), Map.class);
         List<Object> dependencies = (List<Object>) values.get("dependencies");
         Map<String, Object> postgresql = (Map<String, Object>) dependencies.get(0);
         assertEquals("postgresql", postgresql.get("name"));
@@ -59,7 +66,19 @@ public class KubernetesWithDependencyIT {
         assertFalse(postgresql.containsKey("enabled"));
     }
 
-    private final InputStream getResourceAsStream(String file) throws FileNotFoundException {
+    @Test
+    public void deploymentShouldContainInitContainer() throws IOException {
+        String deployment = new String(getResourceAsStream("templates/deployment.yaml").readAllBytes(),
+                StandardCharsets.UTF_8);
+        assertTrue(deployment.contains("name: wait-for-postgresql"), "Init container 'wait-for-postgresql' not found");
+        assertTrue(deployment.contains("image: busybox:1.34.1"), "Init container image not found");
+        assertTrue(deployment.contains("nc -z -w3 quarkus-with-dependency-postgresql 5432"),
+                "Wait-for-service command not found");
+        assertTrue(deployment.contains("{{ .Values.postgresql.enabled | quote }}"),
+                "Condition env var Helm expression not found");
+    }
+
+    private InputStream getResourceAsStream(String file) throws FileNotFoundException {
         return new FileInputStream(Paths.get("target", "helm", "kubernetes").resolve(CHART_NAME).resolve(file).toFile());
     }
 }

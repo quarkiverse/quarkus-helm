@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>io.quarkiverse.helm</groupId>
-    <artifactId>quarkus-helm-integration-tests</artifactId>
+    <artifactId>quarkus-helm-it</artifactId>
     <version>1.4.3-SNAPSHOT</version>
   </parent>
 
-  <artifactId>quarkus-helm-integration-tests-kubernetes-minimal-yaml</artifactId>
+  <artifactId>quarkus-helm-it-kubernetes-minimal-yaml</artifactId>
   <name>Quarkus - Helm - Integration Tests - Kubernetes - Minimal - Yaml config source</name>
 
   <dependencies>
@@ -18,7 +18,7 @@
 
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-container-image-jib</artifactId>
+      <artifactId>${container-image.artifactId}</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -42,8 +42,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.dekorate</groupId>
-      <artifactId>dekorate-core</artifactId>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -53,6 +53,7 @@
       <plugin>
         <groupId>io.quarkus</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>
+        <extensions>true</extensions>
         <executions>
           <execution>
             <goals>

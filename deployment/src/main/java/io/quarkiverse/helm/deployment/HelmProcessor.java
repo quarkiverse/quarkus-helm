@@ -77,6 +77,7 @@ public class HelmProcessor {
     private static final String SERVICE_NAME_PLACEHOLDER = "::service-name";
     private static final String SERVICE_PORT_PLACEHOLDER = "::service-port";
     private static final String SPLIT = ":";
+    private static final String PROFILE_PREFIX = "%";
     private static final String PROPERTIES_CONFIG_SOURCE = "PropertiesConfigSource";
     private static final String YAML_CONFIG_SOURCE = "YamlConfigSource";
     // Lazy loaded when calling `isBuildTimeProperty(xxx)`.
@@ -90,6 +91,13 @@ public class HelmProcessor {
             Config config = ConfigProvider.getConfig();
             Map<String, String> propertiesFromConfigSource = new HashMap<>();
             for (String propName : config.getPropertyNames()) {
+                // Property names still prefixed with a profile (e.g. `%test.foo`) belong to profiles
+                // that are not active in this build (active profile properties are listed unprefixed),
+                // so they must not be mapped to the deployment resources.
+                if (propName.startsWith(PROFILE_PREFIX)) {
+                    continue;
+                }
+
                 ConfigValue propValue = config.getConfigValue(propName);
                 if (isPropertiesConfigSource(propValue.getSourceName())) {
                     propertiesFromConfigSource.put(propName, propValue.getRawValue());

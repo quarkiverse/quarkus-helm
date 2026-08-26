@@ -295,7 +295,10 @@ public class QuarkusHelmWriterSessionListener {
     private Map<String, Object> toValuesMap(Map<String, ValuesHolder.HelmValueHolder> holder) {
         Map<String, Object> values = new HashMap<>();
         for (Map.Entry<String, ValuesHolder.HelmValueHolder> value : holder.entrySet()) {
-            values.put(value.getKey(), value.getValue().value);
+            // Deep clone the value: map values are shared between the prod and profile-specific holders, and
+            // merging a custom values.<profile>.yaml file mutates the nested maps in place, which would leak
+            // profile-specific values into the values.yaml file (and into the other profiles).
+            values.put(value.getKey(), MapUtils.deepClone(value.getValue().value));
         }
 
         return MapUtils.toMultiValueSortedMap(values);

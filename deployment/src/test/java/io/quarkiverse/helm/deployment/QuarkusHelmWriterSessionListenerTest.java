@@ -164,6 +164,188 @@ public class QuarkusHelmWriterSessionListenerTest {
                 "Other Helm directives should be preserved. Actual content:\n" + resultContent);
     }
 
+    // see: https://github.com/quarkiverse/quarkus-helm/issues/462
+    @Test
+    public void shouldNotLeakProfileValuesIntoOtherValuesFilesWhenUsingMaps() throws IOException {
+        QuarkusHelmWriterSessionListener listener = new QuarkusHelmWriterSessionListener();
+
+        String chartName = "test-chart-values-map";
+        Path inputDir = tempDir.resolve("input-values-map");
+        Path outputDir = tempDir.resolve("output-values-map");
+        Files.createDirectories(inputDir);
+        Files.createDirectories(outputDir);
+
+        // Custom per-profile values file overriding one of the map entries
+        Files.writeString(inputDir.resolve("values.dev.yaml"),
+                "app:\n" +
+                        "  ingress:\n" +
+                        "    annotations:\n" +
+                        "      \"alb.ingress.kubernetes.io/certificate-arn\": dev-certificate-arn\n");
+
+        Project project = buildProject(inputDir);
+
+        Map<String, String> annotations = new LinkedHashMap<>();
+        annotations.put("alb.ingress.kubernetes.io/certificate-arn", "CHANGE_ME");
+        annotations.put("alb.ingress.kubernetes.io/scheme", "internal");
+
+        Map<String, ValueReferenceConfig> valueReferences = new LinkedHashMap<>();
+        valueReferences.put("ingress.annotations", valueReference(null, null, annotations));
+        // placeholder value so that the "dev" profile (and hence values.dev.yaml) is generated
+        valueReferences.put("env_dev.profile", valueReference("dev", "dev", Collections.emptyMap()));
+
+        HelmChartConfig helmConfig = new TestHelmChartConfig(chartName, inputDir) {
+            @Override
+            public Map<String, ValueReferenceConfig> values() {
+                return valueReferences;
+            }
+        };
+
+        listener.writeHelmFiles(
+                chartName,
+                project,
+                helmConfig,
+                Collections.emptyList(),
+                inputDir,
+                outputDir,
+                buildGeneratedFiles(),
+                Collections.emptyMap(),
+                Collections.emptyMap(),
+                Collections.emptyList());
+
+        String prodValues = Files.readString(outputDir.resolve(chartName).resolve("values.yaml"));
+        assertTrue(prodValues.contains("CHANGE_ME"),
+                "The values.yaml file should keep the default map values. Actual content:\n" + prodValues);
+        assertFalse(prodValues.contains("dev-certificate-arn"),
+                "Values from the dev profile should not leak into values.yaml. Actual content:\n" + prodValues);
+
+        String devValues = Files.readString(outputDir.resolve(chartName).resolve("values.dev.yaml"));
+        assertTrue(devValues.contains("dev-certificate-arn"),
+                "The values.dev.yaml file should contain the profile override. Actual content:\n" + devValues);
+        assertTrue(devValues.contains("internal"),
+                "The values.dev.yaml file should inherit the remaining map values. Actual content:\n" + devValues);
+    }
+
+    // see: https://github.com/quarkiverse/quarkus-helm/issues/462
+    @Test
+    public void shouldNotSplitDottedKeysFromCustomValuesFile() throws IOException {
+        QuarkusHelmWriterSessionListener listener = new QuarkusHelmWriterSessionListener();
+
+        String chartName = "test-chart-dotted-keys";
+        Path inputDir = tempDir.resolve("input-dotted-keys");
+        Path outputDir = tempDir.resolve("output-dotted-keys");
+        Files.createDirectories(inputDir);
+        Files.createDirectories(outputDir);
+
+        // Custom values file using map keys that contain dots (Kubernetes annotations)
+        Files.writeString(inputDir.resolve("values.yaml"),
+                "app:\n" +
+                        "  ingress:\n" +
+                        "    annotations:\n" +
+                        "      alb.ingress.kubernetes.io/backend-protocol: HTTP\n" +
+                        "      kubernetes.io/ingress.class: alb\n" +
+                        "  replicas: 3\n");
+
+        Project project = buildProject(inputDir);
+
+        HelmChartConfig helmConfig = new TestHelmChartConfig(chartName, inputDir);
+
+        listener.writeHelmFiles(
+                chartName,
+                project,
+                helmConfig,
+                Collections.emptyList(),
+                inputDir,
+                outputDir,
+                buildGeneratedFiles(),
+                Collections.emptyMap(),
+                Collections.emptyMap(),
+                Collections.emptyList());
+
+        String values = Files.readString(outputDir.resolve(chartName).resolve("values.yaml"));
+        assertTrue(values.contains("alb.ingress.kubernetes.io/backend-protocol"),
+                "Annotation keys with dots should be preserved as-is. Actual content:\n" + values);
+        assertTrue(values.contains("kubernetes.io/ingress.class"),
+                "Annotation keys with dots should be preserved as-is. Actual content:\n" + values);
+        assertFalse(values.contains("alb:"),
+                "Annotation keys with dots should not be split into nested maps. Actual content:\n" + values);
+        assertTrue(values.contains("replicas: 3"),
+                "Nested properties without dotted keys should keep working. Actual content:\n" + values);
+    }
+
+    private static ValueReferenceConfig valueReference(String value, String profile, Map<String, String> valueAsMap) {
+        return new ValueReferenceConfig() {
+            @Override
+            public Optional<String> property() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<java.util.List<String>> paths() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<String> profile() {
+                return Optional.ofNullable(profile);
+            }
+
+            @Override
+            public Optional<String> value() {
+                return Optional.ofNullable(value);
+            }
+
+            @Override
+            public Optional<Integer> valueAsInt() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<Boolean> valueAsBool() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Map<String, String> valueAsMap() {
+                return valueAsMap;
+            }
+
+            @Override
+            public Optional<java.util.List<String>> valueAsList() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<String> expression() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<String> description() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<Integer> minimum() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<Integer> maximum() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<String> pattern() {
+                return Optional.empty();
+            }
+
+            @Override
+            public boolean required() {
+                return false;
+            }
+        };
+    }
+
     private Map<String, byte[]> buildGeneratedFiles() {
         Map<String, byte[]> files = new LinkedHashMap<>();
         String deploymentYaml = "apiVersion: apps/v1\n" +

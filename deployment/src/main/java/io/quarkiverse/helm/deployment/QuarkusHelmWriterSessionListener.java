@@ -513,6 +513,10 @@ public class QuarkusHelmWriterSessionListener {
      * https://github.com/wanaku-ai/wanaku/issues/1376
      * Applies expressions to a Helm template using string-based replacement.
      * This handles templates that already contain Helm directives ({{ ... }}).
+     * The content is split into document segments (delimited by "---" separators and Helm control-flow
+     * directives such as "{{ if }}"/"{{ else }}"/"{{ end }}") and the conditions of the YAMLPath selector
+     * (e.g. "kind == ClusterRoleBinding && metadata.name == foo") are evaluated against each segment, so an
+     * expression only rewrites the documents it selects.
      *
      * @param content the Helm template content
      * @param expressions the configured expressions
@@ -527,12 +531,180 @@ public class QuarkusHelmWriterSessionListener {
 
                 // Extract the field name from YAMLPath (e.g., ".roleRef.name" from "(kind == ClusterRoleBinding).roleRef.name")
                 String fieldPath = extractFieldPath(path);
-                if (fieldPath != null) {
-                    result = replaceFieldInHelmTemplate(result, fieldPath, expression);
+                if (fieldPath == null) {
+                    continue;
                 }
+
+                List<PathCondition> conditions = extractPathConditions(path);
+                if (conditions == null) {
+                    LOGGER.info(String.format("Skipping expression with path '%s' for the Helm template content: "
+                            + "the path conditions cannot be evaluated on templates containing Helm directives", path));
+                    continue;
+                }
+
+                result = replaceFieldInMatchingDocuments(result, conditions, fieldPath, expression);
             }
         }
         return result;
+    }
+
+    /**
+     * Extracts the "field == value" conditions from a YAMLPath selector.
+     * E.g., "(kind == ClusterRoleBinding && metadata.name == foo).roleRef.name" ->
+     * [kind == ClusterRoleBinding, metadata.name == foo]
+     *
+     * @param yamlPath the YAMLPath expression
+     * @return the conditions (empty when the selector has none), or null when the selector uses features that
+     *         cannot be evaluated with the line-based strategy (e.g. "||", "!=", nested selectors)
+     */
+    private List<PathCondition> extractPathConditions(String yamlPath) {
+        int firstParen = yamlPath.indexOf('(');
+        int lastParen = yamlPath.lastIndexOf(')');
+        if (firstParen < 0 || lastParen < firstParen) {
+            return Collections.emptyList();
+        }
+
+        String selector = yamlPath.substring(firstParen + 1, lastParen).trim();
+        if (selector.isEmpty()) {
+            return Collections.emptyList();
+        }
+        if (selector.contains("||") || selector.contains("!=") || selector.contains("(")) {
+            return null;
+        }
+
+        List<PathCondition> conditions = new ArrayList<>();
+        for (String term : selector.split("&&")) {
+            String[] operands = term.split("==");
+            if (operands.length != 2) {
+                return null;
+            }
+            conditions.add(new PathCondition(operands[0].trim(), stripQuotes(operands[1].trim())));
+        }
+        return conditions;
+    }
+
+    /**
+     * Splits the template content into document segments and rewrites the field only in the segments that
+     * satisfy all the path conditions. Segment boundaries are YAML document separators ("---") and Helm
+     * control-flow directives, so each branch of a "{{ if }}/{{ else }}/{{ end }}" block is evaluated on its own.
+     */
+    private String replaceFieldInMatchingDocuments(String content, List<PathCondition> conditions, String fieldPath,
+            String expression) {
+        String[] lines = content.split("\n", -1);
+        List<String> output = new ArrayList<>(lines.length);
+        List<String> segment = new ArrayList<>();
+
+        for (String line : lines) {
+            if (isDocumentBoundary(line.trim())) {
+                flushSegment(output, segment, conditions, fieldPath, expression);
+                output.add(line);
+            } else {
+                segment.add(line);
+            }
+        }
+        flushSegment(output, segment, conditions, fieldPath, expression);
+
+        return String.join("\n", output);
+    }
+
+    private void flushSegment(List<String> output, List<String> segment, List<PathCondition> conditions, String fieldPath,
+            String expression) {
+        if (segment.isEmpty()) {
+            return;
+        }
+
+        boolean matches = conditions.stream().allMatch(condition -> condition.matches(segment));
+        if (matches) {
+            String replaced = replaceFieldInHelmTemplate(String.join("\n", segment), fieldPath, expression);
+            output.addAll(Arrays.asList(replaced.split("\n", -1)));
+        } else {
+            output.addAll(segment);
+        }
+        segment.clear();
+    }
+
+    private boolean isDocumentBoundary(String trimmedLine) {
+        if (trimmedLine.equals("---") || trimmedLine.startsWith("--- ")) {
+            return true;
+        }
+
+        // Helm control-flow directives delimit the alternative documents generated within conditional blocks
+        if (trimmedLine.startsWith("{{")) {
+            String directive = trimmedLine.substring(2);
+            if (directive.startsWith("-")) {
+                directive = directive.substring(1);
+            }
+            directive = directive.trim();
+            return directive.startsWith("if ") || directive.startsWith("else") || directive.startsWith("end")
+                    || directive.startsWith("range ");
+        }
+
+        return false;
+    }
+
+    /**
+     * Resolves a dotted scalar path (e.g. "metadata.name") against the lines of a document segment using
+     * indentation-aware traversal.
+     *
+     * @return the scalar value, or null when the field is absent or its value contains Helm directives
+     */
+    private static String resolveScalar(List<String> lines, String dottedPath) {
+        String[] parts = dottedPath.split("\\.");
+        int parentIndent = -1;
+        int partIndex = 0;
+
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (trimmed.isEmpty() || trimmed.startsWith("#") || trimmed.startsWith("{{")) {
+                continue;
+            }
+
+            int indent = line.length() - line.stripLeading().length();
+            if (partIndex > 0 && indent <= parentIndent) {
+                // left the block of the previously matched part without finding the field
+                return null;
+            }
+
+            if (trimmed.equals(parts[partIndex] + ":") || trimmed.startsWith(parts[partIndex] + ": ")) {
+                if (partIndex == parts.length - 1) {
+                    String value = trimmed.substring(parts[partIndex].length() + 1).trim();
+                    if (value.isEmpty() || value.contains("{{")) {
+                        return null;
+                    }
+                    return stripQuotes(value);
+                }
+                parentIndent = indent;
+                partIndex++;
+            }
+        }
+
+        return null;
+    }
+
+    private static String stripQuotes(String value) {
+        if (value.length() >= 2
+                && ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'")))) {
+            return value.substring(1, value.length() - 1);
+        }
+        return value;
+    }
+
+    /**
+     * A single "field == value" condition from a YAMLPath selector, evaluated against the lines of a document
+     * segment.
+     */
+    private static class PathCondition {
+        private final String fieldPath;
+        private final String expectedValue;
+
+        PathCondition(String fieldPath, String expectedValue) {
+            this.fieldPath = fieldPath;
+            this.expectedValue = expectedValue;
+        }
+
+        boolean matches(List<String> documentLines) {
+            return expectedValue.equals(resolveScalar(documentLines, fieldPath));
+        }
     }
 
     /**
@@ -573,7 +745,7 @@ public class QuarkusHelmWriterSessionListener {
         String targetField = parts[parts.length - 1];
         String replacement = targetField + ": " + expression;
 
-        String[] lines = content.split("\n");
+        String[] lines = content.split("\n", -1);
         return processLinesForFieldReplacement(lines, parentField, targetField, replacement);
     }
 

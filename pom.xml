@@ -4,7 +4,7 @@
   <parent>
     <groupId>io.quarkiverse</groupId>
     <artifactId>quarkiverse-parent</artifactId>
-    <version>25</version>
+    <version>26</version>
   </parent>
   <groupId>io.quarkiverse.helm</groupId>
   <artifactId>quarkus-helm-parent</artifactId>
@@ -27,8 +27,7 @@
   <properties>
     <compiler-plugin.version>3.16.0</compiler-plugin.version>
     <maven.compiler.parameters>true</maven.compiler.parameters>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
+    <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.version>3.37.1</quarkus.version>

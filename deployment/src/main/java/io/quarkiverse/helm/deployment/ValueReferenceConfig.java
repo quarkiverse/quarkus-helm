@@ -20,6 +20,14 @@ public interface ValueReferenceConfig {
     Optional<List<String>> paths();
 
     /**
+     * If true, the missing fields of the paths will be created in the resources when a value is provided. If false, the
+     * value will only replace existing fields.
+     * If not set, the missing fields will only be created when a value is provided and the path starts with a filter
+     * expression, for example: `(kind == Deployment).spec.template.spec.restartPolicy`.
+     */
+    Optional<Boolean> createIfMissing();
+
+    /**
      * The profile where this value reference will be mapped to.
      * For example, if the profile is `dev`, then a `values.dev.yml` file will be created with the value.
      */

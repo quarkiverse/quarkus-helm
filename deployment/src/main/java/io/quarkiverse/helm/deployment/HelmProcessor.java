@@ -34,6 +34,7 @@ import org.jboss.logging.Logger;
 import io.dekorate.ConfigReference;
 import io.dekorate.Session;
 import io.dekorate.kubernetes.config.ContainerBuilder;
+import io.dekorate.kubernetes.decorator.AddAnnotationDecorator;
 import io.dekorate.kubernetes.decorator.AddInitContainerDecorator;
 import io.dekorate.project.Project;
 import io.dekorate.utils.Serialization;
@@ -61,6 +62,7 @@ import io.quarkus.kubernetes.spi.CustomKubernetesOutputDirBuildItem;
 import io.quarkus.kubernetes.spi.DecoratorBuildItem;
 import io.quarkus.kubernetes.spi.DekorateOutputBuildItem;
 import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
+import io.quarkus.kubernetes.spi.KubernetesJobBuildItem;
 
 public class HelmProcessor {
     private static final Logger LOGGER = Logger.getLogger(HelmProcessor.class);
@@ -80,6 +82,8 @@ public class HelmProcessor {
     private static final String PROFILE_PREFIX = "%";
     private static final String PROPERTIES_CONFIG_SOURCE = "PropertiesConfigSource";
     private static final String YAML_CONFIG_SOURCE = "YamlConfigSource";
+    private static final String HELM_HOOK_ANNOTATION = "helm.sh/hook";
+    private static final String HELM_HOOK_DELETE_POLICY_ANNOTATION = "helm.sh/hook-delete-policy";
     // Lazy loaded when calling `isBuildTimeProperty(xxx)`.
     private static Set<String> buildProperties;
 
@@ -109,6 +113,22 @@ public class HelmProcessor {
                     mapProperty(deploymentName, decorators, entry.getValue(), propertiesFromConfigSource);
                 }
             }
+        }
+    }
+
+    @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
+    void addHelmHooksToInitTaskJobs(HelmChartConfig config, List<KubernetesJobBuildItem> jobs,
+            BuildProducer<DecoratorBuildItem> decorators) {
+        if (!config.initTaskHook().enabled()) {
+            return;
+        }
+
+        for (KubernetesJobBuildItem job : jobs) {
+            decorators.produce(new DecoratorBuildItem(job.getTarget(),
+                    new AddAnnotationDecorator(job.getName(), HELM_HOOK_ANNOTATION, config.initTaskHook().hooks())));
+            decorators.produce(new DecoratorBuildItem(job.getTarget(),
+                    new AddAnnotationDecorator(job.getName(), HELM_HOOK_DELETE_POLICY_ANNOTATION,
+                            config.initTaskHook().deletePolicy())));
         }
     }
 

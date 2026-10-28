@@ -1,0 +1,1 @@
+CREATE TABLE greeting(id INT PRIMARY KEY, message VARCHAR(255));

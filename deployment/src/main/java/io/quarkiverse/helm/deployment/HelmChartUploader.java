@@ -22,7 +22,7 @@ import org.jboss.logging.Logger;
 
 public final class HelmChartUploader {
 
-    private static final Logger LOGGER = Logger.getLogger(HelmProcessor.class);
+    private static final Logger LOGGER = Logger.getLogger(HelmChartUploader.class);
 
     private static final String APPLICATION_GZIP = "application/gzip";
     private static final String CONTENT_TYPE = "Content-Type";

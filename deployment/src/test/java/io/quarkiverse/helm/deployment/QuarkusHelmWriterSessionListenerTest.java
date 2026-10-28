@@ -765,5 +765,25 @@ public class QuarkusHelmWriterSessionListenerTest {
                 }
             };
         }
+
+        @Override
+        public InitTaskHookConfig initTaskHook() {
+            return new InitTaskHookConfig() {
+                @Override
+                public boolean enabled() {
+                    return false;
+                }
+
+                @Override
+                public String hooks() {
+                    return "post-install,post-upgrade";
+                }
+
+                @Override
+                public String deletePolicy() {
+                    return "before-hook-creation";
+                }
+            };
+        }
     }
 }

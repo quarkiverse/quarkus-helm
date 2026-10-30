@@ -61,6 +61,21 @@ class YamlExpressionParserUtilsTest {
     }
 
     @Test
+    void shouldCreateMissingAnnotationWithDotsInEscapedKey() {
+        YamlExpressionParser parser = parser();
+
+        YamlExpressionParserUtils.readAndSet(parser,
+                "(kind == Service).metadata.annotations.'networking.istio.io/exportTo'",
+                "{{ .Values.app.exportTo }}", Optional.empty());
+
+        Object annotations = YamlExpressionParserUtils.read(parser, "(kind == Service).metadata.annotations");
+        assertTrue(annotations instanceof Map);
+        assertTrue(String.valueOf(((Map<?, ?>) annotations).get("networking.istio.io/exportTo"))
+                .contains(".Values.app.exportTo"));
+        assertNull(YamlExpressionParserUtils.read(parser, "(kind == Deployment).metadata.annotations"));
+    }
+
+    @Test
     void shouldCreateMissingFieldInsideFilteredListItem() {
         YamlExpressionParser parser = parser();
 

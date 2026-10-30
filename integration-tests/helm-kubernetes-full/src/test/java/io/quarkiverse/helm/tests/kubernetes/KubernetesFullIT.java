@@ -171,6 +171,18 @@ public class KubernetesFullIT {
         assertEquals("Always", app.get("restartPolicy"));
     }
 
+    @Test
+    public void shouldAddNewAnnotationToService() throws IOException {
+        String service = Strings.read(getResourceAsStream("templates/service.yaml"));
+        assertTrue(service.contains("networking.istio.io/exportTo: {{ .Values.app.exportTo }}"),
+                "Missing annotation was not created in the Service. Actual content:\n" + service);
+
+        Map<String, Object> values = Serialization.yamlMapper()
+                .readValue(getResourceAsStream("values.yaml"), Map.class);
+        Map<String, Object> app = (Map<String, Object>) values.get(ROOT_CONFIG_NAME);
+        assertEquals("istio-system", app.get("exportTo"));
+    }
+
     private final InputStream getResourceAsStream(String file) throws FileNotFoundException {
         return new FileInputStream(Paths.get("target", "helm", "kubernetes").resolve(CHART_NAME).resolve(file).toFile());
     }

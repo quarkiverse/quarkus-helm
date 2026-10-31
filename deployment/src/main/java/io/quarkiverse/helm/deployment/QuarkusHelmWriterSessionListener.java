@@ -42,12 +42,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import io.dekorate.ConfigReference;
-import io.dekorate.Logger;
-import io.dekorate.LoggerFactory;
 import io.dekorate.project.Project;
 import io.dekorate.utils.Exec;
 import io.dekorate.utils.Maps;
@@ -84,7 +83,7 @@ public class QuarkusHelmWriterSessionListener {
     private static final String TEMPLATE_FUNCTION_END_TAG = "{{- end }}";
     private static final String HELM_HELPER_PREFIX = "_";
     private static final boolean APPEND = true;
-    private static final Logger LOGGER = LoggerFactory.getLogger();
+    private static final Logger LOGGER = Logger.getLogger(QuarkusHelmWriterSessionListener.class);
 
     /**
      * Needs to be public in order to be called from outside the session context.
@@ -369,6 +368,7 @@ public class QuarkusHelmWriterSessionListener {
         Files.createDirectories(templatesDir);
 
         Map<String, String> functionsByResource = processUserDefinedTemplates(inputDir, templates, templatesDir);
+        Set<String> unusedUserTemplates = new HashSet<>(functionsByResource.keySet());
         // Split yamls in separated files by kind
         for (Map<Object, Object> resource : resources) {
             String kind = (String) resource.get(KIND);
@@ -391,6 +391,7 @@ public class QuarkusHelmWriterSessionListener {
 
             Path targetFile = templatesDir.resolve(kind.toLowerCase() + YAML);
             String functions = functionsByResource.get(kind.toLowerCase() + YAML);
+            unusedUserTemplates.remove(kind.toLowerCase() + YAML);
 
             // Adapt the values tag to Helm standards:
             String adaptedString = Serialization.yamlMapper().writeValueAsString(resource);
@@ -421,6 +422,13 @@ public class QuarkusHelmWriterSessionListener {
 
             writeFile(adaptedString, targetFile);
             templates.put(targetFile.toString(), adaptedString);
+        }
+
+        for (String unusedUserTemplate : unusedUserTemplates) {
+            LOGGER.warn(String.format("The user template '%s' was ignored because there is no generated resource "
+                    + "of kind '%s'. To add new resources, use 'src/main/kubernetes/kubernetes.yml' instead.",
+                    inputDir.resolve(TEMPLATES).resolve(unusedUserTemplate),
+                    StringUtils.removeEnd(unusedUserTemplate, YAML)));
         }
 
         if (!additionalTemplates.isEmpty()) {
@@ -887,6 +895,13 @@ public class QuarkusHelmWriterSessionListener {
                             isFunction = !lineUserResource.contains(TEMPLATE_FUNCTION_END_TAG);
                             sb.append(lineUserResource + System.lineSeparator());
                         }
+                    }
+
+                    if (sb.length() == 0) {
+                        LOGGER.warn(String.format("The user template '%s' was ignored because it does not contain "
+                                + "any template function. Only the '{{- define }}' blocks of these files are added "
+                                + "to the generated resource of the same kind.", userTemplateFile));
+                        continue;
                     }
 
                     functionsByResource.put(userTemplateFile.getName(), sb.toString());

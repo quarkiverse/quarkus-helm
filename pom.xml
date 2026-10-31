@@ -32,6 +32,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.version>3.37.1</quarkus.version>
     <yaml-path.version>0.0.12</yaml-path.version>
+    <oras-java.version>0.8.5</oras-java.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -46,6 +47,11 @@
         <groupId>io.github.yaml-path</groupId>
         <artifactId>yaml-path</artifactId>
         <version>${yaml-path.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>land.oras</groupId>
+        <artifactId>oras-java-sdk</artifactId>
+        <version>${oras-java.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

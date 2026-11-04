@@ -8,14 +8,13 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-
 import io.dekorate.ConfigReference;
 import io.dekorate.utils.Serialization;
 import io.quarkiverse.helm.deployment.HelmChartConfig;
 import io.quarkiverse.helm.deployment.ValuesSchemaPropertyConfig;
 import io.quarkiverse.helm.model.ValuesSchema;
 import io.quarkiverse.helm.model.ValuesSchemaProperty;
+import tools.jackson.core.type.TypeReference;
 
 public final class ValuesSchemaUtils {
     private ValuesSchemaUtils() {

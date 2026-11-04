@@ -21,6 +21,7 @@ The current development version targets Quarkus 4.0.0.Beta2 and requires Java 21
 
 | Quarkus Helm Version | Quarkus Version          |
 |----------------------|--------------------------|
+| 2.0.0-SNAPSHOT       | Quarkus 4.0.0.Beta2       |
 | 1.3.0 - 1.4.3       | Quarkus 3.16+            |
 | 1.2.0 - 1.2.7       | Quarkus 3.5.0+           |
 | 1.1.0                | Quarkus 3.3.0+           |

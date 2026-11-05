@@ -13,9 +13,11 @@ import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.SEP
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.SEPARATOR_TOKEN;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.START_EXPRESSION_TOKEN;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.START_TAG;
+import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.createPathIfMissing;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.read;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.readAndSet;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.set;
+import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.shouldCreatePathIfMissing;
 import static io.quarkiverse.helm.deployment.utils.YamlExpressionParserUtils.toExpression;
 import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
@@ -33,6 +35,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -382,7 +385,8 @@ public class QuarkusHelmWriterSessionListener {
                 YamlExpressionParser parser = new YamlExpressionParser(Arrays.asList(resource));
                 for (ExpressionConfig expressionConfig : helmConfig.expressions().values()) {
                     if (expressionConfig.path() != null && expressionConfig.expression() != null) {
-                        readAndSet(parser, expressionConfig.path(), expressionConfig.expression());
+                        readAndSet(parser, expressionConfig.path(), expressionConfig.expression(),
+                                expressionConfig.createIfMissing());
                     }
                 }
             }
@@ -469,7 +473,8 @@ public class QuarkusHelmWriterSessionListener {
                 YamlExpressionParser parser = new YamlExpressionParser(Arrays.asList(resource));
                 for (ExpressionConfig expressionConfig : helmConfig.expressions().values()) {
                     if (expressionConfig.path() != null && expressionConfig.expression() != null) {
-                        readAndSet(parser, expressionConfig.path(), expressionConfig.expression());
+                        readAndSet(parser, expressionConfig.path(), expressionConfig.expression(),
+                                expressionConfig.createIfMissing());
                     }
                 }
             }
@@ -950,19 +955,24 @@ public class QuarkusHelmWriterSessionListener {
             Map<String, byte[]> generatedFiles,
             ValuesHolder values,
             List<ConfigReference> valuesReferencesFromDecorators) throws IOException {
-        List<ConfigReference> valuesReferencesFromUser = helmConfig.values().entrySet().stream()
-                .map(e -> new ConfigReference.Builder(e.getValue().property().orElse(e.getKey()),
-                        e.getValue().paths().map(l -> l.toArray(new String[0])).orElse(new String[0]))
-                        .withValue(toValue(e.getValue()))
-                        .withDescription(e.getValue().description().orElse(EMPTY))
-                        .withExpression(e.getValue().expression().orElse(null))
-                        .withProfile(e.getValue().profile().orElse(null))
-                        .withRequired(e.getValue().required())
-                        .withPattern(e.getValue().pattern().orElse(null))
-                        .withMaximum(e.getValue().maximum().orElse(Integer.MAX_VALUE))
-                        .withMinimum(e.getValue().minimum().orElse(Integer.MIN_VALUE))
-                        .build())
-                .collect(Collectors.toList());
+        // Only the users' value references can create the missing fields in the resources.
+        Map<ConfigReference, Optional<Boolean>> createIfMissingByReference = new IdentityHashMap<>();
+        List<ConfigReference> valuesReferencesFromUser = new ArrayList<>();
+        for (Map.Entry<String, ValueReferenceConfig> e : helmConfig.values().entrySet()) {
+            ConfigReference valueReference = new ConfigReference.Builder(e.getValue().property().orElse(e.getKey()),
+                    e.getValue().paths().map(l -> l.toArray(new String[0])).orElse(new String[0]))
+                    .withValue(toValue(e.getValue()))
+                    .withDescription(e.getValue().description().orElse(EMPTY))
+                    .withExpression(e.getValue().expression().orElse(null))
+                    .withProfile(e.getValue().profile().orElse(null))
+                    .withRequired(e.getValue().required())
+                    .withPattern(e.getValue().pattern().orElse(null))
+                    .withMaximum(e.getValue().maximum().orElse(Integer.MAX_VALUE))
+                    .withMinimum(e.getValue().minimum().orElse(Integer.MIN_VALUE))
+                    .build();
+            valuesReferencesFromUser.add(valueReference);
+            createIfMissingByReference.put(valueReference, e.getValue().createIfMissing());
+        }
 
         List<Map<Object, Object>> allResources = new LinkedList<>();
         for (Map.Entry<String, byte[]> generatedFile : generatedFiles.entrySet()) {
@@ -988,7 +998,7 @@ public class QuarkusHelmWriterSessionListener {
                     String valueReferenceProperty = deductProperty(helmConfig, valueReference.getProperty());
 
                     processValueReference(valueReferenceProperty, valueReference.getValue(), valueReference, values, parser,
-                            seen, paths, EMPTY);
+                            seen, paths, EMPTY, createIfMissingByReference.getOrDefault(valueReference, Optional.of(false)));
                 }
             }
 
@@ -1011,7 +1021,8 @@ public class QuarkusHelmWriterSessionListener {
                     }
 
                     processValueReference(valueReferenceProperty, valueReferenceValue, valueReference, values, parser, seen,
-                            paths, QUOTE_CONVERSION);
+                            paths, QUOTE_CONVERSION,
+                            createIfMissingByReference.getOrDefault(valueReference, Optional.of(false)));
                 }
             }
 
@@ -1036,7 +1047,8 @@ public class QuarkusHelmWriterSessionListener {
     }
 
     private void processValueReference(String property, Object value, ConfigReference valueReference, ValuesHolder values,
-            YamlExpressionParser parser, Map<String, Object> seen, Set<String> paths, String defaultConversion) {
+            YamlExpressionParser parser, Map<String, Object> seen, Set<String> paths, String defaultConversion,
+            Optional<Boolean> createIfMissing) {
 
         String profile = valueReference.getProfile();
         if (valueReference.getPaths() != null && valueReference.getPaths().length > 0) {
@@ -1056,6 +1068,10 @@ public class QuarkusHelmWriterSessionListener {
                 Object actualValue = Optional.ofNullable(value).orElse(found);
 
                 if (actualValue != null) {
+                    if (found == null && value != null && shouldCreatePathIfMissing(path, createIfMissing)) {
+                        createPathIfMissing(parser, path);
+                    }
+
                     set(parser, path, toExpression(property, value, found, valueReference, defaultConversion));
                     values.putIfAbsent(property, valueReference, actualValue, profile);
                     if (StringUtils.isEmpty(profile)) {

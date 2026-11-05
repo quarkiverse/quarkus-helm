@@ -1,6 +1,7 @@
 package io.quarkiverse.helm.tests.kubernetes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -151,6 +152,35 @@ public class KubernetesFullIT {
         // Should use system properties
         assertEquals("foo", envs.get("FROM_SYSTEM_PROPERTY"));
         assertEquals("bar", envs.get("FROM_SYSTEM_ENV"));
+    }
+
+    @Test
+    public void shouldCreateMissingFieldsWhenPathStartsWithFilter() throws IOException {
+        String deployment = Strings.read(getResourceAsStream("templates/deployment.yaml"));
+        assertTrue(deployment.contains("restartPolicy: {{ .Values.app.restartPolicy }}"),
+                "Missing field from values was not created. Actual content:\n" + deployment);
+        assertTrue(deployment.contains("checksum/config: {{ .Values.app.restartPolicy | sha256sum }}"),
+                "Missing field from expressions was not created. Actual content:\n" + deployment);
+        // Paths that don't start with a filter don't create missing fields by default
+        assertFalse(deployment.contains("created-without-filter"),
+                "Missing field should not be created without filter. Actual content:\n" + deployment);
+
+        Map<String, Object> values = Serialization.yamlMapper()
+                .readValue(getResourceAsStream("values.yaml"), Map.class);
+        Map<String, Object> app = (Map<String, Object>) values.get(ROOT_CONFIG_NAME);
+        assertEquals("Always", app.get("restartPolicy"));
+    }
+
+    @Test
+    public void shouldAddNewAnnotationToService() throws IOException {
+        String service = Strings.read(getResourceAsStream("templates/service.yaml"));
+        assertTrue(service.contains("networking.istio.io/exportTo: {{ .Values.app.exportTo }}"),
+                "Missing annotation was not created in the Service. Actual content:\n" + service);
+
+        Map<String, Object> values = Serialization.yamlMapper()
+                .readValue(getResourceAsStream("values.yaml"), Map.class);
+        Map<String, Object> app = (Map<String, Object>) values.get(ROOT_CONFIG_NAME);
+        assertEquals("istio-system", app.get("exportTo"));
     }
 
     private final InputStream getResourceAsStream(String file) throws FileNotFoundException {

@@ -878,6 +878,23 @@ endif::add-copy-button-to-env-var[]
 |
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus-helm-values-values-create-if-missing]]`link:#quarkus-helm_quarkus-helm-values-values-create-if-missing[quarkus.helm.values."values".create-if-missing]`
+
+
+[.description]
+--
+If true, the missing fields of the paths will be created in the resources when a value is provided. If false, the value will only replace existing fields. If not set, the missing fields will only be created when a value is provided and the path starts with a filter expression, for example: `(kind == Deployment).spec.template.spec.restartPolicy`.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_VALUES__VALUES__CREATE_IF_MISSING+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_VALUES__VALUES__CREATE_IF_MISSING+++`
+endif::add-copy-button-to-env-var[]
+--|boolean 
+|
+
+
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus-helm-values-values-profile]]`link:#quarkus-helm_quarkus-helm-values-values-profile[quarkus.helm.values."values".profile]`
 
 
@@ -1114,6 +1131,23 @@ Environment variable: `+++QUARKUS_HELM_EXPRESSIONS__EXPRESSIONS__EXPRESSION+++`
 endif::add-copy-button-to-env-var[]
 --|string 
 |required icon:exclamation-circle[title=Configuration property is required]
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus-helm-expressions-expressions-create-if-missing]]`link:#quarkus-helm_quarkus-helm-expressions-expressions-create-if-missing[quarkus.helm.expressions."expressions".create-if-missing]`
+
+
+[.description]
+--
+If true, the missing fields of the path will be created in the resources. If false, the expression will only replace existing fields. If not set, the missing fields will only be created when the path starts with a filter expression, for example: `(kind == Deployment).spec.template.spec.restartPolicy`.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_EXPRESSIONS__EXPRESSIONS__CREATE_IF_MISSING+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_EXPRESSIONS__EXPRESSIONS__CREATE_IF_MISSING+++`
+endif::add-copy-button-to-env-var[]
+--|boolean 
+|
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus-helm-add-if-statement-add-if-statement-property]]`link:#quarkus-helm_quarkus-helm-add-if-statement-add-if-statement-property[quarkus.helm.add-if-statement."add-if-statement".property]`

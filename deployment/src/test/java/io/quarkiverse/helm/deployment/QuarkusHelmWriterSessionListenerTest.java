@@ -377,6 +377,11 @@ public class QuarkusHelmWriterSessionListenerTest {
             }
 
             @Override
+            public Optional<Boolean> createIfMissing() {
+                return Optional.empty();
+            }
+
+            @Override
             public Optional<String> profile() {
                 return Optional.ofNullable(profile);
             }
@@ -490,6 +495,11 @@ public class QuarkusHelmWriterSessionListenerTest {
             @Override
             public String expression() {
                 return expression;
+            }
+
+            @Override
+            public Optional<Boolean> createIfMissing() {
+                return Optional.empty();
             }
         };
     }
@@ -668,6 +678,11 @@ public class QuarkusHelmWriterSessionListenerTest {
                     public String expression() {
                         return "{{ .Release.Namespace }}-my-custom-cluster-role";
                     }
+
+                    @Override
+                    public Optional<Boolean> createIfMissing() {
+                        return Optional.empty();
+                    }
                 });
             } else {
                 // Expression original para YAML puro
@@ -680,6 +695,11 @@ public class QuarkusHelmWriterSessionListenerTest {
                     @Override
                     public String expression() {
                         return "{{ .Release.Namespace }}-my-cluster-role";
+                    }
+
+                    @Override
+                    public Optional<Boolean> createIfMissing() {
+                        return Optional.empty();
                     }
                 });
             }

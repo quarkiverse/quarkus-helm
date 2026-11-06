@@ -46,8 +46,6 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-
 import io.dekorate.ConfigReference;
 import io.dekorate.Logger;
 import io.dekorate.LoggerFactory;
@@ -65,6 +63,7 @@ import io.quarkiverse.helm.model.Chart;
 import io.quarkiverse.helm.model.HelmDependency;
 import io.quarkiverse.helm.model.Maintainer;
 import io.quarkiverse.helm.spi.AdditionalHelmTemplateBuildItem;
+import tools.jackson.core.type.TypeReference;
 
 public class QuarkusHelmWriterSessionListener {
     private static final String YAML = ".yaml";

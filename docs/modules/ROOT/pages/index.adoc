@@ -10,11 +10,14 @@ https://helm.sh/[Helm] is a package and install manager that standardizes and si
 
 Under the hood, the Quarkus Helm extension uses https://dekorate.io/[Dekorate] to generate the Helm chart manifests at build time.
 
+The current development version targets Quarkus {quarkus-version} and requires Java 21 or later.
+
 Before getting started, make sure you're using the right Quarkus Helm version that is compatible with the Quarkus version you're using in your project. See the following table to see the compatibility among versions:
 
 [%header,format=csv]
 |===
 Quarkus Helm Version,Quarkus Version
+2.0.0-SNAPSHOT,Quarkus 4.0.0.Beta2
 1.2.6,Quarkus 3.16+
 1.2.5,Quarkus 3.5.0+
 1.2.4,Quarkus 3.5.0+
@@ -64,7 +67,7 @@ Apart from all the features supported by the Quarkus Helm extension, in this doc
 To complete this guide, you need:
 
 * roughly 10 minutes
-* JDK 11+ installed with `JAVA_HOME` configured appropriately
+* JDK 21+ installed with `JAVA_HOME` configured appropriately
 * Apache Maven {maven-version}
 * Docker installed
 * https://helm.sh/docs/intro/install/[Helm command line] installed
@@ -192,7 +195,7 @@ helm uninstall helm-example
 To complete this guide, you need:
 
 * roughly 10 minutes
-* JDK 11+ installed with `JAVA_HOME` configured appropriately
+* JDK 21+ installed with `JAVA_HOME` configured appropriately
 * Apache Maven {maven-version}
 * Docker installed
 * https://helm.sh/docs/intro/install/[Helm command line] installed

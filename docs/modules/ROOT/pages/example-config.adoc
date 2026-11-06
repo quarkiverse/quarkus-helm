@@ -10,7 +10,7 @@ Sometimes, this is a challenging use case because most of the Kubernetes resourc
 == Prerequisites
 
 * Maven 3.8+
-* Java 17+
+* Java 21+
 * Have logged into a Kubernetes cluster
 * Have installed the Helm command line
 

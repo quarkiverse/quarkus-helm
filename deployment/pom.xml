@@ -36,8 +36,17 @@
       <artifactId>yaml-path</artifactId>
     </dependency>
     <dependency>
+      <groupId>land.oras</groupId>
+      <artifactId>oras-java-sdk</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

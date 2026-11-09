@@ -125,6 +125,34 @@ class HelmChartUploaderTest {
         assertTrue(e.getMessage().contains("quarkus.helm.repository.password"), e.getMessage());
     }
 
+    @Test
+    void failsWhenOciTypeHasNoOciUrl() {
+        HelmRepository repository = repository(HelmRepositoryType.OCI, "https://ghcr.io/my-org", null, null);
+
+        RuntimeException e = assertThrows(RuntimeException.class,
+                () -> HelmChartUploader.pushToHelmRepository(new File("chart.tgz"), repository));
+        assertTrue(e.getMessage().contains("oci://"), e.getMessage());
+    }
+
+    @Test
+    void failsWhenOciUrlIsUsedWithAnotherType() {
+        HelmRepository repository = repository(HelmRepositoryType.CHARTMUSEUM, "oci://ghcr.io/my-org", null, null);
+
+        RuntimeException e = assertThrows(RuntimeException.class,
+                () -> HelmChartUploader.pushToHelmRepository(new File("chart.tgz"), repository));
+        assertTrue(e.getMessage().contains("`OCI`"), e.getMessage());
+    }
+
+    @Test
+    void failsWhenPushingNonGzipChartToOci() throws IOException {
+        File tarball = Files.write(tempDir.resolve("myapp-1.0.0.tar.bz2"), CHART).toFile();
+        HelmRepository repository = repository(HelmRepositoryType.OCI, "oci://localhost:5000/charts", null, null);
+
+        RuntimeException e = assertThrows(RuntimeException.class,
+                () -> HelmChartUploader.pushToHelmRepository(tarball, repository));
+        assertTrue(e.getMessage().contains("quarkus.helm.extension"), e.getMessage());
+    }
+
     private void push(HelmRepositoryType type, String path, String tarballName, String username, String password)
             throws IOException {
         File tarball = Files.write(tempDir.resolve(tarballName), CHART).toFile();
@@ -132,7 +160,7 @@ class HelmChartUploaderTest {
         HelmChartUploader.pushToHelmRepository(tarball, repository(type, url, username, password));
     }
 
-    private static HelmRepository repository(HelmRepositoryType type, String url, String username, String password) {
+    static HelmRepository repository(HelmRepositoryType type, String url, String username, String password) {
         return new HelmRepository() {
             @Override
             public boolean push() {
@@ -162,6 +190,12 @@ class HelmChartUploaderTest {
             @Override
             public Optional<String> password() {
                 return Optional.ofNullable(password);
+            }
+
+            @Override
+            public boolean insecure() {
+                // tests only use local registries over plain HTTP
+                return true;
             }
         };
     }

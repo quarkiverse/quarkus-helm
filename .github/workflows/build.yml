@@ -152,6 +152,34 @@ jobs:
       - name: Delete namespace "helmrepo" using Helm
         run: kubectl delete namespace helmrepo
 
+      - name: Verify Integration Test Minimal using OCI registry
+        run: |
+          K8S_NAMESPACE=helmoci
+          KIND_REGISTRY_GROUP=local
+          VERSION=latest
+          kubectl create namespace $K8S_NAMESPACE
+
+          # create image plus push the Helm chart to the KinD registry, which is also an OCI registry
+          cd integration-tests/helm-kubernetes-minimal
+          mvn clean package -Dquarkus.container-image.build=true \
+          -Dquarkus.container-image.push=true \
+          -Dquarkus.container-image.registry=${{ steps.kind.outputs.LOCAL_REGISTRY }} \
+          -Dquarkus.container-image.group=$KIND_REGISTRY_GROUP \
+          -Dquarkus.container-image.tag=$VERSION \
+          -Dquarkus.container-image.insecure=true \
+          -Dquarkus.helm.repository.push=true \
+          -Dquarkus.helm.repository.url=oci://${{ steps.kind.outputs.LOCAL_REGISTRY }}/charts \
+          -Dquarkus.helm.repository.type=OCI \
+          -Dquarkus.helm.repository.insecure=true
+
+          # And install application from the OCI registry
+          export QUARKUS_HELM_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+          helm install quarkus-hello-world oci://${{ steps.kind.outputs.LOCAL_REGISTRY }}/charts/quarkus-helm-integration-tests-kubernetes-minimal --version $QUARKUS_HELM_VERSION --plain-http -n $K8S_NAMESPACE --set app.image=${{ steps.kind.outputs.LOCAL_REGISTRY }}/$KIND_REGISTRY_GROUP/quarkus-helm-integration-tests-kubernetes-minimal:$VERSION
+          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=quarkus-helm-integration-tests-kubernetes-minimal" "$K8S_NAMESPACE" "Running"
+
+      - name: Delete namespace "helmoci" using Helm
+        run: kubectl delete namespace helmoci
+
       - name: Verify Integration Test With Templates using Helm Repository
         run: |
           K8S_NAMESPACE=helmtemplates

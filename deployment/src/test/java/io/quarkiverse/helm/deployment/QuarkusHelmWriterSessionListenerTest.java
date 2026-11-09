@@ -753,6 +753,11 @@ public class QuarkusHelmWriterSessionListenerTest {
                 public Optional<String> password() {
                     return Optional.empty();
                 }
+
+                @Override
+                public boolean insecure() {
+                    return false;
+                }
             };
         }
 

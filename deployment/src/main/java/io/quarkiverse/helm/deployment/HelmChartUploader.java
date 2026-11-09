@@ -31,6 +31,7 @@ public final class HelmChartUploader {
             case CHARTMUSEUM -> new ChartMuseumHelmChartPusher();
             case ARTIFACTORY -> new ArtifactoryHelmChartPusher();
             case NEXUS -> new NexusHelmChartPusher();
+            case OCI -> new OciHelmChartPusher();
         };
     }
 
@@ -43,6 +44,16 @@ public final class HelmChartUploader {
         if (repository.type().isEmpty()) {
             throw new RuntimeException("The push to a Helm repository is enabled (the property `quarkus.helm.repository.push` "
                     + "is true), but the repository type was not provided (the property `quarkus.helm.repository.type`).");
+        }
+
+        boolean ociUrl = repository.url().get().startsWith(OciHelmChartPusher.OCI_SCHEME);
+        if (repository.type().get() == HelmRepositoryType.OCI && !ociUrl) {
+            throw new RuntimeException("The Helm repository type is `OCI`, but the repository URL (the property "
+                    + "`quarkus.helm.repository.url`) doesn't start with `" + OciHelmChartPusher.OCI_SCHEME + "`.");
+        }
+        if (repository.type().get() != HelmRepositoryType.OCI && ociUrl) {
+            throw new RuntimeException("The Helm repository URL (the property `quarkus.helm.repository.url`) is an OCI "
+                    + "registry, but the repository type (the property `quarkus.helm.repository.type`) is not `OCI`.");
         }
 
         if ((isNotEmpty(repository.getUsername()) && isEmpty(repository.getPassword()))

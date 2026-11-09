@@ -333,6 +333,8 @@ jobs:
         run: kubectl delete namespace helmconfig
 
       - name: Verify Super Hero microservice from Super Hero workshop using Helm Repository
+        # TODO: Disabled until quarkus-openapi-generator-server supports Quarkus 4
+        if: false
         run: |
           K8S_NAMESPACE=super-heroes
           KIND_REGISTRY_GROUP=local
@@ -437,6 +439,8 @@ jobs:
           kubectl logs -p $POD_NAME
 
       - name: Delete namespace "super-heroes" using Helm
+        # TODO: Re-enable once super-heroes can be built again
+        if: false
         run: kubectl delete namespace super-heroes
 
   verify-in-openshift:

@@ -20,12 +20,13 @@ public interface HelmRepository {
     Optional<String> deploymentTarget();
 
     /**
-     * The Helm repository type. Options are: `CHARTMUSEUM`, `ARTIFACTORY`, and `NEXUS`.
+     * The Helm repository type. Options are: `CHARTMUSEUM`, `ARTIFACTORY`, `NEXUS`, and `OCI`.
      */
     Optional<HelmRepositoryType> type();
 
     /**
-     * The Helm repository URL.
+     * The Helm repository URL. For the `OCI` type, it must start with `oci://` (for example, `oci://ghcr.io/my-org/charts`)
+     * and the chart is pushed to `<url>/<chart name>:<chart version>`.
      */
     Optional<String> url();
 
@@ -38,6 +39,13 @@ public interface HelmRepository {
      * The Helm repository password.
      */
     Optional<String> password();
+
+    /**
+     * If true, it will connect to the OCI registry using plain HTTP. Only used by the `OCI` type, and only meant for
+     * local or testing registries.
+     */
+    @WithDefault("false")
+    boolean insecure();
 
     default String getUsername() {
         return username().filter(StringUtils::isNotEmpty).orElse(null);

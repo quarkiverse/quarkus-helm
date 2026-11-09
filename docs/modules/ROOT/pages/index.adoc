@@ -863,7 +863,7 @@ We can configure the Quarkus Helm extension to automatically push the generated 
 ----
 # To enable pushing to a Helm repository
 quarkus.helm.repository.push=true
-# The Helm repository type. Options are: `CHARTMUSEUM`, `ARTIFACTORY`, and `NEXUS`.
+# The Helm repository type. Options are: `CHARTMUSEUM`, `ARTIFACTORY`, `NEXUS`, and `OCI`.
 quarkus.helm.repository.type=CHARTMUSEUM
 quarkus.helm.repository.url=<chart museum url>
 # Optional
@@ -872,7 +872,7 @@ quarkus.helm.repository.username=...
 quarkus.helm.repository.password=...
 ----
 
-**Note**: At the moment, OCI Helm Repositories like Amazon ECR, Azure Container Registry, ... are not supported. https://github.com/quarkiverse/quarkus-helm/issues/371[#371] for future reference and support.
+To push to an OCI registry (for example, Amazon ECR, Azure Container Registry, Docker Hub, GitHub Container Registry, Google Artifact Registry, Harbor or JFrog Artifactory), see <<push-to-oci-registries>>.
 
 [TIP]
 ====
@@ -903,6 +903,63 @@ Finally, let's install the Helm chart from the Helm repository:
 ----
 helm repo add local http://localhost:8080
 helm install --devel my-quarkus local/quarkus-hello-world
+----
+
+[[push-to-oci-registries]]
+=== Push to OCI registries
+
+Many container registries can also store Helm charts as https://helm.sh/docs/topics/registries/[OCI artifacts]. To push the generated Helm chart to one of them, use the `OCI` type and a URL that starts with `oci://`:
+
+[source,properties]
+----
+quarkus.helm.repository.push=true
+quarkus.helm.repository.type=OCI
+quarkus.helm.repository.url=oci://ghcr.io/my-org/charts
+# Optional
+quarkus.helm.repository.username=...
+# Optional
+quarkus.helm.repository.password=...
+----
+
+The chart is pushed the same way `helm push` does: at `<url>/<chart name>:<chart version>`, so the previous example pushes the chart `quarkus-hello-world` with version `1.0.0` to `ghcr.io/my-org/charts/quarkus-hello-world:1.0.0`.
+
+If the username and the password are not set, the credentials are read from the same files used by the container tools, so you can log in with any of them before building:
+
+* `docker login <registry>` or `helm registry login <registry>`: stored in `~/.docker/config.json` (including the credential helpers configured there, like `docker-credential-desktop`).
+* `podman login <registry>`: stored in `$XDG_RUNTIME_DIR/containers/auth.json`.
+* If the `REGISTRY_AUTH_FILE` environment variable is set, only that file is used.
+
+[TIP]
+====
+In CI environments, prefer setting `quarkus.helm.repository.username` and `quarkus.helm.repository.password` (for example, `QUARKUS_HELM_REPOSITORY_PASSWORD=${{ secrets.GITHUB_TOKEN }}` for GitHub Container Registry), so the build doesn't depend on a previous login.
+====
+
+[NOTE]
+====
+OCI registries only accept gzip-compressed charts, so the property `quarkus.helm.extension` must be either `tar.gz` (the default) or `tgz`.
+====
+
+Let's see a practical example. First, we need to start an OCI registry. The easiest way is running the https://distribution.github.io/distribution/[Distribution registry] using Docker or Podman:
+
+[source,bash]
+----
+docker run --rm -d -p 5000:5000 registry:2
+# or
+podman run --rm -d -p 5000:5000 docker.io/library/registry:2
+----
+
+Next, we're going to build the Helm chart with the push to the OCI registry enabled. Since this registry doesn't use TLS, we also need to set the property `quarkus.helm.repository.insecure`:
+
+[source,bash]
+----
+mvn clean install -Dquarkus.helm.repository.push=true -Dquarkus.helm.repository.type=OCI -Dquarkus.helm.repository.url=oci://localhost:5000/charts -Dquarkus.helm.repository.insecure=true
+----
+
+Finally, let's install the Helm chart from the OCI registry:
+
+[source,bash]
+----
+helm install my-quarkus oci://localhost:5000/charts/quarkus-hello-world --version 1.0.0 --plain-http
 ----
 
 [[helm-profiles]]

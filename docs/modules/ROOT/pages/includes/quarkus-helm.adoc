@@ -457,7 +457,7 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus-helm-repository-ty
 
 [.description]
 --
-The Helm repository type. Options are: `CHARTMUSEUM`, `ARTIFACTORY`, and `NEXUS`.
+The Helm repository type. Options are: `CHARTMUSEUM`, `ARTIFACTORY`, `NEXUS`, and `OCI`.
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_REPOSITORY_TYPE+++[]
@@ -466,7 +466,7 @@ ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_REPOSITORY_TYPE+++`
 endif::add-copy-button-to-env-var[]
 -- a|
-`chartmuseum`, `artifactory`, `nexus` 
+`chartmuseum`, `artifactory`, `nexus`, `oci`
 |
 
 
@@ -475,7 +475,7 @@ a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus-helm-repository-ur
 
 [.description]
 --
-The Helm repository URL.
+The Helm repository URL. For the `OCI` type, it must start with `oci://` (for example, `oci://ghcr.io/my-org/charts`) and the chart is pushed to `<url>/<chart name>:<chart version>`.
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_REPOSITORY_URL+++[]
@@ -517,8 +517,25 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_HELM_REPOSITORY_PASSWORD+++`
 endif::add-copy-button-to-env-var[]
---|string 
+--|string
 |
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus-helm-repository-insecure]]`link:#quarkus-helm_quarkus-helm-repository-insecure[quarkus.helm.repository.insecure]`
+
+
+[.description]
+--
+If true, it will connect to the OCI registry using plain HTTP. Only used by the `OCI` type, and only meant for local or testing registries.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_HELM_REPOSITORY_INSECURE+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_HELM_REPOSITORY_INSECURE+++`
+endif::add-copy-button-to-env-var[]
+--|boolean
+|`false`
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-helm_quarkus-helm-map-system-properties]]`link:#quarkus-helm_quarkus-helm-map-system-properties[quarkus.helm.map-system-properties]`

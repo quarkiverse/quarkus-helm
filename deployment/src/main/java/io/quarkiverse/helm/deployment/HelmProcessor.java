@@ -47,8 +47,9 @@ import io.quarkiverse.helm.spi.AdditionalHelmCRDBuildItem;
 import io.quarkiverse.helm.spi.AdditionalHelmTemplateBuildItem;
 import io.quarkiverse.helm.spi.CustomHelmOutputDirBuildItem;
 import io.quarkiverse.helm.spi.HelmChartBuildItem;
+import io.quarkus.container.image.deployment.ContainerImageConfig;
 import io.quarkus.deployment.Capabilities;
-import io.quarkus.deployment.IsNormal;
+import io.quarkus.deployment.IsProduction;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
@@ -87,7 +88,7 @@ public class HelmProcessor {
     // Lazy loaded when calling `isBuildTimeProperty(xxx)`.
     private static Set<String> buildProperties;
 
-    @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
+    @BuildStep(onlyIf = { HelmEnabled.class, IsProduction.class })
     void mapSystemPropertiesIfEnabled(Capabilities capabilities, ApplicationInfoBuildItem info, HelmChartConfig helmConfig,
             BuildProducer<DecoratorBuildItem> decorators) {
         if (helmConfig.mapSystemProperties()) {
@@ -116,7 +117,7 @@ public class HelmProcessor {
         }
     }
 
-    @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
+    @BuildStep(onlyIf = { HelmEnabled.class, IsProduction.class })
     void addHelmHooksToInitTaskJobs(HelmChartConfig config, List<KubernetesJobBuildItem> jobs,
             BuildProducer<DecoratorBuildItem> decorators) {
         if (!config.initTaskHook().enabled()) {
@@ -132,7 +133,7 @@ public class HelmProcessor {
         }
     }
 
-    @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
+    @BuildStep(onlyIf = { HelmEnabled.class, IsProduction.class })
     void configureHelmDependencyOrder(Capabilities capabilities, ApplicationInfoBuildItem info, HelmChartConfig config,
             BuildProducer<DecoratorBuildItem> decorators) {
         if (config.dependencies() == null || config.dependencies().isEmpty()) {
@@ -182,7 +183,7 @@ public class HelmProcessor {
         }
     }
 
-    @BuildStep(onlyIf = { HelmEnabled.class, IsNormal.class })
+    @BuildStep(onlyIf = { HelmEnabled.class, IsProduction.class })
     void generateResources(ApplicationInfoBuildItem app, OutputTargetBuildItem outputTarget,
             Optional<DekorateOutputBuildItem> dekorateOutput,
             EnabledKubernetesDeploymentTargetsBuildItem kubernetesDeploymentTargets,
@@ -194,7 +195,8 @@ public class HelmProcessor {
             Optional<CustomHelmOutputDirBuildItem> customHelmOutputDir,
             List<AdditionalHelmTemplateBuildItem> additionalHelmTemplateBuildItems,
             List<AdditionalHelmCRDBuildItem> additionalHelmCRDBuildItems,
-            HelmChartConfig config) {
+            HelmChartConfig config,
+            ContainerImageConfig containerImageConfig) {
 
         if (dekorateOutput.isPresent()) {
             helmChartBuildItems.produce(doGenerateResources(app, outputTarget, dekorateOutput.get(),
@@ -204,7 +206,8 @@ public class HelmProcessor {
                     customHelmOutputDir,
                     additionalHelmTemplateBuildItems,
                     additionalHelmCRDBuildItems,
-                    config));
+                    config,
+                    ContainerImageRegistry.from(containerImageConfig)));
         } else if (config.enabled()) {
             LOGGER.warn("Quarkus Helm extension is skipped since no Quarkus Kubernetes extension is configured. ");
         }
@@ -224,7 +227,8 @@ public class HelmProcessor {
             Optional<CustomHelmOutputDirBuildItem> customHelmOutputDir,
             List<AdditionalHelmTemplateBuildItem> additionalHelmTemplateBuildItems,
             List<AdditionalHelmCRDBuildItem> additionalHelmCRDBuildItems,
-            HelmChartConfig config) {
+            HelmChartConfig config,
+            ContainerImageRegistry containerImageRegistry) {
         validate(config);
         Project project = (Project) dekorateOutput.getProject();
 
@@ -294,7 +298,7 @@ public class HelmProcessor {
                         .findFirst()
                         .orElseThrow(() -> new RuntimeException("Couldn't find the tarball file. There should have "
                                 + "been generated when pushing to a Helm repository is enabled."));
-                pushToHelmRepository(new File(tarball), config.repository());
+                pushToHelmRepository(new File(tarball), containerImageRegistry.applyDefaultsTo(config.repository()));
             }
         }
         return helmCharts;

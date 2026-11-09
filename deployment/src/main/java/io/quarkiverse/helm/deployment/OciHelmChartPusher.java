@@ -67,8 +67,9 @@ final class OciHelmChartPusher implements HelmChartPusher {
             annotations.put(Const.ANNOTATION_DESCRIPTION, chart.getDescription());
         }
 
-        // oras-java doesn't shut down its default executor, which would leave non-daemon threads behind after the build.
-        // TODO: revisit when https://github.com/oras-project/oras-java/issues/963 is fixed in a new oras-java release.
+        // Since oras-java 0.9.2 the default executor uses daemon threads, but it is never shut down, so each push would
+        // leave idle threads behind in long-running build JVMs (e.g. mvnd or the Gradle daemon). We own the executor and
+        // shut it down once the push is done.
         ExecutorService executor = Executors.newCachedThreadPool();
         try {
             registry(repository, executor).pushArtifact(ref,

@@ -159,7 +159,9 @@ jobs:
           VERSION=latest
           kubectl create namespace $K8S_NAMESPACE
 
-          # create image plus push the Helm chart to the KinD registry, which is also an OCI registry
+          # create image plus push the Helm chart to the KinD registry, which is also an OCI registry.
+          # `quarkus.helm.repository.insecure` is not set on purpose: it's taken from `quarkus.container-image.insecure`
+          # because the chart is pushed to the same registry as the container image.
           cd integration-tests/helm-kubernetes-minimal
           mvn clean package -Dquarkus.container-image.build=true \
           -Dquarkus.container-image.push=true \
@@ -169,8 +171,7 @@ jobs:
           -Dquarkus.container-image.insecure=true \
           -Dquarkus.helm.repository.push=true \
           -Dquarkus.helm.repository.url=oci://${{ steps.kind.outputs.LOCAL_REGISTRY }}/charts \
-          -Dquarkus.helm.repository.type=OCI \
-          -Dquarkus.helm.repository.insecure=true
+          -Dquarkus.helm.repository.type=OCI
 
           # And install application from the OCI registry
           export QUARKUS_HELM_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)

@@ -2,6 +2,7 @@ package io.quarkiverse.helm.model;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -39,6 +40,7 @@ public class HelmDependency {
 
     }
 
+    @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     public HelmDependency(String name, String alias, String version, String repository, String condition, String[] tags,
             Boolean enabled) {
         this.name = name;

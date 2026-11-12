@@ -31,18 +31,23 @@ public interface HelmRepository {
     Optional<String> url();
 
     /**
-     * The Helm repository username.
+     * The Helm repository username. For the `OCI` type, if neither the username nor the password are set and the chart
+     * is pushed to the same registry as the container image (`quarkus.container-image.registry`), the
+     * `quarkus.container-image.username` property is used.
      */
     Optional<String> username();
 
     /**
-     * The Helm repository password.
+     * The Helm repository password. For the `OCI` type, if neither the username nor the password are set and the chart
+     * is pushed to the same registry as the container image (`quarkus.container-image.registry`), the
+     * `quarkus.container-image.password` property is used.
      */
     Optional<String> password();
 
     /**
      * If true, it will connect to the OCI registry using plain HTTP. Only used by the `OCI` type, and only meant for
-     * local or testing registries.
+     * local or testing registries. It's also enabled when the chart is pushed to the same registry as the container image
+     * and `quarkus.container-image.insecure` is true.
      */
     @WithDefault("false")
     boolean insecure();

@@ -31,7 +31,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.version>4.0.0.Beta3</quarkus.version>
     <yaml-path.version>0.0.12</yaml-path.version>
-    <oras-java.version>0.9.1</oras-java.version>
+    <oras-java.version>0.9.2</oras-java.version>
   </properties>
   <dependencyManagement>
     <dependencies>

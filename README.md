@@ -21,16 +21,18 @@ The documentation for this extension can be found [here](https://quarkiverse.git
 |----------------------|--------------------------|
 | 2.0.0                | Quarkus 4.0.0+           |
 | 1.5.0                | Quarkus 3.40+            |
-| 1.3.0 - 1.4.3       | Quarkus 3.16+            |
-| 1.2.0 - 1.2.7       | Quarkus 3.5.0+           |
+| 1.4.1 - 1.4.3        | Quarkus 3.37+            |
+| 1.3.0 - 1.4.0        | Quarkus 3.31+            |
+| 1.2.6 - 1.2.7        | Quarkus 3.16+            |
+| 1.2.0 - 1.2.5        | Quarkus 3.5.0+           |
 | 1.1.0                | Quarkus 3.3.0+           |
 | 1.0.9                | Quarkus 3.2.0+           |
-| 1.0.7 - 1.0.8       | Quarkus 3.1.0+           |
-| 1.0.1 - 1.0.6       | Quarkus 3.0.0+           |
+| 1.0.7 - 1.0.8        | Quarkus 3.1.0+           |
+| 1.0.1 - 1.0.6        | Quarkus 3.0.0+           |
 | 1.0.0                | Quarkus 3.0.0.Alpha/Beta |
-| 0.2.1 - 0.2.9       | Quarkus 2.16+            |
+| 0.2.1 - 0.2.9        | Quarkus 2.16+            |
 | 0.2.0                | Quarkus 2.14.0+          |
-| 0.0.7 - 0.1.2       | Quarkus 2.13             |
+| 0.0.7 - 0.1.2        | Quarkus 2.13             |
 | 0.0.6                | Quarkus 2.12             |
 
 ## Contributors ✨

@@ -929,6 +929,27 @@ If the username and the password are not set, the credentials are read from the 
 * `podman login <registry>`: stored in `$XDG_RUNTIME_DIR/containers/auth.json`.
 * If the `REGISTRY_AUTH_FILE` environment variable is set, only that file is used.
 
+==== Reusing the container image configuration
+
+If the chart is pushed to the same registry as the container image (the property `quarkus.container-image.registry`), you don't need to configure the registry twice:
+
+* If neither `quarkus.helm.repository.username` nor `quarkus.helm.repository.password` are set, `quarkus.container-image.username` and `quarkus.container-image.password` are used.
+* If `quarkus.container-image.insecure` is true, the chart is also pushed using plain HTTP.
+
+[source,properties]
+----
+quarkus.container-image.registry=quay.io
+quarkus.container-image.username=my-user
+quarkus.container-image.password=my-password
+
+quarkus.helm.repository.push=true
+quarkus.helm.repository.type=OCI
+# Same registry as the container image, so its credentials are used
+quarkus.helm.repository.url=oci://quay.io/my-org/charts
+----
+
+The container image configuration is never used for a different registry, so the credentials are not sent anywhere else.
+
 [TIP]
 ====
 In CI environments, prefer setting `quarkus.helm.repository.username` and `quarkus.helm.repository.password` (for example, `QUARKUS_HELM_REPOSITORY_PASSWORD=${{ secrets.GITHUB_TOKEN }}` for GitHub Container Registry), so the build doesn't depend on a previous login.

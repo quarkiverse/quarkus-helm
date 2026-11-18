@@ -34,7 +34,7 @@ class OciHelmChartPusherTest {
 
     @Test
     void pushesChartAsHelmOciArtifact() throws Exception {
-        File tarball = createChartTarball("myapp", "1.0.0+build.1");
+        File tarball = createChartTarball(tempDir, "myapp", "1.0.0+build.1");
 
         HelmChartUploader.pushToHelmRepository(tarball,
                 HelmChartUploaderTest.repository(HelmRepositoryType.OCI, "oci://" + registryAddress() + "/charts/", null,
@@ -62,7 +62,7 @@ class OciHelmChartPusherTest {
         return REGISTRY.getHost() + ":" + REGISTRY.getMappedPort(5000);
     }
 
-    private File createChartTarball(String name, String version) throws Exception {
+    static File createChartTarball(Path tempDir, String name, String version) throws Exception {
         Path chartDir = tempDir.resolve("chart").resolve(name);
         Files.createDirectories(chartDir.resolve("templates"));
         Files.writeString(chartDir.resolve("Chart.yaml"), """

@@ -19,6 +19,8 @@ The documentation for this extension can be found [here](https://quarkiverse.git
 
 | Quarkus Helm Version | Quarkus Version          |
 |----------------------|--------------------------|
+| 2.0.0                | Quarkus 4.0.0+           |
+| 1.5.0                | Quarkus 3.40+            |
 | 1.3.0 - 1.4.3       | Quarkus 3.16+            |
 | 1.2.0 - 1.2.7       | Quarkus 3.5.0+           |
 | 1.1.0                | Quarkus 3.3.0+           |

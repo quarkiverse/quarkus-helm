@@ -445,15 +445,17 @@ jobs:
         run: kubectl delete namespace super-heroes
 
   verify-in-openshift:
-    name: Verify Extension in OpenShift
-    # the action "manusa/actions-setup-openshift@v1.1.4" only works in ubuntu-20.04
-    runs-on: ubuntu-26.04
+    name: Verify Extension in OpenShift (MicroShift)
+    runs-on: ubuntu-latest
     needs: verify-in-kubernetes
-    # the step "manusa/actions-setup-openshift" is broken:
-    if: false
     strategy:
       matrix:
         java-version: [ 21 ]
+    env:
+      # MicroShift upstream (OKD based, no pull secret needed): https://github.com/microshift-io/microshift
+      MICROSHIFT_IMAGE: ghcr.io/microshift-io/microshift:4.20.0_g153ff0ca9_4.20.0_okd_scos.16
+      MICROSHIFT_CONTAINER: microshift-okd
+      REGISTRY_PORT: 5000
     steps:
       - uses: actions/checkout@v7
       - name: Set up JDK ${{matrix.java-version}}
@@ -466,108 +468,92 @@ jobs:
       - name: Build with Maven
         run: mvn clean install -DskipTests
 
-      - name: Setup OpenShift
-        uses: manusa/actions-setup-openshift@v1.1.5
-        with:
-          oc version: v3.11.0
-          github token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Verify Super Hero microservice from Super Hero workshop
+      - name: Start local container registry
         run: |
-          OC_NAMESPACE=super-heroes
-          REGISTRY_PORT=5000
-          REGISTRY=localhost:$REGISTRY_PORT
-          REGISTRY_GROUP=jcarvaja
-          VERSION=openshift
-          QUARKUS_HELM_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
-          QUARKUS_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${quarkus.version}' --non-recursive exec:exec)
-          oc new-project $OC_NAMESPACE
+          # host network, so the MicroShift container can pull from the runner IP
+          docker run -d --network host --name registry registry:2
+          echo "HOST_IP=$(hostname -I | awk '{print $1}')" >> $GITHUB_ENV
 
-          # setup container registry
-          oc new-app registry:2 -l app=registry
-          oc wait --timeout=160s --for=condition=ready pod -l app=registry
-
-          # checkout the quarkus super heroes repository
-          git clone https://github.com/quarkusio/quarkus-super-heroes
-          cd quarkus-super-heroes/rest-heroes
-
-          # install Quarkus Helm extension
-          ./mvnw quarkus:add-extension -Dextensions="io.quarkiverse.helm:quarkus-helm:$QUARKUS_HELM_VERSION"
-
-          # remove the third party installations via templates (we'll install these services via Helm dependencies :) )
-          rm -rf src/main/kubernetes
-
-          # remove the default application.yml as we'll provide a different one with our Helm properties
-          rm -rf src/main/resources/application.yml
-
-          # copy the import.sql file from
-          cp deploy/db-init/initialize-tables.sql src/main/resources/
-
-          cat > src/main/resources/application.properties << "EOF"
-          quarkus.application.name=rest-heroes
-          quarkus.http.port=8080
-          quarkus.hibernate-orm.sql-load-script=initialize-tables.sql
-          quarkus.hibernate-orm.database.generation=drop-and-create
-          quarkus.datasource.reactive.url=postgresql://quarkus-rest-heroes-db:5432/heroes_database
-          quarkus.datasource.username=superman
-          quarkus.datasource.password=superman
-          quarkus.kubernetes.deployment-target=openshift
-
-          quarkus.openapi.generator.server.spec=openapi.yml
-          quarkus.openapi.generator.server.base-package=io.quarkus.sample.superheroes.hero.api
-          quarkus.openapi.generator.server.use=openapitools
-          quarkus.openapi.generator.server.use-bean-validation=true
-          quarkus.openapi.generator.server.use-builder=true
-          quarkus.openapi.generator.server.use-reactive=true
-
-          quarkus.helm.dependencies.postgresql.alias=db
-          quarkus.helm.dependencies.postgresql.version=18.2.4
-          quarkus.helm.dependencies.postgresql.repository=https://charts.bitnami.com/bitnami
-          quarkus.helm.dependencies.postgresql.wait-for-service=quarkus-rest-heroes-db:5432
-
-          quarkus.helm.values."db.auth.database".value=heroes_database
-          quarkus.helm.values."db.auth.username".value=superman
-          quarkus.helm.values."db.auth.password".value=superman
-          quarkus.helm.values."db.volumePermissions.enabled".value-as-bool=false
-          quarkus.helm.values."db.volumePermissions.securityContext.runAsUser".value=auto
-          quarkus.helm.values."db.securityContext.enabled".value-as-bool=false
-          quarkus.helm.values."db.shmVolume.chmod.enabled".value-as-bool=false
-          quarkus.helm.values."db.primary.containerSecurityContext.enabled".value-as-bool=false
-          quarkus.helm.values."db.primary.containerSecurityContext.runAsUser".value=auto
-          quarkus.helm.values."db.primary.podSecurityContext.enabled".value-as-bool=false
-          quarkus.helm.values."db.primary.podSecurityContext.fsGroup".value=auto
+      - name: Start MicroShift
+        run: |
+          # allow CRI-O to pull from the local (plain HTTP) registry
+          cat > $RUNNER_TEMP/local-registry.conf << EOF
+          [[registry]]
+          location = "$HOST_IP:$REGISTRY_PORT"
+          insecure = true
           EOF
 
-          # start port-forward to allow pushing images to our registry
-          oc port-forward $(oc get pod -l app=registry -o name) $REGISTRY_PORT:5000 &
-          PF_REGISTRY_PID=$!
+          # LVM volume group used by the TopoLVM CSI driver (same setup as the MicroShift quickstart.sh)
+          command -v vgcreate > /dev/null || (sudo apt-get update && sudo apt-get install -y lvm2)
+          sudo mkdir -p /var/lib/microshift-okd
+          sudo truncate --size=1G /var/lib/microshift-okd/lvmdisk.image
+          sudo vgcreate -f -y myvg1 "$(sudo losetup --find --show --nooverlap /var/lib/microshift-okd/lvmdisk.image)"
 
-          # generate helm manifests
-          ./mvnw clean package -DskipTests \
-            -Dhelm.version=$QUARKUS_HELM_VERSION \
-            -Dquarkus.platform.version=$QUARKUS_VERSION -Dquarkus.platform.group-id=io.quarkus \
-            -Dquarkus.container-image.builder=docker \
+          VOL_OPTS="--tty --volume /dev:/dev"
+          for device in input snd dri; do
+            [ -d "/dev/$device" ] && VOL_OPTS="$VOL_OPTS --tmpfs /dev/$device"
+          done
+          sudo podman run --privileged --rm -d $VOL_OPTS \
+            --name $MICROSHIFT_CONTAINER \
+            --hostname 127.0.0.1.nip.io \
+            --publish 6443:6443 \
+            --volume $RUNNER_TEMP/local-registry.conf:/etc/containers/registries.conf.d/99-local-registry.conf:ro \
+            $MICROSHIFT_IMAGE
+
+          # wait for the kubeconfig to be generated and copy it to the runner
+          KUBECONFIG_PATH=/var/lib/microshift/resources/kubeadmin/kubeconfig
+          timeout 300 bash -c "until sudo podman exec $MICROSHIFT_CONTAINER test -f $KUBECONFIG_PATH; do sleep 2; done"
+          mkdir -p $HOME/.kube
+          sudo podman exec $MICROSHIFT_CONTAINER cat $KUBECONFIG_PATH > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+          # wait for the cluster to be ready
+          timeout 300 bash -c "until kubectl get nodes > /dev/null 2>&1; do sleep 5; done"
+          kubectl wait --for=condition=Ready node --all --timeout=300s
+          timeout 300 bash -c "until kubectl get deployment router-default -n openshift-ingress > /dev/null 2>&1; do sleep 5; done"
+          kubectl rollout status deployment/router-default -n openshift-ingress --timeout=300s
+          kubectl get pods -A
+
+      - name: Verify Integration Test Minimal in OpenShift
+        run: |
+          K8S_NAMESPACE=helm-openshift
+          REGISTRY_GROUP=local
+          VERSION=latest
+          NAME=quarkus-helm-integration-tests-openshift-minimal
+          kubectl create namespace $K8S_NAMESPACE
+
+          cd integration-tests/helm-openshift-minimal
+          # MicroShift does not provide the BuildConfig and ImageStream APIs, so we build the image
+          # using JIB instead of S2I. This way, the chart only contains the Deployment, Service and Route resources.
+          mvn -B quarkus:add-extension -Dextensions=container-image-jib
+          mvn -B clean package -DskipTests \
+            -Dquarkus.container-image.builder=jib \
             -Dquarkus.container-image.build=true \
             -Dquarkus.container-image.push=true \
-            -Dquarkus.container-image.registry=$REGISTRY \
+            -Dquarkus.container-image.registry=localhost:$REGISTRY_PORT \
             -Dquarkus.container-image.group=$REGISTRY_GROUP \
-            -Dquarkus.container-image.tag=$VERSION
-
-          # after pushing the image, we can now stop the port forwarding
-          kill -9 $PF_REGISTRY_PID
+            -Dquarkus.container-image.tag=$VERSION \
+            -Dquarkus.container-image.insecure=true \
+            -Dquarkus.openshift.route.expose=true
 
           # And install application
-          helm install --dependency-update quarkus-rest-heroes target/helm/openshift/rest-heroes/ --set app.image=registry:5000/$REGISTRY_GROUP:$VERSION
-          oc wait --timeout=160s --for=condition=ready pod -l app.kubernetes.io/name=rest-heroes
+          helm lint target/helm/openshift/$NAME
+          helm install openshift-minimal target/helm/openshift/$NAME -n $K8S_NAMESPACE --set app.image=$HOST_IP:$REGISTRY_PORT/$REGISTRY_GROUP/$NAME:$VERSION
+          bash $GITHUB_WORKSPACE/.github/scripts/waitFor.sh pod "-l app.kubernetes.io/name=$NAME" "$K8S_NAMESPACE" "Running"
+          kubectl rollout status deployment/$NAME -n $K8S_NAMESPACE --timeout=160s
 
-          POD_NAME=$(oc get pod -l app.kubernetes.io/name=rest-heroes -o name)
-          if [ $(oc exec -i $POD_NAME --container rest-heroes -- sh -c "curl -s -i localhost:8080") = *"500 Internal Server Error"* ]
-          then
-            echo Service rest-heroes is not working
-            oc describe $POD_NAME
-            oc logs $POD_NAME
-            exit 1
-          fi
+          # Verify the route was admitted by the OpenShift router
+          kubectl wait --for=jsonpath='{.status.ingress[0].conditions[0].status}'=True route/$NAME -n $K8S_NAMESPACE --timeout=120s
+          kubectl get route $NAME -n $K8S_NAMESPACE
 
-      - name: Delete namespace "super-heroes" using Helm
-        run: oc delete project super-heroes
+      - name: (Only if it failed) Log traces at failures
+        if: failure()
+        run: |
+          kubectl get pods -A || true
+          kubectl get all,route -n helm-openshift -o wide || true
+          kubectl describe pod -n helm-openshift || true
+          kubectl logs -l app.kubernetes.io/name=quarkus-helm-integration-tests-openshift-minimal -n helm-openshift --all-containers=true || true
+          sudo podman logs --tail 200 $MICROSHIFT_CONTAINER || true
+
+      - name: Delete namespace "helm-openshift"
+        run: kubectl delete namespace helm-openshift
